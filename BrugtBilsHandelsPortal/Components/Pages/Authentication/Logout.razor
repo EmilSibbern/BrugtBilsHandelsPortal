@@ -1,0 +1,53 @@
+﻿@page "/Logout"
+
+<PageTitle>Log ud</PageTitle>
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-7 col-lg-5">
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+                    <AuthorizeView>
+                        <Authorized>
+                            <h1 class="h3 mb-3">
+                                Log ud
+                            </h1>
+
+                            <p>
+                                Er du sikker på, at du vil
+                                logge ud?
+                            </p>
+
+                            <form method="post"
+                                  action="/account/logout">
+
+                                <AntiforgeryToken />
+
+                                <button type="submit"
+                                        class="btn btn-danger">
+                                    Log ud
+                                </button>
+
+                                <a href="/"
+                                   class="btn btn-outline-secondary">
+                                    Annuller
+                                </a>
+                            </form>
+                        </Authorized>
+
+                        <NotAuthorized>
+                            <h1 class="h3 mb-3">
+                                Du er allerede logget ud
+                            </h1>
+
+                            <a href="/Login"
+                               class="btn btn-primary">
+                                Log ind
+                            </a>
+                        </NotAuthorized>
+                    </AuthorizeView>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

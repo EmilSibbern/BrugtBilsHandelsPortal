@@ -1,0 +1,195 @@
+﻿@page "/Register"
+@rendermode InteractiveServer
+
+@using BrugtBilsHandelsPortal.DTOs.Authentication
+@using BrugtBilsHandelsPortal.Services.Interfaces
+
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
+
+<PageTitle>Opret bruger</PageTitle>
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+                    <h1 class="h3 mb-3">Opret bruger</h1>
+
+                    <p class="text-muted">
+                        Opret en konto for at kunne kontakte sælgere
+                        og oprette dine egne annoncer.
+                    </p>
+
+                    @if (!string.IsNullOrWhiteSpace(_errorMessage))
+                    {
+                        <div class="alert alert-danger" role="alert">
+                            @_errorMessage
+                        </div>
+                    }
+
+                    <EditForm Model="_model"
+                              OnValidSubmit="HandleRegisterAsync"
+                              FormName="register-form">
+
+                        <DataAnnotationsValidator />
+
+                        <ValidationSummary class="text-danger mb-3" />
+
+                        <div class="mb-3">
+                            <label for="username" class="form-label">
+                                Brugernavn
+                            </label>
+
+                            <InputText id="username"
+                                       class="form-control"
+                                       autocomplete="username"
+                                       @bind-Value="_model.Username" />
+
+                            <ValidationMessage For="@(() => _model.Username)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="email" class="form-label">
+                                E-mail
+                            </label>
+
+                            <InputText id="email"
+                                       type="email"
+                                       class="form-control"
+                                       autocomplete="email"
+                                       @bind-Value="_model.Email" />
+
+                            <ValidationMessage For="@(() => _model.Email)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="phone" class="form-label">
+                                Telefonnummer
+                            </label>
+
+                            <InputText id="phone"
+                                       type="tel"
+                                       class="form-control"
+                                       autocomplete="tel"
+                                       @bind-Value="_model.Phone" />
+
+                            <ValidationMessage For="@(() => _model.Phone)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="address" class="form-label">
+                                Adresse
+                            </label>
+
+                            <InputText id="address"
+                                       class="form-control"
+                                       autocomplete="street-address"
+                                       @bind-Value="_model.Address" />
+
+                            <ValidationMessage For="@(() => _model.Address)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label">
+                                Password
+                            </label>
+
+                            <InputText id="password"
+                                       type="password"
+                                       class="form-control"
+                                       autocomplete="new-password"
+                                       @bind-Value="_model.Password" />
+
+                            <ValidationMessage For="@(() => _model.Password)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="confirm-password" class="form-label">
+                                Gentag password
+                            </label>
+
+                            <InputText id="confirm-password"
+                                       type="password"
+                                       class="form-control"
+                                       autocomplete="new-password"
+                                       @bind-Value="_model.ConfirmPassword" />
+
+                            <ValidationMessage
+                                For="@(() => _model.ConfirmPassword)" />
+                        </div>
+
+                        <button type="submit"
+                                class="btn btn-primary w-100"
+                                disabled="@_isSubmitting">
+                            @if (_isSubmitting)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2"
+                                      aria-hidden="true"></span>
+
+                                <span>Opretter bruger...</span>
+                            }
+                            else
+                            {
+                                <span>Opret bruger</span>
+                            }
+                        </button>
+                    </EditForm>
+
+                    <hr />
+
+                    <p class="text-center mb-0">
+                        Har du allerede en konto?
+                        <a href="/Login">Log ind</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private RegisterRequest _model = new();
+
+    private bool _isSubmitting;
+
+    private string? _errorMessage;
+
+    private async Task HandleRegisterAsync()
+    {
+        if (_isSubmitting)
+        {
+            return;
+        }
+
+        _isSubmitting = true;
+        _errorMessage = null;
+
+        try
+        {
+            var result =
+                await AuthService.RegisterAsync(_model);
+
+            if (!result.Succeeded)
+            {
+                _errorMessage =
+                    result.ErrorMessage
+                    ?? "Brugeren kunne ikke oprettes.";
+
+                return;
+            }
+
+            Navigation.NavigateTo(
+                "/Login?registered=true");
+        }
+        catch
+        {
+            _errorMessage =
+                "Der opstod en fejl under oprettelsen. Prøv igen.";
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+}

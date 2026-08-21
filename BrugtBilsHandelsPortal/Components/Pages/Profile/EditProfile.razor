@@ -1,0 +1,217 @@
+﻿@page "/EditProfile"
+@attribute [Authorize]
+@rendermode InteractiveServer
+
+@using BrugtBilsHandelsPortal.DTOs.Users
+@using BrugtBilsHandelsPortal.Services.Interfaces
+
+@inject IUserService UserService
+
+<PageTitle>Rediger profil</PageTitle>
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-6">
+            <h1>Rediger profil</h1>
+
+            @if (_isLoading)
+            {
+                <p>Indlæser profil...</p>
+            }
+            else if (_profileNotFound)
+            {
+                <div class="alert alert-danger">
+                    Profilen kunne ikke indlæses.
+                </div>
+
+                <a href="/Profile"
+                   class="btn btn-outline-secondary">
+                    Tilbage til profil
+                </a>
+            }
+            else
+            {
+                @if (!string.IsNullOrWhiteSpace(_errorMessage))
+                {
+                    <div class="alert alert-danger" role="alert">
+                        @_errorMessage
+                    </div>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(_successMessage))
+                {
+                    <div class="alert alert-success" role="alert">
+                        @_successMessage
+                    </div>
+                }
+
+                <EditForm Model="_model"
+                          OnValidSubmit="HandleUpdateAsync"
+                          FormName="edit-profile-form">
+
+                    <DataAnnotationsValidator />
+
+                    <ValidationSummary class="text-danger mb-3" />
+
+                    <div class="mb-3">
+                        <label for="username" class="form-label">
+                            Brugernavn
+                        </label>
+
+                        <InputText id="username"
+                                   class="form-control"
+                                   autocomplete="username"
+                                   @bind-Value="_model.Username" />
+
+                        <ValidationMessage
+                            For="@(() => _model.Username)" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="email" class="form-label">
+                            E-mail
+                        </label>
+
+                        <InputText id="email"
+                                   type="email"
+                                   class="form-control"
+                                   autocomplete="email"
+                                   @bind-Value="_model.Email" />
+
+                        <ValidationMessage
+                            For="@(() => _model.Email)" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="phone" class="form-label">
+                            Telefonnummer
+                        </label>
+
+                        <InputText id="phone"
+                                   type="tel"
+                                   class="form-control"
+                                   autocomplete="tel"
+                                   @bind-Value="_model.Phone" />
+
+                        <ValidationMessage
+                            For="@(() => _model.Phone)" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="address" class="form-label">
+                            Adresse
+                        </label>
+
+                        <InputText id="address"
+                                   class="form-control"
+                                   autocomplete="street-address"
+                                   @bind-Value="_model.Address" />
+
+                        <ValidationMessage
+                            For="@(() => _model.Address)" />
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit"
+                                class="btn btn-primary"
+                                disabled="@_isSubmitting">
+                            @if (_isSubmitting)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2"
+                                      aria-hidden="true"></span>
+
+                                <span>Gemmer...</span>
+                            }
+                            else
+                            {
+                                <span>Gem ændringer</span>
+                            }
+                        </button>
+
+                        <a href="/Profile"
+                           class="btn btn-outline-secondary">
+                            Tilbage
+                        </a>
+                    </div>
+                </EditForm>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private UpdateProfileDto _model = new();
+
+    private bool _isLoading = true;
+    private bool _isSubmitting;
+    private bool _profileNotFound;
+
+    private string? _errorMessage;
+    private string? _successMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var profile =
+                await UserService.GetCurrentProfileAsync();
+
+            if (profile is null)
+            {
+                _profileNotFound = true;
+                return;
+            }
+
+            _model = new UpdateProfileDto
+            {
+                Username = profile.Username,
+                Email = profile.Email,
+                Phone = profile.Phone,
+                Address = profile.Address
+            };
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task HandleUpdateAsync()
+    {
+        if (_isSubmitting)
+        {
+            return;
+        }
+
+        _isSubmitting = true;
+        _errorMessage = null;
+        _successMessage = null;
+
+        try
+        {
+            var result =
+                await UserService.UpdateCurrentProfileAsync(_model);
+
+            if (!result.Succeeded)
+            {
+                _errorMessage =
+                    result.ErrorMessage
+                    ?? "Profilen kunne ikke opdateres.";
+
+                return;
+            }
+
+            _successMessage =
+                "Dine profiloplysninger er blevet gemt.";
+        }
+        catch
+        {
+            _errorMessage =
+                "Der opstod en fejl. Prøv igen.";
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+}

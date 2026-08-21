@@ -1,0 +1,79 @@
+name: User story
+description: Opret en story til produktbackloggen
+title: "[USxx] "
+labels:
+  - user-story
+body:
+  - type: input
+    id: epic
+    attributes:
+      label: Epic
+      placeholder: Eksempelvis Authentication og profil
+    validations:
+      required: true
+  - type: textarea
+    id: story
+    attributes:
+      label: User story
+      description: Beskriv aktør, behov og værdi.
+      placeholder: Som bruger vil jeg ..., så jeg ...
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Prioritet
+      options:
+        - Kritisk
+        - Høj
+        - Mellem
+        - Lav
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptkriterier
+      placeholder: |
+        - [ ] Kriterium 1
+        - [ ] Kriterium 2
+    validations:
+      required: true
+  - type: textarea
+    id: variants
+    attributes:
+      label: Rollevarianter
+      description: Beskriv afvigende adfærd for Guest og Administrator.
+      placeholder: |
+        Guest:
+        - [ ] ...
+
+        Administrator:
+        - [ ] ...
+  - type: textarea
+    id: implementation
+    attributes:
+      label: Implementering
+      placeholder: |
+        Frontend:
+        - ...
+
+        Backend:
+        - ...
+  - type: textarea
+    id: security
+    attributes:
+      label: Authorization og sikkerhed
+      placeholder: |
+        - [ ] ...
+  - type: textarea
+    id: definition-of-done
+    attributes:
+      label: Definition of Done
+      value: |
+        - [ ] Acceptkriterierne er opfyldt og demonstreret
+        - [ ] Backend validerer data og håndhæver authorization/ejerskab
+        - [ ] Relevante automatiserede tests er tilføjet eller opdateret
+        - [ ] Koden er reviewet, og dokumentationen er opdateret
+    validations:
+      required: true

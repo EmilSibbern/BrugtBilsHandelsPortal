@@ -1,0 +1,1 @@
+-- TODO: Opret indeks og unikke constraints til søgning og relationer.

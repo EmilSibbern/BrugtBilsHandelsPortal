@@ -1,0 +1,37 @@
+# .NET build output
+**/bin/
+**/obj/
+packages/
+TestResults/
+*.trx
+coverage/
+coverage.*
+
+# IDEs and local tooling
+.idea/
+.vs/
+.vscode/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.iml
+_ReSharper.Caches/
+*.DotSettings.user
+
+# Local configuration and secrets
+appsettings.Local.json
+appsettings.*.Local.json
+secrets.json
+.env
+.env.*
+!.env.example
+
+# Runtime-generated files
+BrugtBilsHandelsPortal/wwwroot/uploads/*
+!BrugtBilsHandelsPortal/wwwroot/uploads/.gitkeep
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini

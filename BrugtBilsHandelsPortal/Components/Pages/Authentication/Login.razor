@@ -1,0 +1,114 @@
+﻿@page "/Login"
+
+@using Microsoft.AspNetCore.Components.Forms
+
+<PageTitle>Log ind</PageTitle>
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-5">
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+                    <h1 class="h3 mb-3">Log ind</h1>
+
+                    @if (Registered)
+                    {
+                        <div class="alert alert-success"
+                             role="status">
+                            Din bruger er oprettet.
+                            Du kan nu logge ind.
+                        </div>
+                    }
+
+                    @if (LoginFailed)
+                    {
+                        <div class="alert alert-danger"
+                             role="alert">
+                            Brugernavn/e-mail eller password
+                            er forkert.
+                        </div>
+                    }
+
+                    <form method="post"
+                          action="/account/login">
+
+                        <AntiforgeryToken />
+
+                        <input type="hidden"
+                               name="ReturnUrl"
+                               value="@ReturnUrl" />
+
+                        <div class="mb-3">
+                            <label for="login"
+                                   class="form-label">
+                                Brugernavn eller e-mail
+                            </label>
+
+                            <input id="login"
+                                   name="EmailOrUsername"
+                                   type="text"
+                                   class="form-control"
+                                   autocomplete="username"
+                                   required />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password"
+                                   class="form-label">
+                                Password
+                            </label>
+
+                            <input id="password"
+                                   name="Password"
+                                   type="password"
+                                   class="form-control"
+                                   autocomplete="current-password"
+                                   required />
+                        </div>
+
+                        <div class="form-check mb-3">
+                            <input id="remember-me"
+                                   name="RememberMe"
+                                   type="checkbox"
+                                   value="true"
+                                   class="form-check-input" />
+
+                            <label for="remember-me"
+                                   class="form-check-label">
+                                Husk mig
+                            </label>
+                        </div>
+
+                        <button type="submit"
+                                class="btn btn-primary w-100">
+                            Log ind
+                        </button>
+                    </form>
+
+                    <hr />
+
+                    <p class="text-center mb-0">
+                        Har du ikke en konto?
+                        <a href="/Register">
+                            Opret bruger
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromQuery(
+        Name = "registered")]
+    public bool Registered { get; set; }
+
+    [SupplyParameterFromQuery(
+        Name = "loginFailed")]
+    public bool LoginFailed { get; set; }
+
+    [SupplyParameterFromQuery(
+        Name = "returnUrl")]
+    public string? ReturnUrl { get; set; }
+}

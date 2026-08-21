@@ -1,0 +1,1 @@
+// TODO: Definér Message-entiteten.

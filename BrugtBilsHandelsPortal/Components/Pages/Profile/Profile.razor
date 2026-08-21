@@ -1,0 +1,89 @@
+﻿@page "/Profile"
+@attribute [Authorize]
+@rendermode InteractiveServer
+
+@using BrugtBilsHandelsPortal.DTOs.Users
+@using BrugtBilsHandelsPortal.Services.Interfaces
+
+@inject IUserService UserService
+
+<PageTitle>Min profil</PageTitle>
+
+<div class="container py-4">
+    <h1>Min profil</h1>
+
+    @if (_isLoading)
+    {
+        <p>Indlæser profil...</p>
+    }
+    else if (_profile is null)
+    {
+        <div class="alert alert-danger">
+            Profilen kunne ikke indlæses.
+        </div>
+    }
+    else
+    {
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Brugernavn</dt>
+                    <dd class="col-sm-8">@_profile.Username</dd>
+
+                    <dt class="col-sm-4">E-mail</dt>
+                    <dd class="col-sm-8">@_profile.Email</dd>
+
+                    <dt class="col-sm-4">Telefon</dt>
+                    <dd class="col-sm-8">
+                        @DisplayValue(_profile.Phone)
+                    </dd>
+
+                    <dt class="col-sm-4">Adresse</dt>
+                    <dd class="col-sm-8">
+                        @DisplayValue(_profile.Address)
+                    </dd>
+
+                    <dt class="col-sm-4">Brugerrolle</dt>
+                    <dd class="col-sm-8">
+                        @_profile.UserGroupName
+                    </dd>
+
+                    <dt class="col-sm-4">Oprettet</dt>
+                    <dd class="col-sm-8">
+                        @_profile.CreatedAt.ToString("dd-MM-yyyy")
+                    </dd>
+                </dl>
+            </div>
+        </div>
+
+        <a href="/EditProfile"
+           class="btn btn-primary mt-3">
+            Rediger profil
+        </a>
+    }
+</div>
+
+@code {
+    private UserProfileDto? _profile;
+    private bool _isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _profile =
+                await UserService.GetCurrentProfileAsync();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private static string DisplayValue(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value)
+            ? "Ikke angivet"
+            : value;
+    }
+}
