@@ -9,6 +9,8 @@ using BrugtBilsHandelsPortal.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using BrugtBilsHandelsPortal.Security;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -76,6 +78,30 @@ builder.Services.AddAuthorization();
 
 builder.Services.AddCascadingAuthenticationState();
 
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode =
+        StatusCodes.Status429TooManyRequests;
+
+    options.AddPolicy(
+        "login",
+        httpContext =>
+            RateLimitPartition.GetFixedWindowLimiter(
+                partitionKey:
+                httpContext.Connection.RemoteIpAddress?
+                    .ToString()
+                ?? "unknown",
+
+                factory: _ =>
+                    new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = 5,
+                        Window = TimeSpan.FromMinutes(1),
+                        QueueLimit = 0,
+                        AutoReplenishment = true
+                    }));
+});
+
 var app = builder.Build();
 
 // Fejlhåndtering i produktion
@@ -95,6 +121,10 @@ app.UseStatusCodePagesWithReExecute(
 
 // HTTP sendes videre til HTTPS
 app.UseHttpsRedirection();
+
+app.UseRouting();
+
+app.UseRateLimiter();
 
 // Læs authentication-cookien og opret HttpContext.User
 app.UseAuthentication();

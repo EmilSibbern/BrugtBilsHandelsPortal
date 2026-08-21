@@ -15,7 +15,7 @@ public static class AccountEndpoints
     {
         endpoints.MapPost(
             "/account/login",
-            LoginAsync);
+            LoginAsync).RequireRateLimiting("login");
         endpoints.MapPost(
                 "/account/logout",
                 LogoutAsync)
