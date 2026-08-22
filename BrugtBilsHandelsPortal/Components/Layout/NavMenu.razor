@@ -28,10 +28,10 @@
         <AuthorizeView>
             <Authorized Context="authenticationState">
                 <div class="nav-item px-3">
-                    <span class="nav-link">
-                        Logget ind som
-                        @authenticationState.User.Identity?.Name
-                    </span>
+                    <NavLink class="nav-link"
+                             href="announcements/create">
+                        Opret announce
+                    </NavLink>
                 </div>
 
                 <div class="nav-item px-3">
@@ -45,6 +45,13 @@
                              href="Logout">
                         Log ud
                     </NavLink>
+                </div>
+                
+                <div class="nav-item px-3">
+                    <span class="nav-link">
+                        Logget ind som
+                        @authenticationState.User.Identity?.Name
+                    </span>
                 </div>
             </Authorized>
 

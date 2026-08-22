@@ -1,1 +1,170 @@
-@* TODO: Upload, preview, sortering og valg af hovedbillede. *@
+@using BrugtBilsHandelsPortal.Configuration
+@using BrugtBilsHandelsPortal.DTOs.Images
+@using BrugtBilsHandelsPortal.Services.Interfaces
+@using Microsoft.Extensions.Options
+
+@inject IImageService ImageService
+@inject IOptions<ImageUploadOptions> Options
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <h2 class="h5">Tilføj billeder</h2>
+
+        <p class="text-muted">
+            JPEG, PNG eller WebP. Maksimalt
+            @MaxFileSizeInMb MB pr. billede.
+        </p>
+
+        @if (!string.IsNullOrWhiteSpace(_errorMessage))
+        {
+            <div class="alert alert-danger"
+                 role="alert">
+                @_errorMessage
+            </div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(_successMessage))
+        {
+            <div class="alert alert-success"
+                 role="status">
+                @_successMessage
+            </div>
+        }
+
+        <InputFile OnChange="HandleFilesSelectedAsync"
+                   accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                   multiple
+                   disabled="@_isUploading" />
+
+        @if (_isUploading)
+        {
+            <div class="mt-3">
+                <span class="spinner-border
+                             spinner-border-sm me-2"
+                      aria-hidden="true"></span>
+
+                <span>
+                    Uploader @_currentFile af @_totalFiles...
+                </span>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public int AnnouncementId { get; set; }
+
+    [Parameter]
+    public EventCallback OnImagesChanged { get; set; }
+
+    private bool _isUploading;
+    private int _currentFile;
+    private int _totalFiles;
+
+    private string? _errorMessage;
+    private string? _successMessage;
+
+    private long MaxFileSize =>
+        Options.Value.MaxFileSizeBytes;
+
+    private long MaxFileSizeInMb =>
+        MaxFileSize / 1024 / 1024;
+
+    private async Task HandleFilesSelectedAsync(
+        InputFileChangeEventArgs eventArgs)
+    {
+        if (_isUploading)
+        {
+            return;
+        }
+
+        _isUploading = true;
+        _errorMessage = null;
+        _successMessage = null;
+
+        try
+        {
+            IReadOnlyList<IBrowserFile> files;
+
+            try
+            {
+                files = eventArgs.GetMultipleFiles(
+                    Options.Value.MaxImagesPerAnnouncement);
+            }
+            catch (InvalidOperationException)
+            {
+                _errorMessage =
+                    $"Du kan højst vælge " +
+                    $"{Options.Value.MaxImagesPerAnnouncement} billeder.";
+
+                return;
+            }
+
+            _totalFiles = files.Count;
+            var uploadedCount = 0;
+
+            foreach (var file in files)
+            {
+                _currentFile++;
+
+                if (file.Size > MaxFileSize)
+                {
+                    _errorMessage =
+                        $"{file.Name} overskrider grænsen på " +
+                        $"{MaxFileSizeInMb} MB.";
+
+                    continue;
+                }
+
+                await using var stream =
+                    file.OpenReadStream(MaxFileSize);
+
+                var result =
+                    await ImageService.UploadAsync(
+                        new UploadAnnouncementImageRequest
+                        {
+                            AnnouncementId =
+                                AnnouncementId,
+
+                            Content = stream,
+                            Size = file.Size,
+                            ContentType =
+                                file.ContentType
+                        });
+
+                if (!result.Succeeded)
+                {
+                    _errorMessage =
+                        result.ErrorMessage
+                        ?? $"{file.Name} kunne ikke uploades.";
+
+                    continue;
+                }
+
+                uploadedCount++;
+            }
+
+            if (uploadedCount > 0)
+            {
+                _successMessage =
+                    uploadedCount == 1
+                        ? "Billedet blev uploadet."
+                        : $"{uploadedCount} billeder blev uploadet.";
+
+                await OnImagesChanged.InvokeAsync();
+            }
+        }
+        catch
+        {
+            _errorMessage =
+                "Der opstod en fejl under upload.";
+        }
+        finally
+        {
+            _isUploading = false;
+            _currentFile = 0;
+            _totalFiles = 0;
+        }
+    }
+}

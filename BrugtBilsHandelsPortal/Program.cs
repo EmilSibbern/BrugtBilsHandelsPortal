@@ -11,7 +11,8 @@ using Microsoft.AspNetCore.Identity;
 using BrugtBilsHandelsPortal.Security;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
-
+using BrugtBilsHandelsPortal.Configuration;
+using BrugtBilsHandelsPortal.Storage;
 var builder = WebApplication.CreateBuilder(args);
 
 // Razor Components og Interactive Server
@@ -38,6 +39,34 @@ builder.Services.AddScoped<
 builder.Services.AddScoped<
     IAuthService,
     AuthService>();
+
+builder.Services.AddScoped<
+    ICarBrandRepository,
+    CarBrandRepository>();
+
+builder.Services.AddScoped<
+    IAnnouncementRepository,
+    AnnouncementRepository>();
+
+builder.Services.AddScoped<
+    IAnnouncementService,
+    AnnouncementService>();
+
+builder.Services.Configure<ImageUploadOptions>(
+    builder.Configuration.GetSection(
+        ImageUploadOptions.SectionName));
+
+builder.Services.AddSingleton<
+    IImageStorage,
+    LocalImageStorage>();
+
+builder.Services.AddScoped<
+    IImageRepository,
+    ImageRepository>();
+
+builder.Services.AddScoped<
+    IImageService,
+    ImageService>();
 
 // Cookie authentication
 builder.Services
@@ -134,6 +163,8 @@ app.UseAuthorization();
 
 // Beskyt formularer mod CSRF
 app.UseAntiforgery();
+
+app.UseStaticFiles();
 
 // Statiske filer fra wwwroot
 app.MapStaticAssets();

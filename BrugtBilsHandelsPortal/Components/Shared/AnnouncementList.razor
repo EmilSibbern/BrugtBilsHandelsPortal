@@ -1,1 +1,33 @@
-@* TODO: Genbrugelig liste eller grid af annoncer. *@
+@using BrugtBilsHandelsPortal.DTOs.Announcements
+
+@if (Announcements.Count == 0)
+{
+    <div class="alert alert-light border text-center py-5">
+        <h2 class="h4">Ingen aktive annoncer</h2>
+
+        <p class="text-muted mb-0">
+            Der er endnu ikke oprettet nogen aktive annoncer.
+        </p>
+    </div>
+}
+else
+{
+    <div class="row row-cols-1 row-cols-md-2
+                row-cols-xl-3 g-4">
+        @foreach (var announcement in Announcements)
+        {
+            <div class="col"
+                 @key="announcement.Id">
+                <AnnouncementCard
+                    Announcement="announcement" />
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<AnnouncementListItemDto>
+        Announcements { get; set; }
+            = Array.Empty<AnnouncementListItemDto>();
+}

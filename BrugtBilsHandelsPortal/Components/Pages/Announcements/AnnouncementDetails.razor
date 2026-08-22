@@ -1,1 +1,280 @@
-@* TODO: Vis annoncedetaljer, billeder, sælger og kommentarer. *@
+@page "/announcements/{Id:int}"
+@rendermode InteractiveServer
+
+@using BrugtBilsHandelsPortal.Components.Shared
+@using BrugtBilsHandelsPortal.DTOs.Announcements
+@using BrugtBilsHandelsPortal.DTOs.Images
+@using BrugtBilsHandelsPortal.Security
+@using BrugtBilsHandelsPortal.Services.Interfaces
+
+@inject IAnnouncementService AnnouncementService
+@inject IImageService ImageService
+@inject ICurrentUserService CurrentUserService
+
+<PageTitle>@PageTitle</PageTitle>
+
+<div class="container py-4">
+    @if (_isLoading)
+    {
+        <p>Indlæser annonce...</p>
+    }
+    else if (!string.IsNullOrWhiteSpace(_errorMessage))
+    {
+        <div class="alert alert-danger"
+             role="alert">
+            @_errorMessage
+        </div>
+
+        <a href="/"
+           class="btn btn-outline-secondary">
+            Tilbage til forsiden
+        </a>
+    }
+    else if (_announcement is null)
+    {
+        <div class="alert alert-warning"
+             role="alert">
+            Annoncen findes ikke eller er ikke længere aktiv.
+        </div>
+
+        <a href="/"
+           class="btn btn-outline-secondary">
+            Tilbage til forsiden
+        </a>
+    }
+    else
+    {
+        <div class="mb-4">
+            <ImageGallery Images="_images"
+                          CanManage="_canManageImages"
+                          OnSetPrimary="HandleSetPrimaryAsync" />
+        </div>
+
+        <div class="row g-4">
+            <div class="col-12 col-lg-8">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h1 class="card-title">
+                            @_announcement.Title
+                        </h1>
+
+                        <p class="fs-3
+                                  fw-semibold
+                                  text-primary">
+                            @FormatPrice(
+                                _announcement.Price)
+                        </p>
+
+                        <p class="card-text"
+                           style="white-space: pre-line;">
+                            @_announcement.Description
+                        </p>
+                    </div>
+                </div>
+
+                @if (_canManageImages)
+                {
+                    <div class="mt-4">
+                        <ImageUpload
+                            AnnouncementId="Id"
+                            OnImagesChanged=
+                                "HandleImagesChangedAsync" />
+                    </div>
+                }
+            </div>
+
+            <div class="col-12 col-lg-4">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <h2 class="h4">
+                            Biloplysninger
+                        </h2>
+
+                        <dl class="row mb-0">
+                            <dt class="col-5">
+                                Mærke
+                            </dt>
+
+                            <dd class="col-7">
+                                @_announcement.BrandName
+                            </dd>
+
+                            <dt class="col-5">
+                                Model
+                            </dt>
+
+                            <dd class="col-7">
+                                @_announcement.Model
+                            </dd>
+
+                            <dt class="col-5">
+                                Årgang
+                            </dt>
+
+                            <dd class="col-7">
+                                @_announcement.ProductionYear
+                            </dd>
+
+                            <dt class="col-5">
+                                Kilometer
+                            </dt>
+
+                            <dd class="col-7">
+                                @FormatMileage(
+                                    _announcement.Mileage)
+                            </dd>
+
+                            <dt class="col-5">
+                                Farve
+                            </dt>
+
+                            <dd class="col-7">
+                                @DisplayValue(
+                                    _announcement.Color)
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h2 class="h4">
+                            Sælger
+                        </h2>
+
+                        <p class="mb-2">
+                            @_announcement.SellerUsername
+                        </p>
+
+                        <small class="text-muted">
+                            Oprettet
+                            @_announcement.CreatedAt.ToString(
+                                "dd-MM-yyyy")
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private AnnouncementDetailsDto? _announcement;
+
+    private IReadOnlyList<AnnouncementImageDto> _images =
+        Array.Empty<AnnouncementImageDto>();
+
+    private bool _isLoading = true;
+    private bool _canManageImages;
+
+    private string? _errorMessage;
+
+    private string PageTitle =>
+        _announcement?.Title ?? "Annonce";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _isLoading = true;
+        _errorMessage = null;
+        _announcement = null;
+        _images = Array.Empty<AnnouncementImageDto>();
+        _canManageImages = false;
+
+        try
+        {
+            _announcement =
+                await AnnouncementService.GetDetailsAsync(Id);
+
+            if (_announcement is null)
+            {
+                return;
+            }
+
+            await LoadImagesAsync();
+
+            var currentUserId =
+                await CurrentUserService.GetUserIdAsync();
+
+            _canManageImages =
+                currentUserId.HasValue
+                && currentUserId.Value ==
+                   _announcement.SellerUserId;
+        }
+        catch
+        {
+            _errorMessage =
+                "Annoncen kunne ikke indlæses. Prøv igen.";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task LoadImagesAsync()
+    {
+        _images =
+            await ImageService
+                .GetForActiveAnnouncementAsync(Id);
+    }
+
+    private async Task HandleImagesChangedAsync()
+    {
+        try
+        {
+            await LoadImagesAsync();
+        }
+        catch
+        {
+            _errorMessage =
+                "Billederne kunne ikke genindlæses.";
+        }
+    }
+
+    private async Task HandleSetPrimaryAsync(int imageId)
+    {
+        _errorMessage = null;
+
+        try
+        {
+            var succeeded =
+                await ImageService.SetPrimaryAsync(
+                    Id,
+                    imageId);
+
+            if (!succeeded)
+            {
+                _errorMessage =
+                    "Det primære billede kunne ikke ændres.";
+                return;
+            }
+
+            await LoadImagesAsync();
+        }
+        catch
+        {
+            _errorMessage =
+                "Det primære billede kunne ikke ændres.";
+        }
+    }
+
+    private static string FormatPrice(int price)
+    {
+        return $"{price:N0} kr.";
+    }
+
+    private static string FormatMileage(int mileage)
+    {
+        return $"{mileage:N0} km";
+    }
+
+    private static string DisplayValue(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value)
+            ? "Ikke angivet"
+            : value;
+    }
+}

@@ -1,1 +1,146 @@
-@* TODO: Galleri med primært billede og thumbnails. *@
+@using BrugtBilsHandelsPortal.DTOs.Images
+
+@if (Images.Count == 0)
+{
+    <div class="ratio ratio-16x9
+                bg-light border rounded">
+        <div class="d-flex
+                    align-items-center
+                    justify-content-center
+                    text-secondary">
+            Intet billede
+        </div>
+    </div>
+}
+else
+{
+    <div>
+        <div class="ratio ratio-16x9
+                    bg-light rounded overflow-hidden">
+            <img src="@_selectedImage!.Url"
+                 alt="Billede af annoncen"
+                 class="w-100 h-100 object-fit-cover" />
+        </div>
+
+        @if (CanManage && !_selectedImage!.IsPrimary)
+        {
+            <button type="button"
+                    class="btn btn-outline-primary mt-3"
+                    disabled="@_isSettingPrimary"
+                    @onclick="SetSelectedAsPrimaryAsync">
+                @(_isSettingPrimary
+                    ? "Gemmer..."
+                    : "Sæt som primært billede")
+            </button>
+        }
+
+        @if (_selectedImage!.IsPrimary)
+        {
+            <span class="badge text-bg-primary mt-3">
+                Primært billede
+            </span>
+        }
+
+        @if (Images.Count > 1)
+        {
+            <div class="d-flex flex-wrap gap-2 mt-3">
+                @foreach (var image in Images)
+                {
+                    <button type="button"
+                            class="@GetThumbnailClass(image)"
+                            @onclick="() => SelectImage(image)">
+                        <img src="@image.Url"
+                             alt="Vis billede"
+                             class="w-100 h-100 object-fit-cover" />
+                    </button>
+                }
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<AnnouncementImageDto>
+        Images { get; set; }
+            = Array.Empty<AnnouncementImageDto>();
+
+    [Parameter]
+    public bool CanManage { get; set; }
+
+    [Parameter]
+    public EventCallback<int> OnSetPrimary { get; set; }
+
+    private AnnouncementImageDto? _selectedImage;
+    private int? _previousPrimaryImageId;
+    private bool _isSettingPrimary;
+
+    protected override void OnParametersSet()
+    {
+        if (Images.Count == 0)
+        {
+            _selectedImage = null;
+            _previousPrimaryImageId = null;
+            return;
+        }
+
+        var primaryImage =
+            Images.FirstOrDefault(image => image.IsPrimary)
+            ?? Images.OrderBy(image => image.SortOrder).First();
+
+        var selectedStillExists =
+            _selectedImage is not null
+            && Images.Any(
+                image => image.Id == _selectedImage.Id);
+
+        if (!selectedStillExists
+            || _previousPrimaryImageId != primaryImage.Id)
+        {
+            _selectedImage = primaryImage;
+        }
+
+        _previousPrimaryImageId = primaryImage.Id;
+    }
+
+    private void SelectImage(
+        AnnouncementImageDto image)
+    {
+        _selectedImage = image;
+    }
+
+    private async Task SetSelectedAsPrimaryAsync()
+    {
+        if (_selectedImage is null
+            || _selectedImage.IsPrimary
+            || _isSettingPrimary)
+        {
+            return;
+        }
+
+        _isSettingPrimary = true;
+
+        try
+        {
+            await OnSetPrimary.InvokeAsync(
+                _selectedImage.Id);
+        }
+        finally
+        {
+            _isSettingPrimary = false;
+        }
+    }
+
+    private string GetThumbnailClass(
+        AnnouncementImageDto image)
+    {
+        const string baseClasses =
+            "btn p-0 overflow-hidden";
+
+        var selectedClass =
+            _selectedImage?.Id == image.Id
+                ? "border-primary border-3"
+                : "border";
+
+        return $"{baseClasses} {selectedClass}";
+    }
+}

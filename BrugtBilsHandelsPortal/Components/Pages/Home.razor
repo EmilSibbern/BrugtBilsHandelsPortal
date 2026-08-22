@@ -1,13 +1,88 @@
 ﻿@page "/"
-@using BrugtBilsHandelsPortal.Repositories
-@using Microsoft.Data.SqlClient
+@rendermode InteractiveServer
 
-<PageTitle>Home</PageTitle>
+@using BrugtBilsHandelsPortal.DTOs.Announcements
+@using BrugtBilsHandelsPortal.Services.Interfaces
+@using BrugtBilsHandelsPortal.Components.Shared
+@inject IAnnouncementService AnnouncementService
 
-<h1>Hello, world!</h1>
+<PageTitle>Brugte biler</PageTitle>
 
-Welcome to your new app.
-@code
-{
-    
+<div class="container py-4">
+    <div class="d-flex flex-column flex-md-row
+                justify-content-between
+                align-items-md-center
+                gap-3 mb-4">
+        <div>
+            <h1 class="mb-1">Brugte biler</h1>
+
+            <p class="text-muted mb-0">
+                Se de nyeste aktive annoncer.
+            </p>
+        </div>
+
+        <AuthorizeView>
+            <Authorized>
+                <a href="/announcements/create"
+                   class="btn btn-primary">
+                    Opret annonce
+                </a>
+            </Authorized>
+        </AuthorizeView>
+    </div>
+
+    @if (_isLoading)
+    {
+        <p>Indlæser annoncer...</p>
+    }
+    else if (!string.IsNullOrWhiteSpace(_errorMessage))
+    {
+        <div class="alert alert-danger" role="alert">
+            @_errorMessage
+        </div>
+    }
+    else
+    {
+        <AnnouncementList
+            Announcements="_announcements" />
+    }
+</div>
+
+@code {
+    private IReadOnlyList<AnnouncementListItemDto>
+        _announcements =
+            Array.Empty<AnnouncementListItemDto>();
+
+    private bool _isLoading = true;
+    private string? _errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var result =
+                await AnnouncementService.SearchActiveAsync(
+                    new AnnouncementSearchDto());
+
+            if (result.Succeeded && result.Page is not null)
+            {
+                _announcements = result.Page.Items;
+            }
+            else
+            {
+                _errorMessage =
+                    result.ErrorMessage
+                    ?? "Annoncerne kunne ikke indlæses.";
+            }
+        }
+        catch
+        {
+            _errorMessage =
+                "Annoncerne kunne ikke indlæses.";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
 }
