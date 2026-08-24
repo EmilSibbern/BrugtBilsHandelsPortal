@@ -10,6 +10,9 @@ namespace BrugtBilsHandelsPortal.Services.Implementations;
 /// <summary>Håndterer kommentartråde, ejerskab og administrativ moderation.</summary>
 public class CommentService : ICommentService
 {
+
+    private const int MaxCommentsPerMinute = 5;
+
     private readonly ICommentRepository _commentRepository;
     private readonly IAnnouncementRepository _announcementRepository;
     private readonly ICurrentUserService _currentUserService;
@@ -69,6 +72,20 @@ public class CommentService : ICommentService
             await ValidateParentCommentAsync(
                 request.ParentCommentId.Value,
                 request.AnnouncementId);
+        }
+
+        var rateLimitStart =
+            DateTime.UtcNow.AddMinutes(-1);
+
+        var recentlyCreatedCount =
+            await _commentRepository.CountCreatedSinceAsync(
+                userId.Value,
+                rateLimitStart);
+
+        if (recentlyCreatedCount >= MaxCommentsPerMinute)
+        {
+            throw new InvalidOperationException(
+                "Du har skrevet for mange kommentarer. Vent et øjeblik og prøv igen.");
         }
 
         var comment = new Comment

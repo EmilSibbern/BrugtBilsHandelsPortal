@@ -14,6 +14,9 @@ public interface ICommentRepository
 
     Task<long> CreateAsync(
         Comment comment);
+    Task<int> CountCreatedSinceAsync(
+        int userId,
+        DateTime since);
 
     Task<bool> SoftDeleteAsync(
         long commentId,

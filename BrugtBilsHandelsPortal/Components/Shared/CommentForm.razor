@@ -34,12 +34,11 @@
 </div>
 
 @code {
-    // Indsendelsesflaget forhindrer dobbeltoprettelse ved gentagne klik eller langsomt netværk.
-    [Parameter, EditorRequired]
-    public int AnnouncementId { get; set; }
 
-    [Parameter]
-    public EventCallback<CommentDto> OnCreated { get; set; }
+    // Indsendelsesflaget forhindrer dobbeltoprettelse ved gentagne klik eller langsomt netværk.
+    [Parameter, EditorRequired] public int AnnouncementId { get; set; }
+
+    [Parameter] public EventCallback<CommentDto> OnCreated { get; set; }
 
     private string _text = string.Empty;
     private string? _errorMessage;
@@ -69,6 +68,18 @@
 
             await OnCreated.InvokeAsync(comment);
         }
+
+        catch (InvalidOperationException exception)
+            when (exception.Message ==
+                  "Du har skrevet for mange kommentarer. Vent et øjeblik og prøv igen.")
+        {
+            Logger.LogWarning(
+                "Kommentar-rate-limit nået for annonce {AnnouncementId}",
+                AnnouncementId);
+
+            _errorMessage =
+                "Du har skrevet for mange kommentarer. Prøv igen om lidt.";
+        }
         catch (Exception exception)
         {
             Logger.LogError(
@@ -84,4 +95,5 @@
             _isSubmitting = false;
         }
     }
+
 }

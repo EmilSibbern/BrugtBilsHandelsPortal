@@ -2,19 +2,39 @@
 
 @if (Comments.Count == 0)
 {
-    <p class="text-muted">Der er endnu ingen kommentarer.</p>
+    <p class="text-muted"
+       data-testid="comments-empty">
+        Der er endnu ingen kommentarer.
+    </p>
 }
 else
 {
-    @foreach (var comment in Comments)
-    {
-        <article class="card mb-3">
-            <div class="card-body">
-                <strong>@comment.Username</strong>
-                <p class="mb-0">@comment.Text</p>
-            </div>
-        </article>
-    }
+    <div data-testid="comment-list">
+        @foreach (var comment in Comments)
+        {
+            <article class="card mb-3"
+                     data-testid="comment"
+                     @key="comment.Id">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between gap-3 mb-2">
+                        <strong>
+                            @comment.Username
+                        </strong>
+
+                        <time class="text-muted"
+                              datetime="@comment.CreatedAt.ToString("O")">
+                            @comment.CreatedAt.ToLocalTime().ToString("dd-MM-yyyy HH:mm")
+                        </time>
+                    </div>
+
+                    <p class="mb-0"
+                       style="white-space: pre-line;">
+                        @comment.Text
+                    </p>
+                </div>
+            </article>
+        }
+    </div>
 }
 
 @code {

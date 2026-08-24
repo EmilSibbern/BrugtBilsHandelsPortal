@@ -195,6 +195,43 @@ public class CommentRepository : ICommentRepository
         return Convert.ToInt64(result);
     }
 
+    public async Task<int> CountCreatedSinceAsync(
+        int userId,
+        DateTime since)
+    {
+        const string sql = """
+                           SELECT COUNT(*)
+                           FROM dbo.Comments
+                           WHERE UserId = @UserId
+                             AND CreatedAt >= @Since;
+                           """;
+
+        await using var connection =
+            _connectionFactory.CreateConnection();
+
+        await connection.OpenAsync();
+
+        await using var command =
+            connection.CreateCommand();
+
+        command.CommandText = sql;
+
+        AddParameter(
+            command,
+            "@UserId",
+            userId);
+
+        AddParameter(
+            command,
+            "@Since",
+            since);
+
+        var result =
+            await command.ExecuteScalarAsync();
+
+        return Convert.ToInt32(result);
+    }
+
     public async Task<bool> SoftDeleteAsync(
         long commentId,
         int deletedByUserId,
