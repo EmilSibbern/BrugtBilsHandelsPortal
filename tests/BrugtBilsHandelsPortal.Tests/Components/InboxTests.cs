@@ -153,5 +153,11 @@ public class InboxTests
 
         public Task<MessageDto?> GetByIdAsync(long messageId) =>
             throw new NotSupportedException();
+
+        public Task<ConversationDto?> GetConversationAsync(long messageId) =>
+            throw new NotSupportedException();
+
+        public Task<MessageDto> ReplyAsync(long messageId, string text) =>
+            throw new NotSupportedException();
     }
 }

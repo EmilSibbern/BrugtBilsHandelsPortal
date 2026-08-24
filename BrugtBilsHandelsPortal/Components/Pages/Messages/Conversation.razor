@@ -1,1 +1,260 @@
-@* TODO: Vis og besvar en samtale knyttet til en annonce. *@
+@page "/messages/{MessageId:long}"
+@rendermode InteractiveServer
+@attribute [Authorize]
+
+@using System.ComponentModel.DataAnnotations
+@using BrugtBilsHandelsPortal.DTOs.Messages
+@using BrugtBilsHandelsPortal.Services.Interfaces
+
+@inject IMessageService MessageService
+
+<PageTitle>Samtale</PageTitle>
+
+<div class="container py-4">
+    <a href="/messages"
+       class="btn btn-link px-0 mb-3">
+        ← Tilbage til indbakken
+    </a>
+
+    @if (_isLoading)
+    {
+        <p>Indlæser samtale...</p>
+    }
+    else if (!string.IsNullOrWhiteSpace(_loadError))
+    {
+        <div class="alert alert-danger"
+             role="alert">
+            @_loadError
+        </div>
+    }
+    else if (_conversation is null)
+    {
+        <div class="alert alert-warning"
+             role="alert">
+            Samtalen findes ikke, eller du har ikke adgang til den.
+        </div>
+    }
+    else
+    {
+        <header class="mb-4">
+            <h1 class="h3">
+                @_conversation.AnnouncementTitle
+            </h1>
+
+            <p class="text-muted mb-2">
+                Samtale med
+                <strong>@_conversation.OtherUsername</strong>
+            </p>
+
+            <a href="@($"/announcements/{_conversation.AnnouncementId}")">
+                Se annoncen
+            </a>
+        </header>
+
+        @if (_conversation.Messages.Count == 0)
+        {
+            <div class="alert alert-light border">
+                Samtalen indeholder ingen beskeder.
+            </div>
+        }
+        else
+        {
+            <div class="d-flex flex-column gap-3 mb-4"
+                 data-testid="conversation-messages">
+                @foreach (var message in _conversation.Messages)
+                {
+                    var isIncoming =
+                        message.SenderUserId ==
+                        _conversation.OtherUserId;
+
+                    <article class="card @(isIncoming ? "me-5" : "ms-5 border-primary")"
+                             @key="message.Id">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between gap-3">
+                                <strong>
+                                    @(isIncoming
+                                        ? _conversation.OtherUsername
+                                        : "Dig")
+                                </strong>
+
+                                <small class="text-muted">
+                                    @message.CreatedAt.ToLocalTime().ToString("dd-MM-yyyy HH:mm")
+                                </small>
+                            </div>
+
+                            <p class="mb-0 mt-2"
+                               style="white-space: pre-line;">
+                                @message.Text
+                            </p>
+                        </div>
+                    </article>
+                }
+            </div>
+        }
+
+        <section aria-labelledby="reply-heading">
+            <h2 id="reply-heading"
+                class="h4">
+                Skriv et svar
+            </h2>
+
+            @if (!string.IsNullOrWhiteSpace(_submitError))
+            {
+                <div class="alert alert-danger"
+                     role="alert">
+                    @_submitError
+                </div>
+            }
+
+            @if (_replyWasSent)
+            {
+                <div class="alert alert-success"
+                     role="status">
+                    Dit svar er sendt.
+                </div>
+            }
+
+            <EditForm Model="_reply"
+                      OnValidSubmit="SubmitReplyAsync"
+                      FormName="conversation-reply">
+                <DataAnnotationsValidator />
+
+                <div class="mb-3">
+                    <label for="reply-text"
+                           class="form-label">
+                        Besked
+                    </label>
+
+                    <InputTextArea id="reply-text"
+                                   class="form-control"
+                                   rows="4"
+                                   @bind-Value="_reply.Text"
+                                   disabled="@_isSubmitting" />
+
+                    <ValidationMessage For="@(() => _reply.Text)" />
+                </div>
+
+                <button type="submit"
+                        class="btn btn-primary"
+                        disabled="@_isSubmitting">
+                    @if (_isSubmitting)
+                    {
+                        <span>
+                            Sender...
+                        </span>
+                    }
+                    else
+                    {
+                        <span>
+                            Send svar
+                        </span>
+                    }
+                </button>
+            </EditForm>
+        </section>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public long MessageId { get; set; }
+
+    private ConversationDto? _conversation;
+    private ReplyFormModel _reply = new();
+
+    private bool _isLoading = true;
+    private bool _isSubmitting;
+    private bool _replyWasSent;
+
+    private string? _loadError;
+    private string? _submitError;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadConversationAsync();
+    }
+
+    private async Task LoadConversationAsync()
+    {
+        _isLoading = true;
+        _loadError = null;
+
+        try
+        {
+            _conversation =
+                await MessageService.GetConversationAsync(
+                    MessageId);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            _loadError =
+                "Du skal være logget ind for at se samtalen.";
+        }
+        catch (Exception)
+        {
+            _loadError =
+                "Samtalen kunne ikke indlæses. Prøv igen.";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task SubmitReplyAsync()
+    {
+        if (_isSubmitting)
+        {
+            return;
+        }
+
+        _isSubmitting = true;
+        _submitError = null;
+        _replyWasSent = false;
+
+        try
+        {
+            await MessageService.ReplyAsync(
+                MessageId,
+                _reply.Text);
+
+            _reply = new ReplyFormModel();
+            _replyWasSent = true;
+
+            _conversation =
+                await MessageService.GetConversationAsync(
+                    MessageId);
+        }
+        catch (ValidationException exception)
+        {
+            _submitError = exception.Message;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            _submitError =
+                "Du skal være logget ind for at svare.";
+        }
+        catch (Exception)
+        {
+            _submitError =
+                "Svaret kunne ikke sendes. Prøv igen.";
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private sealed class ReplyFormModel
+    {
+        [Required(
+            ErrorMessage = "Beskeden må ikke være tom.")]
+        [StringLength(
+            2000,
+            MinimumLength = 1,
+            ErrorMessage =
+                "Beskeden skal være mellem 1 og 2000 tegn.")]
+        public string Text { get; set; }
+            = string.Empty;
+    }
+}

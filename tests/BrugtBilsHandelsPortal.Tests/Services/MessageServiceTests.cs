@@ -190,6 +190,100 @@ public class MessageServiceTests
         Assert.Equal(1, repository.LastParticipantUserId);
     }
 
+    [Fact]
+    [Trait("UserStory", "US13")]
+    public async Task GetConversationAsync_AsReceiver_LoadsBothDirectionsAndMarksIncomingRead()
+    {
+        var repository = new FakeMessageRepository();
+        repository.Messages[2] = CreateMessage(
+            id: 2,
+            senderUserId: 9,
+            receiverUserId: 7,
+            text: "Er bilen stadig til salg?");
+        repository.Messages[3] = CreateMessage(
+            id: 3,
+            senderUserId: 7,
+            receiverUserId: 9,
+            text: "Ja, den er stadig til salg.");
+
+        var service = CreateService(repository, currentUserId: 7);
+
+        var conversation = await service.GetConversationAsync(2);
+
+        Assert.NotNull(conversation);
+        Assert.Equal(42, conversation.AnnouncementId);
+        Assert.Equal(9, conversation.OtherUserId);
+        Assert.Equal(2, conversation.Messages.Count);
+        Assert.Equal(42, repository.LastMarkedAnnouncementId);
+        Assert.Equal(7, repository.LastMarkedReceiverUserId);
+        Assert.Equal(9, repository.LastMarkedSenderUserId);
+    }
+
+    [Fact]
+    [Trait("UserStory", "US13")]
+    public async Task GetConversationAsync_ForNonParticipant_ReturnsNullWithoutReadingConversation()
+    {
+        var repository = new FakeMessageRepository();
+        repository.Messages[2] = CreateMessage(
+            id: 2,
+            senderUserId: 9,
+            receiverUserId: 7);
+
+        var service = CreateService(repository, currentUserId: 99);
+
+        var conversation = await service.GetConversationAsync(2);
+
+        Assert.Null(conversation);
+        Assert.Equal(0, repository.GetConversationCallCount);
+        Assert.Equal(0, repository.MarkConversationCallCount);
+    }
+
+    [Fact]
+    [Trait("UserStory", "US13")]
+    public async Task ReplyAsync_AsSeller_SendsTrimmedReplyToBuyer()
+    {
+        var repository = new FakeMessageRepository();
+        repository.Messages[12] = CreateMessage(
+            id: 12,
+            senderUserId: 9,
+            receiverUserId: 7);
+
+        var service = CreateService(repository, currentUserId: 7);
+
+        var reply = await service.ReplyAsync(
+            12,
+            "  Ja, den er stadig til salg.  ");
+
+        Assert.NotNull(repository.CreatedMessage);
+        Assert.Equal(7, repository.CreatedMessage.SenderUserId);
+        Assert.Equal(9, repository.CreatedMessage.ReceiverUserId);
+        Assert.Equal(42, repository.CreatedMessage.AnnouncementId);
+        Assert.Equal(
+            "Ja, den er stadig til salg.",
+            repository.CreatedMessage.Text);
+        Assert.Equal(7, reply.SenderUserId);
+        Assert.Equal(9, reply.ReceiverUserId);
+    }
+
+    [Fact]
+    [Trait("UserStory", "US13")]
+    public async Task ReplyAsync_ForNonParticipant_IsRejectedWithoutCreatingMessage()
+    {
+        var repository = new FakeMessageRepository();
+        repository.Messages[12] = CreateMessage(
+            id: 12,
+            senderUserId: 9,
+            receiverUserId: 7);
+
+        var service = CreateService(repository, currentUserId: 99);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => service.ReplyAsync(12, "Uautoriseret svar"));
+
+        Assert.Equal(0, repository.CreateCallCount);
+        Assert.Equal(0, repository.CountSentCallCount);
+    }
+
     private static MessageService CreateService(
         FakeMessageRepository messageRepository,
         int? currentUserId,
@@ -259,6 +353,11 @@ public class MessageServiceTests
         public int GetInboxCallCount { get; private set; }
         public int? LastInboxUserId { get; private set; }
         public int? LastParticipantUserId { get; private set; }
+        public int GetConversationCallCount { get; private set; }
+        public int MarkConversationCallCount { get; private set; }
+        public int? LastMarkedAnnouncementId { get; private set; }
+        public int? LastMarkedReceiverUserId { get; private set; }
+        public int? LastMarkedSenderUserId { get; private set; }
 
         public Task<long> CreateAsync(Message message)
         {
@@ -295,6 +394,38 @@ public class MessageServiceTests
                     message.ReceiverUserId == receiverUserId)
                 .ToList();
             return Task.FromResult(inbox);
+        }
+
+        public Task<IReadOnlyList<MessageDto>> GetConversationAsync(
+            int announcementId,
+            int firstUserId,
+            int secondUserId)
+        {
+            GetConversationCallCount++;
+            IReadOnlyList<MessageDto> conversation = Messages.Values
+                .Where(message =>
+                    message.AnnouncementId == announcementId
+                    && ((message.SenderUserId == firstUserId
+                         && message.ReceiverUserId == secondUserId)
+                        || (message.SenderUserId == secondUserId
+                            && message.ReceiverUserId == firstUserId)))
+                .OrderBy(message => message.CreatedAt)
+                .ThenBy(message => message.Id)
+                .ToList();
+            return Task.FromResult(conversation);
+        }
+
+        public Task<int> MarkConversationAsReadAsync(
+            int announcementId,
+            int receiverUserId,
+            int senderUserId,
+            DateTime readAt)
+        {
+            MarkConversationCallCount++;
+            LastMarkedAnnouncementId = announcementId;
+            LastMarkedReceiverUserId = receiverUserId;
+            LastMarkedSenderUserId = senderUserId;
+            return Task.FromResult(1);
         }
 
         public Task<int> CountSentSinceAsync(

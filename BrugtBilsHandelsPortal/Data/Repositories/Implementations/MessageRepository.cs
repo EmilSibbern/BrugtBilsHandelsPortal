@@ -207,6 +207,136 @@ public class MessageRepository : IMessageRepository
         return messages;
     }
 
+    public async Task<IReadOnlyList<MessageDto>>
+    GetConversationAsync(
+        int announcementId,
+        int firstUserId,
+        int secondUserId)
+{
+    const string sql = """
+                       SELECT
+                           m.Id,
+                           m.AnnouncementId,
+                           a.Title AS AnnouncementTitle,
+                           m.SenderUserId,
+                           sender.Username AS SenderUsername,
+                           m.ReceiverUserId,
+                           receiver.Username AS ReceiverUsername,
+                           m.Message,
+                           m.CreatedAt,
+                           m.IsRead,
+                           m.ReadAt
+                       FROM dbo.Messages AS m
+                       INNER JOIN dbo.Announcement AS a
+                           ON a.Id = m.AnnouncementId
+                       INNER JOIN dbo.Users AS sender
+                           ON sender.Id = m.SenderUserId
+                       INNER JOIN dbo.Users AS receiver
+                           ON receiver.Id = m.ReceiverUserId
+                       WHERE m.AnnouncementId = @AnnouncementId
+                         AND
+                         (
+                             (
+                                 m.SenderUserId = @FirstUserId
+                                 AND m.ReceiverUserId = @SecondUserId
+                             )
+                             OR
+                             (
+                                 m.SenderUserId = @SecondUserId
+                                 AND m.ReceiverUserId = @FirstUserId
+                             )
+                         )
+                       ORDER BY
+                           m.CreatedAt,
+                           m.Id;
+                       """;
+
+    await using var connection =
+        _connectionFactory.CreateConnection();
+
+    await connection.OpenAsync();
+
+    await using var command = connection.CreateCommand();
+    command.CommandText = sql;
+
+    AddParameter(
+        command,
+        "@AnnouncementId",
+        announcementId);
+
+    AddParameter(
+        command,
+        "@FirstUserId",
+        firstUserId);
+
+    AddParameter(
+        command,
+        "@SecondUserId",
+        secondUserId);
+
+    await using var reader =
+        await command.ExecuteReaderAsync();
+
+    var messages = new List<MessageDto>();
+
+    while (await reader.ReadAsync())
+    {
+        messages.Add(
+            MessageMapper.MapToDto(reader));
+    }
+
+    return messages;
+}
+
+public async Task<int>
+    MarkConversationAsReadAsync(
+        int announcementId,
+        int receiverUserId,
+        int senderUserId,
+        DateTime readAt)
+{
+    const string sql = """
+                       UPDATE dbo.Messages
+                       SET
+                           IsRead = 1,
+                           ReadAt = @ReadAt
+                       WHERE AnnouncementId = @AnnouncementId
+                         AND ReceiverUserId = @ReceiverUserId
+                         AND SenderUserId = @SenderUserId
+                         AND IsRead = 0;
+                       """;
+
+    await using var connection =
+        _connectionFactory.CreateConnection();
+
+    await connection.OpenAsync();
+
+    await using var command = connection.CreateCommand();
+    command.CommandText = sql;
+
+    AddParameter(
+        command,
+        "@AnnouncementId",
+        announcementId);
+
+    AddParameter(
+        command,
+        "@ReceiverUserId",
+        receiverUserId);
+
+    AddParameter(
+        command,
+        "@SenderUserId",
+        senderUserId);
+
+    AddParameter(
+        command,
+        "@ReadAt",
+        readAt);
+
+    return await command.ExecuteNonQueryAsync();
+}
+
     public async Task<int> CountSentSinceAsync(
         int senderUserId,
         DateTime since)
