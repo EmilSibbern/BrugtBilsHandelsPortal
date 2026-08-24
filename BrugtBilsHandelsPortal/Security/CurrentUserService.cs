@@ -34,4 +34,13 @@ public class CurrentUserService : ICurrentUserService
 
         return authenticationState.User.Identity?.IsAuthenticated == true;
     }
+
+    public async Task<bool> IsInRoleAsync(string role)
+    {
+        var authenticationState =
+            await _authenticationStateProvider
+                .GetAuthenticationStateAsync();
+
+        return authenticationState.User.IsInRole(role);
+    }
 }

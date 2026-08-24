@@ -1,1 +1,10 @@
-@* TODO: Startside for administratorområdet. *@
+@page "/admin"
+@attribute [Authorize(Roles = "Administrator")]
+
+<PageTitle>Administration</PageTitle>
+
+<div class="container py-4">
+    <h1>Administration</h1>
+
+    <p>Vælg et administrationsområde i navigationen.</p>
+</div>

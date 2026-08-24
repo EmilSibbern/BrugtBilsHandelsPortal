@@ -1,1 +1,24 @@
-@* TODO: Vis kommentarer og svar. *@
+@using BrugtBilsHandelsPortal.DTOs.Comments
+
+@if (Comments.Count == 0)
+{
+    <p class="text-muted">Der er endnu ingen kommentarer.</p>
+}
+else
+{
+    @foreach (var comment in Comments)
+    {
+        <article class="card mb-3">
+            <div class="card-body">
+                <strong>@comment.Username</strong>
+                <p class="mb-0">@comment.Text</p>
+            </div>
+        </article>
+    }
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<CommentDto> Comments { get; set; }
+        = Array.Empty<CommentDto>();
+}

@@ -11,6 +11,7 @@ public class FakeAnnouncementRepository : IAnnouncementRepository
 
     public int CreateCallCount { get; private set; }
     public int GetByIdCallCount { get; private set; }
+    public int GetActiveByIdCallCount { get; private set; }
     public int SearchActiveCallCount { get; private set; }
     public int? LastRequestedAnnouncementId { get; private set; }
     public AnnouncementSearchDto? LastSearch { get; private set; }
@@ -33,6 +34,22 @@ public class FakeAnnouncementRepository : IAnnouncementRepository
     }
 
     public Task<AnnouncementDetailsDto?> GetActiveByIdAsync(
+        int announcementId)
+    {
+        GetActiveByIdCallCount++;
+        LastRequestedAnnouncementId = announcementId;
+
+        Details.TryGetValue(
+            announcementId,
+            out var announcement);
+
+        return Task.FromResult(
+            announcement?.IsActive == true
+                ? announcement
+                : null);
+    }
+
+    public Task<AnnouncementDetailsDto?> GetByIdAsync(
         int announcementId)
     {
         GetByIdCallCount++;

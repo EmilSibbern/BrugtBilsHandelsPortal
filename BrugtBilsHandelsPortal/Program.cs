@@ -68,6 +68,22 @@ builder.Services.AddScoped<
     IImageService,
     ImageService>();
 
+builder.Services.AddScoped<
+    ICommentRepository,
+    CommentRepository>();
+
+builder.Services.AddScoped<
+    ICommentService,
+    CommentService>();
+
+builder.Services.AddScoped<
+    IMessageRepository,
+    MessageRepository>();
+
+builder.Services.AddScoped<
+    IMessageService,
+    MessageService>();
+
 // Cookie authentication
 builder.Services
     .AddAuthentication(

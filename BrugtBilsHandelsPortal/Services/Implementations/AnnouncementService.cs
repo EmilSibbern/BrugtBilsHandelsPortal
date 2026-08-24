@@ -108,17 +108,48 @@ public class AnnouncementService : IAnnouncementService
         return CreateAnnouncementResult.Successful(
             announcementId);
     }
-    public Task<AnnouncementDetailsDto?> GetDetailsAsync(
+    public async Task<AnnouncementDetailsDto?> GetDetailsAsync(
         int announcementId)
     {
         if (announcementId <= 0)
         {
-            return Task.FromResult<AnnouncementDetailsDto?>(
-                null);
+            return null;
         }
 
-        return _announcementRepository.GetActiveByIdAsync(
-            announcementId);
+        var announcement =
+            await _announcementRepository.GetByIdAsync(
+                announcementId);
+
+        if (announcement is null)
+        {
+            return null;
+        }
+
+        if (announcement.IsActive)
+        {
+            return announcement;
+        }
+
+        var currentUserId =
+            await _currentUserService.GetUserIdAsync();
+
+        var isOwner =
+            currentUserId.HasValue
+            && currentUserId.Value
+            == announcement.SellerUserId;
+
+        if (isOwner)
+        {
+            return announcement;
+        }
+
+        var isAdministrator =
+            await _currentUserService.IsInRoleAsync(
+                "Administrator");
+
+        return isAdministrator
+            ? announcement
+            : null;
     }
     
     public async Task<AnnouncementSearchResult> SearchActiveAsync(

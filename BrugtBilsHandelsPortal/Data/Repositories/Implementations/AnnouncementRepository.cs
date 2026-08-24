@@ -2,8 +2,8 @@ using System.Data.Common;
 using BrugtBilsHandelsPortal.Data.Connections;
 using BrugtBilsHandelsPortal.Data.Repositories.Interfaces;
 using BrugtBilsHandelsPortal.DTOs.Announcements;
-using BrugtBilsHandelsPortal.Models.Entities;
 using BrugtBilsHandelsPortal.DTOs.Common;
+using BrugtBilsHandelsPortal.Models.Entities;
 
 namespace BrugtBilsHandelsPortal.Data.Repositories.Implementations;
 
@@ -97,86 +97,26 @@ public class AnnouncementRepository : IAnnouncementRepository
         }
     }
 
-    private static async Task<int> InsertCarAsync(
-        DbConnection connection,
-        DbTransaction transaction,
-        string sql,
-        Car car)
-    {
-        await using var command = connection.CreateCommand();
-
-        command.Transaction = transaction;
-        command.CommandText = sql;
-
-        AddParameter(command, "@BrandId", car.BrandId);
-        AddParameter(command, "@Model", car.Model);
-        AddParameter(
-            command,
-            "@ProductionYear",
-            car.ProductionYear);
-        AddParameter(command, "@Mileage", car.Mileage);
-        AddParameter(command, "@Color", car.Color);
-
-        var result = await command.ExecuteScalarAsync();
-
-        if (result is null || result is DBNull)
-        {
-            throw new InvalidOperationException(
-                "Bilen kunne ikke oprettes.");
-        }
-
-        return Convert.ToInt32(result);
-    }
-
-    private static async Task<int> InsertAnnouncementAsync(
-        DbConnection connection,
-        DbTransaction transaction,
-        string sql,
-        Announcement announcement)
-    {
-        await using var command = connection.CreateCommand();
-
-        command.Transaction = transaction;
-        command.CommandText = sql;
-
-        AddParameter(
-            command,
-            "@UserId",
-            announcement.UserId);
-
-        AddParameter(
-            command,
-            "@CarId",
-            announcement.CarId);
-
-        AddParameter(
-            command,
-            "@Title",
-            announcement.Title);
-
-        AddParameter(
-            command,
-            "@Description",
-            announcement.Description);
-
-        AddParameter(
-            command,
-            "@Price",
-            announcement.Price);
-
-        var result = await command.ExecuteScalarAsync();
-
-        if (result is null || result is DBNull)
-        {
-            throw new InvalidOperationException(
-                "Annoncen kunne ikke oprettes.");
-        }
-
-        return Convert.ToInt32(result);
-    }
-
-    public async Task<AnnouncementDetailsDto?> GetActiveByIdAsync(
+    public Task<AnnouncementDetailsDto?> GetActiveByIdAsync(
         int announcementId)
+    {
+        return GetByIdInternalAsync(
+            announcementId,
+            onlyActive: true);
+    }
+
+    public Task<AnnouncementDetailsDto?> GetByIdAsync(
+        int announcementId)
+    {
+        return GetByIdInternalAsync(
+            announcementId,
+            onlyActive: false);
+    }
+
+    private async Task<AnnouncementDetailsDto?>
+        GetByIdInternalAsync(
+            int announcementId,
+            bool onlyActive)
     {
         const string sql = """
                            SELECT TOP (1)
@@ -185,6 +125,7 @@ public class AnnouncementRepository : IAnnouncementRepository
                                a.Description,
                                a.Price,
                                a.CreatedAt,
+                               a.IsActive,
 
                                a.UserId AS SellerUserId,
                                u.Username AS SellerUsername,
@@ -204,7 +145,11 @@ public class AnnouncementRepository : IAnnouncementRepository
                            INNER JOIN dbo.CarBrand AS cb
                                ON cb.BrandId = c.BrandId
                            WHERE a.Id = @AnnouncementId
-                             AND a.IsActive = 1
+                             AND
+                             (
+                                 @OnlyActive = 0
+                                 OR a.IsActive = 1
+                             )
                              AND u.IsActive = 1;
                            """;
 
@@ -220,6 +165,11 @@ public class AnnouncementRepository : IAnnouncementRepository
             command,
             "@AnnouncementId",
             announcementId);
+
+        AddParameter(
+            command,
+            "@OnlyActive",
+            onlyActive);
 
         await using var reader =
             await command.ExecuteReaderAsync();
@@ -247,6 +197,9 @@ public class AnnouncementRepository : IAnnouncementRepository
 
             CreatedAt = reader.GetDateTime(
                 reader.GetOrdinal("CreatedAt")),
+
+            IsActive = reader.GetBoolean(
+                reader.GetOrdinal("IsActive")),
 
             SellerUserId = reader.GetInt32(
                 reader.GetOrdinal("SellerUserId")),
@@ -460,6 +413,86 @@ public class AnnouncementRepository : IAnnouncementRepository
             PageSize = search.PageSize,
             TotalItems = totalItems
         };
+    }
+
+    private static async Task<int> InsertCarAsync(
+        DbConnection connection,
+        DbTransaction transaction,
+        string sql,
+        Car car)
+    {
+        await using var command = connection.CreateCommand();
+
+        command.Transaction = transaction;
+        command.CommandText = sql;
+
+        AddParameter(command, "@BrandId", car.BrandId);
+        AddParameter(command, "@Model", car.Model);
+
+        AddParameter(
+            command,
+            "@ProductionYear",
+            car.ProductionYear);
+
+        AddParameter(command, "@Mileage", car.Mileage);
+        AddParameter(command, "@Color", car.Color);
+
+        var result = await command.ExecuteScalarAsync();
+
+        if (result is null || result is DBNull)
+        {
+            throw new InvalidOperationException(
+                "Bilen kunne ikke oprettes.");
+        }
+
+        return Convert.ToInt32(result);
+    }
+
+    private static async Task<int> InsertAnnouncementAsync(
+        DbConnection connection,
+        DbTransaction transaction,
+        string sql,
+        Announcement announcement)
+    {
+        await using var command = connection.CreateCommand();
+
+        command.Transaction = transaction;
+        command.CommandText = sql;
+
+        AddParameter(
+            command,
+            "@UserId",
+            announcement.UserId);
+
+        AddParameter(
+            command,
+            "@CarId",
+            announcement.CarId);
+
+        AddParameter(
+            command,
+            "@Title",
+            announcement.Title);
+
+        AddParameter(
+            command,
+            "@Description",
+            announcement.Description);
+
+        AddParameter(
+            command,
+            "@Price",
+            announcement.Price);
+
+        var result = await command.ExecuteScalarAsync();
+
+        if (result is null || result is DBNull)
+        {
+            throw new InvalidOperationException(
+                "Annoncen kunne ikke oprettes.");
+        }
+
+        return Convert.ToInt32(result);
     }
 
     private static void AddParameter(

@@ -15,4 +15,12 @@ public class FakeCurrentUserService : ICurrentUserService
     {
         return Task.FromResult(UserId.HasValue);
     }
+
+    public bool IsAdministrator { get; set; }
+
+    public Task<bool> IsInRoleAsync(string role)
+    {
+        return Task.FromResult(
+            role == "Administrator" && IsAdministrator);
+    }
 }

@@ -1,1 +1,99 @@
-@* TODO: Vis brugerens indbakke og sendte samtaler. *@
+@page "/messages"
+@rendermode InteractiveServer
+@attribute [Authorize]
+
+@using BrugtBilsHandelsPortal.DTOs.Messages
+@using BrugtBilsHandelsPortal.Services.Interfaces
+@inject IMessageService MessageService
+
+<PageTitle>Indbakke</PageTitle>
+
+<div class="container py-4">
+    <h1>Indbakke</h1>
+
+    @if (_isLoading)
+    {
+        <p>Indlæser beskeder...</p>
+    }
+    else if (!string.IsNullOrWhiteSpace(_errorMessage))
+    {
+        <div class="alert alert-danger"
+             role="alert">
+            @_errorMessage
+        </div>
+    }
+    else if (_messages.Count == 0)
+    {
+        <div class="alert alert-light border">
+            Du har ingen beskeder endnu.
+        </div>
+    }
+    else
+    {
+        <div class="list-group"
+             data-testid="message-inbox">
+            @foreach (var message in _messages)
+            {
+                <article class="list-group-item"
+                         @key="message.Id">
+                    <div class="d-flex justify-content-between gap-3">
+                        <div>
+                            <h2 class="h5 mb-1">
+                                @message.AnnouncementTitle
+                            </h2>
+
+                            <p class="mb-1">
+                                Fra:
+                                <strong>
+                                    @message.SenderUsername
+                                </strong>
+                            </p>
+                        </div>
+
+                        @if (!message.IsRead)
+                        {
+                            <span class="badge text-bg-primary">
+                                Ny
+                            </span>
+                        }
+                    </div>
+
+                    <p class="mb-1"
+                       style="white-space: pre-line;">
+                        @message.Text
+                    </p>
+
+                    <small class="text-muted">
+                        @message.CreatedAt.ToLocalTime().ToString("dd-MM-yyyy HH:mm")
+                    </small>
+                </article>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private IReadOnlyList<MessageDto> _messages =
+        Array.Empty<MessageDto>();
+
+    private bool _isLoading = true;
+    private string? _errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _messages =
+                await MessageService.GetInboxAsync();
+        }
+        catch (Exception)
+        {
+            _errorMessage =
+                "Beskederne kunne ikke indlæses. Prøv igen.";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+}

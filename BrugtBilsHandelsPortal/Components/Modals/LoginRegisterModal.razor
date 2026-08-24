@@ -1,1 +1,53 @@
-@* TODO: Modal, der samler login- og registreringsflowet for Guest. *@
+<div class="modal-backdrop fade show"></div>
+
+<div class="modal d-block"
+     tabindex="-1"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="login-modal-title">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="login-modal-title"
+                    class="modal-title h5">
+                    Log ind for at fortsætte
+                </h2>
+
+                <button type="button"
+                        class="btn-close"
+                        aria-label="Luk"
+                        @onclick="CloseAsync">
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <p>
+                    Du skal være logget ind for at skrive en kommentar
+                    eller kontakte sælgeren.
+                </p>
+
+                <div class="d-grid gap-2">
+                    <a href="/Login"
+                       class="btn btn-primary">
+                        Log ind
+                    </a>
+
+                    <a href="/Register"
+                       class="btn btn-outline-primary">
+                        Opret bruger
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    private Task CloseAsync()
+    {
+        return OnClose.InvokeAsync();
+    }
+}

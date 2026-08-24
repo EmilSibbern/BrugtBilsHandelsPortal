@@ -10,6 +10,8 @@ public class AnnouncementDetailsDto
     public int Price { get; set; }
     public DateTime CreatedAt { get; set; }
 
+    public bool IsActive { get; set; }
+
     public int SellerUserId { get; set; }
     public string SellerUsername { get; set; } = string.Empty;
 
@@ -23,4 +25,5 @@ public class AnnouncementDetailsDto
     public int Mileage { get; set; }
 
     public string? Color { get; set; }
+
 }

@@ -1,1 +1,86 @@
-@* TODO: Formular til kommentar eller svar. *@
+@using BrugtBilsHandelsPortal.DTOs.Comments
+@using BrugtBilsHandelsPortal.Services.Interfaces
+@inject ICommentService CommentService
+@inject ILogger<CommentForm> Logger
+
+<div>
+    <label for="comment-content"
+           class="form-label">
+        Skriv kommentar
+    </label>
+
+    <textarea id="comment-content"
+              class="form-control"
+              maxlength="1500"
+              disabled="@_isSubmitting"
+              @bind="_text">
+    </textarea>
+
+    @if (!string.IsNullOrWhiteSpace(_errorMessage))
+    {
+        <div class="text-danger mt-2"
+             role="alert">
+            @_errorMessage
+        </div>
+    }
+
+    <button type="button"
+            class="btn btn-primary mt-2"
+            disabled="@(_isSubmitting ||
+                      string.IsNullOrWhiteSpace(_text))"
+            @onclick="SubmitAsync">
+        @(_isSubmitting ? "Sender..." : "Send kommentar")
+    </button>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public int AnnouncementId { get; set; }
+
+    [Parameter]
+    public EventCallback<CommentDto> OnCreated { get; set; }
+
+    private string _text = string.Empty;
+    private string? _errorMessage;
+    private bool _isSubmitting;
+
+    private async Task SubmitAsync()
+    {
+        if (_isSubmitting ||
+            string.IsNullOrWhiteSpace(_text))
+        {
+            return;
+        }
+
+        _isSubmitting = true;
+        _errorMessage = null;
+
+        try
+        {
+            var comment = await CommentService.CreateAsync(
+                new CreateCommentDto
+                {
+                    AnnouncementId = AnnouncementId,
+                    Text = _text
+                });
+
+            _text = string.Empty;
+
+            await OnCreated.InvokeAsync(comment);
+        }
+        catch (Exception exception)
+        {
+            Logger.LogError(
+                exception,
+                "Kunne ikke oprette kommentar til annonce {AnnouncementId}",
+                AnnouncementId);
+
+            _errorMessage =
+                "Kommentaren kunne ikke oprettes. Prøv igen.";
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+}

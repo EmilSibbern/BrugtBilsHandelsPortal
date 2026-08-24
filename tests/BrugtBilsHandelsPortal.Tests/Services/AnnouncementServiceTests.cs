@@ -248,6 +248,83 @@ public class AnnouncementServiceTests
         Assert.Equal(1, announcementRepository.GetByIdCallCount);
     }
 
+    [Fact]
+    public async Task GetDetailsAsync_InactiveAnnouncementAsGuest_ReturnsNull()
+    {
+        var repository = new FakeAnnouncementRepository();
+        repository.Details[42] = CreateAnnouncementDetails(
+            id: 42,
+            isActive: false);
+
+        var service = CreateService(
+            repository,
+            CreateCarBrandRepository(),
+            userId: null);
+
+        var result = await service.GetDetailsAsync(42);
+
+        Assert.Null(result);
+        Assert.Equal(1, repository.GetByIdCallCount);
+    }
+
+    [Fact]
+    public async Task GetDetailsAsync_InactiveAnnouncementAsDifferentUser_ReturnsNull()
+    {
+        var repository = new FakeAnnouncementRepository();
+        repository.Details[42] = CreateAnnouncementDetails(
+            id: 42,
+            isActive: false);
+
+        var service = CreateService(
+            repository,
+            CreateCarBrandRepository(),
+            userId: 99);
+
+        var result = await service.GetDetailsAsync(42);
+
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task GetDetailsAsync_InactiveAnnouncementAsOwner_ReturnsDetails()
+    {
+        var repository = new FakeAnnouncementRepository();
+        repository.Details[42] = CreateAnnouncementDetails(
+            id: 42,
+            isActive: false);
+
+        var service = CreateService(
+            repository,
+            CreateCarBrandRepository(),
+            userId: 7);
+
+        var result = await service.GetDetailsAsync(42);
+
+        Assert.NotNull(result);
+        Assert.False(result.IsActive);
+        Assert.Equal(7, result.SellerUserId);
+    }
+
+    [Fact]
+    public async Task GetDetailsAsync_InactiveAnnouncementAsAdministrator_ReturnsDetails()
+    {
+        var repository = new FakeAnnouncementRepository();
+        repository.Details[42] = CreateAnnouncementDetails(
+            id: 42,
+            isActive: false);
+
+        var service = CreateService(
+            repository,
+            CreateCarBrandRepository(),
+            userId: 1,
+            isAdministrator: true);
+
+        var result = await service.GetDetailsAsync(42);
+
+        Assert.NotNull(result);
+        Assert.False(result.IsActive);
+    }
+
     [Theory]
     [InlineData(0)]
     [InlineData(-1)]
@@ -418,12 +495,17 @@ public class AnnouncementServiceTests
     private static AnnouncementService CreateService(
         FakeAnnouncementRepository announcementRepository,
         FakeCarBrandRepository carBrandRepository,
-        int? userId)
+        int? userId,
+        bool isAdministrator = false)
     {
         return new AnnouncementService(
             announcementRepository,
             carBrandRepository,
-            new FakeCurrentUserService { UserId = userId });
+            new FakeCurrentUserService
+            {
+                UserId = userId,
+                IsAdministrator = isAdministrator
+            });
     }
 
     private static FakeCarBrandRepository CreateCarBrandRepository()
@@ -456,7 +538,8 @@ public class AnnouncementServiceTests
     }
 
     private static AnnouncementDetailsDto CreateAnnouncementDetails(
-        int id)
+        int id,
+        bool isActive = true)
     {
         return new AnnouncementDetailsDto
         {
@@ -465,6 +548,7 @@ public class AnnouncementServiceTests
             Description = "Velholdt familiebil.",
             Price = 175_000,
             CreatedAt = DateTime.UtcNow,
+            IsActive = isActive,
             SellerUserId = 7,
             SellerUsername = "sælger",
             CarId = 10,

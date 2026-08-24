@@ -9,6 +9,9 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="bunit"
+                          Version="2.9.0" />
+
         <PackageReference Include="Microsoft.NET.Test.Sdk"
                           Version="17.14.1" />
 

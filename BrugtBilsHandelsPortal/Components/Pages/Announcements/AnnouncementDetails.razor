@@ -1,16 +1,20 @@
 @page "/announcements/{Id:int}"
 @rendermode InteractiveServer
 
+@using BrugtBilsHandelsPortal.Components.Modals
 @using BrugtBilsHandelsPortal.Components.Shared
 @using BrugtBilsHandelsPortal.DTOs.Announcements
+@using BrugtBilsHandelsPortal.DTOs.Comments
 @using BrugtBilsHandelsPortal.DTOs.Images
+@using BrugtBilsHandelsPortal.DTOs.Messages
 @using BrugtBilsHandelsPortal.Security
+@using BrugtBilsHandelsPortal.Services.Implementations
 @using BrugtBilsHandelsPortal.Services.Interfaces
 
 @inject IAnnouncementService AnnouncementService
 @inject IImageService ImageService
 @inject ICurrentUserService CurrentUserService
-
+@inject ICommentService CommentService
 <PageTitle>@PageTitle</PageTitle>
 
 <div class="container py-4">
@@ -47,7 +51,7 @@
         <div class="mb-4">
             <ImageGallery Images="_images"
                           CanManage="_canManageImages"
-                          OnSetPrimary="HandleSetPrimaryAsync" />
+                          OnSetPrimary="HandleSetPrimaryAsync"/>
         </div>
 
         <div class="row g-4">
@@ -58,11 +62,8 @@
                             @_announcement.Title
                         </h1>
 
-                        <p class="fs-3
-                                  fw-semibold
-                                  text-primary">
-                            @FormatPrice(
-                                _announcement.Price)
+                        <p class="fs-3 fw-semibold text-primary">
+                            @FormatPrice(_announcement.Price)
                         </p>
 
                         <p class="card-text"
@@ -77,8 +78,7 @@
                     <div class="mt-4">
                         <ImageUpload
                             AnnouncementId="Id"
-                            OnImagesChanged=
-                                "HandleImagesChangedAsync" />
+                            OnImagesChanged="HandleImagesChangedAsync"/>
                     </div>
                 }
             </div>
@@ -120,8 +120,7 @@
                             </dt>
 
                             <dd class="col-7">
-                                @FormatMileage(
-                                    _announcement.Mileage)
+                                @FormatMileage(_announcement.Mileage)
                             </dd>
 
                             <dt class="col-5">
@@ -129,8 +128,7 @@
                             </dt>
 
                             <dd class="col-7">
-                                @DisplayValue(
-                                    _announcement.Color)
+                                @DisplayValue(_announcement.Color)
                             </dd>
                         </dl>
                     </div>
@@ -148,27 +146,134 @@
 
                         <small class="text-muted">
                             Oprettet
-                            @_announcement.CreatedAt.ToString(
-                                "dd-MM-yyyy")
+                            @_announcement.CreatedAt.ToString("dd-MM-yyyy")
                         </small>
+
+                        <div class="d-grid gap-2 mt-3">
+                            <AuthorizeView>
+                                <Authorized>
+                                    @if (!_isOwner)
+                                    {
+                                        <button type="button"
+                                                class="btn btn-primary"
+                                                data-testid="contact-seller"
+                                                @onclick="StartContact">
+                                            Kontakt sælger
+                                        </button>
+                                    }
+
+                                    <div data-testid="comment-form">
+                                        <CommentForm AnnouncementId="Id"
+                                                     OnCreated="HandleCommentCreatedAsync"/>
+                                    </div>
+                                </Authorized>
+
+                                <NotAuthorized>
+                                    <button type="button"
+                                            class="btn btn-primary"
+                                            data-testid="contact-seller"
+                                            @onclick="OpenLoginRegisterModal">
+                                        Kontakt sælger
+                                    </button>
+
+                                    <button type="button"
+                                            class="btn btn-outline-primary"
+                                            data-testid="add-comment"
+                                            @onclick="OpenLoginRegisterModal">
+                                        Skriv kommentar
+                                    </button>
+                                </NotAuthorized>
+                            </AuthorizeView>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
+
+        <section class="mt-4"
+                 data-testid="public-comments">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h2 class="h4">
+                        Kommentarer
+                    </h2>
+
+                    @*
+                        Midlertidigt indhold, indtil CommentDto,
+                        ICommentService og CommentList er implementeret.
+                    *@
+                    <CommentList Comments="_comments" />
+                </div>
+            </div>
+        </section>
+
+        <AuthorizeView Roles="Administrator">
+            <div class="mt-4"
+                 data-testid="admin-announcement-actions">
+                <div class="card border-warning">
+                    <div class="card-body">
+                        <h2 class="h4">
+                            Administration af annonce
+                        </h2>
+
+                        <p class="text-muted">
+                            Administratorhandlinger til annoncen placeres her.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4"
+                 data-testid="admin-comment-actions">
+                <div class="card border-warning">
+                    <div class="card-body">
+                        <h2 class="h4">
+                            Moderation af kommentarer
+                        </h2>
+
+                        <p class="text-muted">
+                            Administratorhandlinger til kommentarer
+                            placeres her.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </AuthorizeView>
+
+        @if (_showLoginRegisterModal)
+        {
+            <div data-testid="login-register-modal">
+                <LoginRegisterModal
+                    OnClose="CloseLoginRegisterModal" />
+            </div>
+        }
+
+        @if (_showContactMessage)
+        {
+            <ContactSellerForm
+                AnnouncementId="Id"
+                OnSent="HandleMessageSent"
+                OnCancel="CloseContactForm" />
+        }
     }
 </div>
 
 @code {
-    [Parameter]
-    public int Id { get; set; }
+    [Parameter] public int Id { get; set; }
 
     private AnnouncementDetailsDto? _announcement;
 
     private IReadOnlyList<AnnouncementImageDto> _images =
         Array.Empty<AnnouncementImageDto>();
 
+    private IReadOnlyList<CommentDto> _comments =
+        Array.Empty<CommentDto>();
+
     private bool _isLoading = true;
     private bool _canManageImages;
+    private bool _isOwner;
+    private bool _showLoginRegisterModal;
+    private bool _showContactMessage;
 
     private string? _errorMessage;
 
@@ -182,6 +287,10 @@
         _announcement = null;
         _images = Array.Empty<AnnouncementImageDto>();
         _canManageImages = false;
+        _isOwner = false;
+        _showLoginRegisterModal = false;
+        _showContactMessage = false;
+        _comments = Array.Empty<CommentDto>();
 
         try
         {
@@ -194,14 +303,17 @@
             }
 
             await LoadImagesAsync();
+            await LoadCommentsAsync();
 
             var currentUserId =
                 await CurrentUserService.GetUserIdAsync();
 
-            _canManageImages =
+            _isOwner =
                 currentUserId.HasValue
                 && currentUserId.Value ==
-                   _announcement.SellerUserId;
+                _announcement.SellerUserId;
+
+            _canManageImages = _isOwner;
         }
         catch
         {
@@ -221,6 +333,12 @@
                 .GetForActiveAnnouncementAsync(Id);
     }
 
+    private async Task LoadCommentsAsync()
+    {
+        _comments = await CommentService
+            .GetForAnnouncementAsync(Id);
+    }
+
     private async Task HandleImagesChangedAsync()
     {
         try
@@ -232,6 +350,13 @@
             _errorMessage =
                 "Billederne kunne ikke genindlæses.";
         }
+    }
+
+    private async Task HandleCommentCreatedAsync(
+        CommentDto comment)
+    {
+        _comments = await CommentService
+            .GetForAnnouncementAsync(Id);
     }
 
     private async Task HandleSetPrimaryAsync(int imageId)
@@ -249,6 +374,7 @@
             {
                 _errorMessage =
                     "Det primære billede kunne ikke ændres.";
+
                 return;
             }
 
@@ -259,6 +385,21 @@
             _errorMessage =
                 "Det primære billede kunne ikke ændres.";
         }
+    }
+
+    private void OpenLoginRegisterModal()
+    {
+        _showLoginRegisterModal = true;
+    }
+
+    private void CloseLoginRegisterModal()
+    {
+        _showLoginRegisterModal = false;
+    }
+
+    private void StartContact()
+    {
+        _showContactMessage = true;
     }
 
     private static string FormatPrice(int price)
@@ -277,4 +418,16 @@
             ? "Ikke angivet"
             : value;
     }
+
+    private void HandleMessageSent(
+        MessageDto message)
+    {
+        _showContactMessage = false;
+    }
+
+    private void CloseContactForm()
+    {
+        _showContactMessage = false;
+    }
+
 }

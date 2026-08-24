@@ -15,6 +15,7 @@ databaser:
 5. `005_SeedData.sql` opretter brugergrupper og bilmærker.
 6. `006_UseWholeNumberPrices.sql` migrerer ældre databaser til priser i hele kroner.
 7. `007_RenameAnnouncementSchema.sql` retter det tidligere `Announce`-navn til `Announcement`.
+8. `008_UpdateCommentTrigger.sql` opdaterer triggeren til redigering af kommentarer.
 
 Eksempel med SQL Server Express og Windows Authentication:
 
@@ -26,6 +27,7 @@ sqlcmd -S ".\SQLEXPRESS" -E -b -i ".\Scripts\004_CreateViews.sql"
 sqlcmd -S ".\SQLEXPRESS" -E -b -i ".\Scripts\005_SeedData.sql"
 sqlcmd -S ".\SQLEXPRESS" -E -b -i ".\Scripts\006_UseWholeNumberPrices.sql"
 sqlcmd -S ".\SQLEXPRESS" -E -b -i ".\Scripts\007_RenameAnnouncementSchema.sql"
+sqlcmd -S ".\SQLEXPRESS" -E -b -i ".\Scripts\008_UpdateCommentTrigger.sql"
 ```
 
 Flaget `-b` får `sqlcmd` til at stoppe med en fejlkode, hvis et script fejler.
