@@ -14,14 +14,16 @@ public class CommentComponentsTests
     public void CommentList_ShowsAuthorTextAndCreatedAt()
     {
         using var context = new BunitContext();
+        context.AddAuthorization();
         var createdAt = new DateTime(
             2026, 8, 24, 10, 30, 0, DateTimeKind.Utc);
 
-        var cut = context.Render<CommentList>(parameters =>
-            parameters.Add(component => component.Comments,
-            [
-                CreateComment(createdAt: createdAt)
-            ]));
+        var cut = context.Render<CommentList>(parameters => parameters
+            .Add(component => component.AnnouncementId, 42)
+            .Add(component => component.Comments,
+                [
+                    CreateComment(createdAt: createdAt)
+                ]));
 
         var comment = cut.Find("[data-testid='comment']");
         Assert.Contains("interesseret-køber", comment.TextContent);
@@ -36,9 +38,11 @@ public class CommentComponentsTests
     public void CommentList_WithNoComments_ShowsEmptyState()
     {
         using var context = new BunitContext();
+        context.AddAuthorization();
 
-        var cut = context.Render<CommentList>(parameters =>
-            parameters.Add(
+        var cut = context.Render<CommentList>(parameters => parameters
+            .Add(component => component.AnnouncementId, 42)
+            .Add(
                 component => component.Comments,
                 Array.Empty<CommentDto>()));
 
@@ -52,13 +56,15 @@ public class CommentComponentsTests
     public void CommentList_OutputEncodesCommentText()
     {
         using var context = new BunitContext();
+        context.AddAuthorization();
         const string unsafeText = "<script>alert('xss')</script>";
 
-        var cut = context.Render<CommentList>(parameters =>
-            parameters.Add(component => component.Comments,
-            [
-                CreateComment(text: unsafeText)
-            ]));
+        var cut = context.Render<CommentList>(parameters => parameters
+            .Add(component => component.AnnouncementId, 42)
+            .Add(component => component.Comments,
+                [
+                    CreateComment(text: unsafeText)
+                ]));
 
         Assert.Empty(cut.FindAll("script"));
         Assert.Contains(
@@ -133,6 +139,90 @@ public class CommentComponentsTests
         });
     }
 
+    [Fact]
+    [Trait("UserStory", "US15")]
+    public void ReplyButton_AsAuthorizedUser_OpensInlineReplyForm()
+    {
+        var service = new StubCommentService();
+        using var context = CreateContext(service);
+        var authorization = context.AddAuthorization();
+        authorization.SetAuthorized("bruger");
+        var cut = RenderList(context);
+
+        cut.Find("[data-testid='reply-comment-17']").Click();
+
+        Assert.NotNull(cut.Find("[data-testid='reply-form-17']"));
+        Assert.NotNull(cut.Find("#reply-content-17"));
+    }
+
+    [Fact]
+    [Trait("UserStory", "US15")]
+    public void ReplyForm_SubmitsCorrectParentCommentId()
+    {
+        var service = new StubCommentService();
+        using var context = CreateContext(service);
+        var authorization = context.AddAuthorization();
+        authorization.SetAuthorized("bruger");
+        var cut = RenderList(context);
+
+        cut.Find("[data-testid='reply-comment-17']").Click();
+        cut.Find("#reply-content-17").Change("Et offentligt svar");
+        cut.Find("[data-testid='reply-form-17'] button.btn-primary")
+            .Click();
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.NotNull(service.LastRequest);
+            Assert.Equal(42, service.LastRequest.AnnouncementId);
+            Assert.Equal(17, service.LastRequest.ParentCommentId);
+            Assert.Equal("Et offentligt svar", service.LastRequest.Text);
+        });
+    }
+
+    [Fact]
+    [Trait("UserStory", "US15")]
+    public void ReplyButton_AsGuest_RequestsLoginWithoutOpeningForm()
+    {
+        using var context = new BunitContext();
+        context.AddAuthorization();
+        var loginWasRequested = false;
+        var cut = context.Render<CommentList>(parameters => parameters
+            .Add(component => component.AnnouncementId, 42)
+            .Add(component => component.Comments,
+                [CreateComment()])
+            .Add(component => component.OnLoginRequired,
+                () => loginWasRequested = true));
+
+        cut.Find("[data-testid='reply-comment-17']").Click();
+
+        Assert.True(loginWasRequested);
+        Assert.Empty(cut.FindAll("[data-testid='reply-form-17']"));
+    }
+
+    [Fact]
+    [Trait("UserStory", "US15")]
+    public void Replies_AreIndentedAndDoNotHaveReplyButtons()
+    {
+        using var context = new BunitContext();
+        context.AddAuthorization();
+        var parent = CreateComment(replies:
+        [
+            CreateComment(
+                id: 18,
+                text: "Svar fra sælger",
+                parentCommentId: 17)
+        ]);
+
+        var cut = context.Render<CommentList>(parameters => parameters
+            .Add(component => component.AnnouncementId, 42)
+            .Add(component => component.Comments, [parent]));
+
+        var reply = cut.Find("[data-testid='comment-reply']");
+        Assert.True(reply.ClassList.Contains("ms-4"));
+        Assert.Contains("Svar fra sælger", reply.TextContent);
+        Assert.Empty(reply.QuerySelectorAll("button"));
+    }
+
     private static BunitContext CreateContext(
         ICommentService service)
     {
@@ -148,19 +238,33 @@ public class CommentComponentsTests
             parameters.Add(component => component.AnnouncementId, 42));
     }
 
+    private static IRenderedComponent<CommentList> RenderList(
+        BunitContext context)
+    {
+        return context.Render<CommentList>(parameters => parameters
+            .Add(component => component.AnnouncementId, 42)
+            .Add(component => component.Comments,
+                [CreateComment()]));
+    }
+
     private static CommentDto CreateComment(
+        long id = 17,
         string text = "Er bilen stadig til salg?",
-        DateTime? createdAt = null)
+        DateTime? createdAt = null,
+        long? parentCommentId = null,
+        IReadOnlyList<CommentDto>? replies = null)
     {
         return new CommentDto
         {
-            Id = 17,
+            Id = id,
             AnnouncementId = 42,
             UserId = 9,
             Username = "interesseret-køber",
             Text = text,
             CreatedAt = createdAt
-                ?? new DateTime(2026, 8, 24, 10, 30, 0)
+                ?? new DateTime(2026, 8, 24, 10, 30, 0),
+            ParentCommentId = parentCommentId,
+            Replies = replies ?? Array.Empty<CommentDto>()
         };
     }
 

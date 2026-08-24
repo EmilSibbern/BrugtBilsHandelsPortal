@@ -171,6 +171,7 @@ public class CommentServiceAuthorizationTests
     }
 
     [Fact]
+    [Trait("UserStory", "US15")]
     public async Task CreateReply_ForCommentOnDifferentAnnouncement_IsRejected()
     {
         var commentRepository = new FakeCommentRepository();
@@ -192,6 +193,67 @@ public class CommentServiceAuthorizationTests
         await Assert.ThrowsAsync<ValidationException>(
             () => service.CreateAsync(request));
 
+        Assert.Equal(0, commentRepository.CreateCallCount);
+    }
+
+    [Fact]
+    [Trait("UserStory", "US15")]
+    public async Task CreateReply_ForMainComment_SetsParentCommentId()
+    {
+        var commentRepository = new FakeCommentRepository
+        {
+            CreatedCommentId = 17
+        };
+        commentRepository.CommentsById[5] =
+            CreateCommentDto(id: 5, userId: 8);
+        commentRepository.CommentsById[17] = new CommentDto
+        {
+            Id = 17,
+            AnnouncementId = 42,
+            UserId = 9,
+            Username = "køber",
+            Text = "Ja, den er stadig til salg.",
+            ParentCommentId = 5
+        };
+
+        var service = CreateService(
+            commentRepository,
+            currentUserId: 9);
+
+        var result = await service.CreateAsync(
+            CreateRequest(
+                text: "Ja, den er stadig til salg.",
+                parentCommentId: 5));
+
+        Assert.NotNull(commentRepository.CreatedComment);
+        Assert.Equal(5, commentRepository.CreatedComment.ParentCommentId);
+        Assert.Equal(5, result.ParentCommentId);
+    }
+
+    [Fact]
+    [Trait("UserStory", "US15")]
+    public async Task CreateReply_ForReply_IsRejectedBeforeDatabaseWrite()
+    {
+        var commentRepository = new FakeCommentRepository();
+        commentRepository.CommentsById[6] = new CommentDto
+        {
+            Id = 6,
+            AnnouncementId = 42,
+            UserId = 8,
+            Username = "anden-bruger",
+            Text = "Et eksisterende svar",
+            ParentCommentId = 5
+        };
+
+        var service = CreateService(
+            commentRepository,
+            currentUserId: 9);
+
+        await Assert.ThrowsAsync<ValidationException>(
+            () => service.CreateAsync(
+                CreateRequest(parentCommentId: 6)));
+
+        Assert.Equal(0, commentRepository.CountCreatedSinceCallCount);
         Assert.Equal(0, commentRepository.CreateCallCount);
     }
 

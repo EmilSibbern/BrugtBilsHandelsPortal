@@ -221,5 +221,11 @@ public class CommentService : ICommentService
             throw new ValidationException(
                 "Der kan kun svares på kommentarer fra samme annonce.");
         }
+
+        if (parentComment.ParentCommentId.HasValue)
+        {
+            throw new ValidationException(
+                "Der kan kun svares direkte på en hovedkommentar.");
+        }
     }
 }

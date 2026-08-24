@@ -198,11 +198,10 @@
                         Kommentarer
                     </h2>
 
-                    @*
-                        Midlertidigt indhold, indtil CommentDto,
-                        ICommentService og CommentList er implementeret.
-                    *@
-                    <CommentList Comments="_comments" />
+                    <CommentList AnnouncementId="Id"
+                                 Comments="_comments"
+                                 OnCreated="HandleCommentCreatedAsync"
+                                 OnLoginRequired="OpenLoginRegisterModal"/>
                 </div>
             </div>
         </section>
@@ -244,7 +243,7 @@
         {
             <div data-testid="login-register-modal">
                 <LoginRegisterModal
-                    OnClose="CloseLoginRegisterModal" />
+                    OnClose="CloseLoginRegisterModal"/>
             </div>
         }
 
@@ -253,12 +252,13 @@
             <ContactSellerForm
                 AnnouncementId="Id"
                 OnSent="HandleMessageSent"
-                OnCancel="CloseContactForm" />
+                OnCancel="CloseContactForm"/>
         }
     }
 </div>
 
 @code {
+
     // Route-parameteren kan ændres uden at komponenten genskabes, så state nulstilles ved hvert opslag.
     [Parameter] public int Id { get; set; }
 
