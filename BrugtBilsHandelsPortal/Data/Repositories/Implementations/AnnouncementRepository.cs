@@ -7,6 +7,7 @@ using BrugtBilsHandelsPortal.Models.Entities;
 
 namespace BrugtBilsHandelsPortal.Data.Repositories.Implementations;
 
+/// <summary>Udfører parameteriserede SQL-operationer for biler og annoncer.</summary>
 public class AnnouncementRepository : IAnnouncementRepository
 {
     private readonly IDbConnectionFactory _connectionFactory;
@@ -66,6 +67,7 @@ public class AnnouncementRepository : IAnnouncementRepository
 
         await connection.OpenAsync();
 
+        // Bil og annonce er én samlet oprettelse og må derfor lykkes eller rulles tilbage sammen.
         await using var transaction =
             await connection.BeginTransactionAsync();
 
@@ -113,6 +115,7 @@ public class AnnouncementRepository : IAnnouncementRepository
             onlyActive: false);
     }
 
+    // Den fælles forespørgsel sikrer, at aktive og privilegerede opslag mapper data ens.
     private async Task<AnnouncementDetailsDto?>
         GetByIdInternalAsync(
             int announcementId,

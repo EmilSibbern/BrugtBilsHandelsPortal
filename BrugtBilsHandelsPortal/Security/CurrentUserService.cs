@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Components.Authorization;
 
 namespace BrugtBilsHandelsPortal.Security;
 
+/// <summary>Læser den aktuelle identitet fra Blazors authentication state.</summary>
 public class CurrentUserService : ICurrentUserService
 {
     private readonly AuthenticationStateProvider _authenticationStateProvider;

@@ -259,6 +259,7 @@
 </div>
 
 @code {
+    // Route-parameteren kan ændres uden at komponenten genskabes, så state nulstilles ved hvert opslag.
     [Parameter] public int Id { get; set; }
 
     private AnnouncementDetailsDto? _announcement;
@@ -282,6 +283,7 @@
 
     protected override async Task OnParametersSetAsync()
     {
+        // Undgå at vise data fra den forrige annonce, mens den nye indlæses.
         _isLoading = true;
         _errorMessage = null;
         _announcement = null;
@@ -308,6 +310,7 @@
             var currentUserId =
                 await CurrentUserService.GetUserIdAsync();
 
+            // UI-rettigheden er kun præsentation; service-laget håndhæver stadig ejerskab ved ændringer.
             _isOwner =
                 currentUserId.HasValue
                 && currentUserId.Value ==
@@ -355,6 +358,7 @@
     private async Task HandleCommentCreatedAsync(
         CommentDto comment)
     {
+        // Genindlæs hele tråden, så sortering og eventuelle serverskabte felter altid er korrekte.
         _comments = await CommentService
             .GetForAnnouncementAsync(Id);
     }

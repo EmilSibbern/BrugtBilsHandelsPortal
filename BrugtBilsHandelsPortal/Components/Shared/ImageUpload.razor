@@ -52,6 +52,7 @@
 </div>
 
 @code {
+    // Komponenten rapporterer ændringer til forælderen, som ejer den viste billedliste.
     [Parameter, EditorRequired]
     public int AnnouncementId { get; set; }
 
@@ -104,6 +105,7 @@
             _totalFiles = files.Count;
             var uploadedCount = 0;
 
+            // Fortsæt efter fejl på en enkelt fil og vis samlet resultat for hele valget.
             foreach (var file in files)
             {
                 _currentFile++;

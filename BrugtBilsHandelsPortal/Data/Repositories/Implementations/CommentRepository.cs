@@ -7,6 +7,7 @@ using BrugtBilsHandelsPortal.Models.Entities;
 
 namespace BrugtBilsHandelsPortal.Data.Repositories.Implementations;
 
+/// <summary>Gemmer kommentartråde og bevarer historik gennem soft delete.</summary>
 public class CommentRepository : ICommentRepository
 {
     private readonly IDbConnectionFactory _connectionFactory;

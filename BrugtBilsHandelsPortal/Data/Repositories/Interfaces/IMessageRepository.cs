@@ -3,6 +3,7 @@ using BrugtBilsHandelsPortal.Models.Entities;
 
 namespace BrugtBilsHandelsPortal.Data.Repositories.Interfaces;
 
+/// <summary>Definerer persistens og deltagerbegrænset læsning af private beskeder.</summary>
 public interface IMessageRepository
 {
     Task<long> CreateAsync(

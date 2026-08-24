@@ -2,6 +2,7 @@ using BrugtBilsHandelsPortal.Models.Entities;
 
 namespace BrugtBilsHandelsPortal.Data.Repositories.Interfaces;
 
+/// <summary>Definerer persistensoperationer for brugeridentiteter og profiler.</summary>
 public interface IUserRepository
 {
     Task<bool> TestConnectionAsync();

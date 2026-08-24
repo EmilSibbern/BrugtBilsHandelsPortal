@@ -7,6 +7,7 @@ using BrugtBilsHandelsPortal.Models.Entities;
 
 namespace BrugtBilsHandelsPortal.Data.Repositories.Implementations;
 
+/// <summary>Vedligeholder billedmetadata og ejerbegrænsede billedændringer atomisk.</summary>
 public class ImageRepository : IImageRepository
 {
     private readonly IDbConnectionFactory _connectionFactory;

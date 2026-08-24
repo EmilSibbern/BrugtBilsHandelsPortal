@@ -222,6 +222,7 @@
 </div>
 
 @code {
+    // Formularens tilstand holdes lokalt, så en fejl ikke rydder brugerens indtastning eller valgte filer.
     private readonly CreateAnnouncementDto _model = new();
 
     private IReadOnlyList<CarBrand> _brands =
@@ -271,6 +272,7 @@
             var images = eventArgs.GetMultipleFiles(
                 ImageOptions.Value.MaxImagesPerAnnouncement);
 
+            // Klientkontrollen giver hurtig feedback; service-laget validerer igen af sikkerhedshensyn.
             var oversizedImage = images.FirstOrDefault(
                 image => image.Size > MaxFileSize);
 
@@ -317,6 +319,7 @@
 
         try
         {
+            // Filer uploades enkeltvis, så én ugyldig fil ikke forhindrer de øvrige i at blive gemt.
             for (var index = 0;
                  index < _selectedImages.Count;
                  index++)
@@ -387,6 +390,7 @@
             var announcementId =
                 result.AnnouncementId.Value;
 
+            // Annoncen oprettes først, fordi billedmetadata kræver annoncens database-id.
             var failedUploads =
                 await UploadSelectedImagesAsync(
                     announcementId);

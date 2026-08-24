@@ -6,6 +6,7 @@ using System.ComponentModel.DataAnnotations;
 using BrugtBilsHandelsPortal.Models.Entities;
 namespace BrugtBilsHandelsPortal.Services.Implementations;
 
+/// <summary>Afgrænser læsning og redigering af profiler til den aktuelle bruger.</summary>
 public class UserService : IUserService
 {
     private readonly IUserRepository _userRepository;

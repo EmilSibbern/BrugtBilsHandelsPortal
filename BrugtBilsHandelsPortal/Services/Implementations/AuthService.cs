@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Identity;
 
 namespace BrugtBilsHandelsPortal.Services.Implementations;
 
+/// <summary>Validerer legitimationsoplysninger og opretter sikre brugeridentiteter.</summary>
 public class AuthService : IAuthService
 {
     private readonly IUserRepository _userRepository;

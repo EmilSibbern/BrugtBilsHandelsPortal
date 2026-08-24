@@ -73,6 +73,7 @@
 </div>
 
 @code {
+    // Beskeder hentes gennem service-laget, som afgrænser resultatet til den aktuelle bruger.
     private IReadOnlyList<MessageDto> _messages =
         Array.Empty<MessageDto>();
 

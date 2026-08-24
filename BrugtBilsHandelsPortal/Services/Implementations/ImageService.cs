@@ -9,6 +9,7 @@ using Microsoft.Extensions.Options;
 
 namespace BrugtBilsHandelsPortal.Services.Implementations;
 
+/// <summary>Koordinerer sikker filvalidering, disklagring og billedmetadata.</summary>
 public class ImageService : IImageService
 {
     private readonly IImageRepository _imageRepository;

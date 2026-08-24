@@ -7,6 +7,7 @@ using BrugtBilsHandelsPortal.Models.Entities;
 
 namespace BrugtBilsHandelsPortal.Data.Repositories.Implementations;
 
+/// <summary>Gemmer beskeder og begrænser læsning til samtalens deltagere.</summary>
 public class MessageRepository : IMessageRepository
 {
     private readonly IDbConnectionFactory _connectionFactory;

@@ -3,6 +3,7 @@ using Microsoft.Extensions.Options;
 
 namespace BrugtBilsHandelsPortal.Storage;
 
+/// <summary>Gemmer annoncebilleder lokalt og beskytter filsystemet mod usikre filnavne.</summary>
 public class LocalImageStorage : IImageStorage
 {
     private readonly string _uploadDirectory;
@@ -113,6 +114,7 @@ public class LocalImageStorage : IImageStorage
                Uri.EscapeDataString(safeFileName);
     }
 
+    // Path.GetFileName fjerner eventuelle mappesegmenter og forhindrer path traversal.
     private string GetSafePath(string fileName)
     {
         var safeFileName = Path.GetFileName(fileName);

@@ -60,6 +60,7 @@ else
 }
 
 @code {
+    // Valgt billede er lokal UI-state; Images er den autoritative state fra forælderkomponenten.
     [Parameter, EditorRequired]
     public IReadOnlyList<AnnouncementImageDto>
         Images { get; set; }
@@ -88,6 +89,7 @@ else
             Images.FirstOrDefault(image => image.IsPrimary)
             ?? Images.OrderBy(image => image.SortOrder).First();
 
+        // Bevar brugerens valg ved rerender, medmindre billedet er fjernet eller primærbilledet er ændret.
         var selectedStillExists =
             _selectedImage is not null
             && Images.Any(

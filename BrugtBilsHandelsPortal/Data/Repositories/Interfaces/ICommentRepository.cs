@@ -3,6 +3,7 @@ using BrugtBilsHandelsPortal.Models.Entities;
 
 namespace BrugtBilsHandelsPortal.Data.Repositories.Interfaces;
 
+/// <summary>Definerer persistensoperationer for kommentartråde og soft delete.</summary>
 public interface ICommentRepository
 {
     Task<IReadOnlyList<CommentDto>> GetForActiveAnnouncementAsync(

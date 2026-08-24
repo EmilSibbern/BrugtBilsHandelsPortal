@@ -7,6 +7,7 @@ using BrugtBilsHandelsPortal.Services.Interfaces;
 
 namespace BrugtBilsHandelsPortal.Services.Implementations;
 
+/// <summary>Håndterer kommentartråde, ejerskab og administrativ moderation.</summary>
 public class CommentService : ICommentService
 {
     private readonly ICommentRepository _commentRepository;

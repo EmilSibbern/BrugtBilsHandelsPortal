@@ -4,6 +4,7 @@ using BrugtBilsHandelsPortal.Models.Entities;
 
 namespace BrugtBilsHandelsPortal.Data.Repositories.Implementations;
 
+/// <summary>Udfører parameteriserede SQL-operationer for brugeridentiteter og profiler.</summary>
 public class UserRepository : IUserRepository
 {
     private readonly IDbConnectionFactory _dbConnectionFactory;

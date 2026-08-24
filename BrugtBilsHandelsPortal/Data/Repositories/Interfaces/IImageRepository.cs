@@ -3,6 +3,7 @@ using BrugtBilsHandelsPortal.Models.Entities;
 
 namespace BrugtBilsHandelsPortal.Data.Repositories.Interfaces;
 
+/// <summary>Definerer ejerbegrænsede ændringer af billedmetadata.</summary>
 public interface IImageRepository
 {
     Task<ImageMetadataCreateResult> AddForOwnerAsync(

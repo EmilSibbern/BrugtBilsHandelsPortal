@@ -4,6 +4,7 @@ using BrugtBilsHandelsPortal.Models.Entities;
 
 namespace BrugtBilsHandelsPortal.Data.Repositories.Implementations;
 
+/// <summary>Leverer opslag i den fælles liste over bilmærker.</summary>
 public class CarBrandRepository : ICarBrandRepository
 {
     private readonly IDbConnectionFactory _connectionFactory;

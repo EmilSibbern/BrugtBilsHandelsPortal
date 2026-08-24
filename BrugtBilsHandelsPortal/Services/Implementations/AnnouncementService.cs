@@ -7,6 +7,7 @@ using BrugtBilsHandelsPortal.Services.Interfaces;
 
 namespace BrugtBilsHandelsPortal.Services.Implementations;
 
+/// <summary>Samler validering, autorisation og normalisering for annoncens use cases.</summary>
 public class AnnouncementService : IAnnouncementService
 {
     private readonly IAnnouncementRepository
@@ -61,6 +62,7 @@ public class AnnouncementService : IAnnouncementService
                 "Du skal være logget ind for at oprette en annonce.");
         }
 
+        // UTC gør årstalskontrollen uafhængig af serverens lokale tidszone.
         var currentYear = DateTime.UtcNow.Year;
 
         if (request.ProductionYear > currentYear + 1)
@@ -125,6 +127,7 @@ public class AnnouncementService : IAnnouncementService
             return null;
         }
 
+        // Aktive annoncer er offentlige; inaktive annoncer er kun synlige for ejer og administrator.
         if (announcement.IsActive)
         {
             return announcement;
@@ -178,6 +181,7 @@ public class AnnouncementService : IAnnouncementService
                 "Minimumsprisen må ikke være højere end maksimumsprisen.");
         }
 
+        // Sortering begrænses til kendte værdier, så repository-laget aldrig bygger SQL fra fri tekst.
         var allowedSortValues = new[]
         {
             "newest",

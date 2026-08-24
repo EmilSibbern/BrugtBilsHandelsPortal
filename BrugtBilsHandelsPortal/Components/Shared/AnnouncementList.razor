@@ -26,6 +26,7 @@ else
 }
 
 @code {
+    // Komponenten er præsentationsorienteret; data og paging-events ejes af forælderen.
     [Parameter, EditorRequired]
     public IReadOnlyList<AnnouncementListItemDto>
         Announcements { get; set; }

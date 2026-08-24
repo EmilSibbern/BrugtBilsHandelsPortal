@@ -3,6 +3,7 @@ using Microsoft.Data.SqlClient;
 
 namespace BrugtBilsHandelsPortal.Data.Connections;
 
+/// <summary>Opretter SQL Server-forbindelser med den konfigurerede connection string.</summary>
 public class SqlConnectionFactory : IDbConnectionFactory
 {
     private readonly string _connectionString;

@@ -7,8 +7,10 @@ using BrugtBilsHandelsPortal.Services.Interfaces;
 
 namespace BrugtBilsHandelsPortal.Services.Implementations;
 
+/// <summary>Håndhæver deltageradgang, inputregler og rate limit for private beskeder.</summary>
 public class MessageService : IMessageService
 {
+    // En enkel databasebaseret rate limit fungerer på tværs af flere serverinstanser.
     private const int MaxMessagesPerMinute = 10;
 
     private readonly IMessageRepository _messageRepository;

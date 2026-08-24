@@ -68,6 +68,7 @@
 </div>
 
 @code {
+    // Komponenten ejer formular-state, mens forælderen bestemmer, hvornår dialogen vises og lukkes.
     [Parameter, EditorRequired] public int AnnouncementId { get; set; }
 
     [Parameter] public EventCallback<MessageDto> OnSent { get; set; }

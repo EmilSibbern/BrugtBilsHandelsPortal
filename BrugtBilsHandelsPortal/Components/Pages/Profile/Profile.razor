@@ -64,6 +64,7 @@
 </div>
 
 @code {
+    // Profilen bestemmes på serveren ud fra brugerens claims og accepterer derfor intet bruger-id fra URL'en.
     private UserProfileDto? _profile;
     private bool _isLoading = true;
 

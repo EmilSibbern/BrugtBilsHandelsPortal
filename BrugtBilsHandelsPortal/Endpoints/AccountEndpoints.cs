@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 
 namespace BrugtBilsHandelsPortal.Endpoints;
 
+/// <summary>Definerer cookie-baserede login- og logout-endpoints til Blazor-klienten.</summary>
 public static class AccountEndpoints
 {
     public static IEndpointRouteBuilder MapAccountEndpoints(
