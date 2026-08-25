@@ -1,1 +1,149 @@
-@* TODO: Administrér brugere, status og roller. *@
+@page "/admin/users"
+@attribute [Authorize(Roles = "Administrator")]
+@rendermode InteractiveServer
+
+@using BrugtBilsHandelsPortal.DTOs.Users
+@using BrugtBilsHandelsPortal.Services.Interfaces
+@inject IAdminUserService AdminUserService
+
+<PageTitle>Administrer brugere</PageTitle>
+
+<div class="container py-4">
+	<div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+		<div>
+			<p class="text-uppercase text-muted small fw-semibold mb-1">Administration</p>
+			<h1 class="mb-1">Administrer brugere</h1>
+			<p class="text-muted mb-0">Se brugere, deaktiver konti og kontrollerede rolleændringer.</p>
+		</div>
+		<button class="btn btn-outline-secondary" @onclick="LoadUsersAsync" disabled="@_isLoading">
+			Opdater liste
+		</button>
+	</div>
+
+	<div class="row g-2 mb-3">
+		<div class="col-md-6">
+			<label for="user-search" class="form-label">Søg bruger</label>
+			<div class="input-group">
+				<input id="user-search" class="form-control" placeholder="Brugernavn eller e-mail" @bind="_search" @bind:event="oninput" @onkeydown="HandleSearchKeyDown" />
+				<button class="btn btn-primary" @onclick="LoadUsersAsync">Søg</button>
+			</div>
+		</div>
+		<div class="col-md-3">
+			<label for="status-filter" class="form-label">Status</label>
+			<select id="status-filter" class="form-select" @bind="_statusFilter">
+				<option value="Alle">Alle</option>
+				<option value="Aktiv">Aktive</option>
+				<option value="Inaktiv">Deaktiverede</option>
+			</select>
+		</div>
+	</div>
+
+	@if (!string.IsNullOrWhiteSpace(_message))
+	{
+		<div class="alert alert-@(_hasError ? "danger" : "success")">@_message</div>
+	}
+
+	@if (_pendingAction is not null)
+	{
+		<div class="alert alert-warning d-flex flex-wrap justify-content-between align-items-center gap-2">
+			<span>@_pendingAction.Message</span>
+			<span>
+				<button class="btn btn-sm btn-warning me-2" @onclick="ConfirmActionAsync">Bekræft</button>
+				<button class="btn btn-sm btn-outline-secondary" @onclick="CancelAction">Annuller</button>
+			</span>
+		</div>
+	}
+
+	@if (_isLoading)
+	{
+		<p>Indlæser brugerlisten...</p>
+	}
+	else if (FilteredUsers.Count == 0)
+	{
+		<div class="alert alert-info">Ingen brugere matcher søgningen.</div>
+	}
+	else
+	{
+		<div class="table-responsive">
+			<table class="table table-hover align-middle">
+				<thead>
+					<tr><th>Bruger</th><th>Rolle</th><th>Status</th><th>Oprettet</th><th class="text-end">Handlinger</th></tr>
+				</thead>
+				<tbody>
+					@foreach (var user in FilteredUsers)
+					{
+						<tr>
+							<td><strong>@user.Username</strong><br /><span class="text-muted small">@user.Email</span></td>
+							<td>
+								<select class="form-select form-select-sm" value="@user.Role" @onchange="eventArgs => AskForRoleChange(user, eventArgs.Value?.ToString() ?? user.Role)">
+									<option>User</option><option>Administrator</option>
+								</select>
+							</td>
+							<td><span class="badge text-bg-@(user.IsActive ? "success" : "secondary")">@(user.IsActive ? "Aktiv" : "Deaktiveret")</span></td>
+							<td>@user.CreatedAt.ToString("dd-MM-yyyy")</td>
+							<td class="text-end"><button class="btn btn-sm btn-outline-@(user.IsActive ? "danger" : "success")" @onclick="() => AskForStatusChange(user)">@(user.IsActive ? "Deaktiver" : "Aktiver")</button></td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		</div>
+	}
+</div>
+
+@code {
+	private IReadOnlyList<AdminUserDto> _users = [];
+	private string _search = string.Empty;
+	private string _statusFilter = "Alle";
+	private bool _isLoading = true;
+	private bool _hasError;
+	private string? _message;
+	private PendingAction? _pendingAction;
+
+	private List<AdminUserDto> FilteredUsers => _users
+		.Where(user => _statusFilter == "Alle" || (_statusFilter == "Aktiv" ? user.IsActive : !user.IsActive))
+		.ToList();
+
+	protected override async Task OnInitializedAsync() => await LoadUsersAsync();
+
+	private async Task LoadUsersAsync()
+	{
+		_isLoading = true;
+		_message = null;
+		try { _users = await AdminUserService.GetUsersAsync(_search); }
+		catch (Exception exception) { _hasError = true; _message = exception.Message; }
+		finally { _isLoading = false; }
+	}
+
+	private void AskForStatusChange(AdminUserDto user)
+	{
+		_pendingAction = new PendingAction(user.Id, user.IsActive, null, $"Vil du { (user.IsActive ? "deaktivere" : "aktivere") } kontoen for {user.Username}?");
+	}
+
+	private void AskForRoleChange(AdminUserDto user, string role)
+	{
+		if (role != user.Role) _pendingAction = new PendingAction(user.Id, null, role, $"Vil du ændre {user.Username}s rolle til {role}?");
+	}
+
+	private async Task ConfirmActionAsync()
+	{
+		if (_pendingAction is null) return;
+		var action = _pendingAction;
+		_pendingAction = null;
+		_hasError = false;
+		try
+		{
+			var changed = action.Role is null
+				? await AdminUserService.SetActiveAsync(action.UserId, !action.IsActive!.Value)
+				: await AdminUserService.SetRoleAsync(action.UserId, action.Role);
+			_message = changed ? "Brugeren blev opdateret." : "Brugeren blev ikke fundet.";
+			await LoadUsersAsync();
+		}
+		catch (Exception exception) { _hasError = true; _message = exception.Message; }
+	}
+
+	private void CancelAction() => _pendingAction = null;
+
+	private Task HandleSearchKeyDown(KeyboardEventArgs args) => args.Key == "Enter" ? LoadUsersAsync() : Task.CompletedTask;
+
+	private sealed record PendingAction(int UserId, bool? IsActive, string? Role, string Message);
+}

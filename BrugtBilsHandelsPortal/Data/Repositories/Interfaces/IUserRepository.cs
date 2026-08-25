@@ -23,4 +23,10 @@ public interface IUserRepository
         string email);
 
     Task<bool> UpdateProfileAsync(User user);
+
+    Task<IReadOnlyList<User>> GetAllForAdministrationAsync(string? search);
+    Task<bool> SetActiveAsync(int userId, bool isActive);
+    Task<bool> SetRoleAsync(int userId, string roleName);
+    Task<bool> IsAdministratorAsync(int userId);
+    Task AddAuditLogAsync(int? userId, string action, int targetUserId, string details);
 }
