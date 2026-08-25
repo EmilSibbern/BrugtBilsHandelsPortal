@@ -3,10 +3,10 @@
 @if (Announcements.Count == 0)
 {
     <div class="alert alert-light border text-center py-5">
-        <h2 class="h4">Ingen aktive annoncer</h2>
+        <h2 class="h4">@EmptyTitle</h2>
 
         <p class="text-muted mb-0">
-            Der er endnu ikke oprettet nogen aktive annoncer.
+            @EmptyText
         </p>
     </div>
 }
@@ -31,4 +31,12 @@ else
     public IReadOnlyList<AnnouncementListItemDto>
         Announcements { get; set; }
             = Array.Empty<AnnouncementListItemDto>();
+
+    [Parameter]
+    public string EmptyTitle { get; set; }
+        = "Ingen aktive annoncer";
+
+    [Parameter]
+    public string EmptyText { get; set; }
+        = "Der er endnu ikke oprettet nogen aktive annoncer.";
 }

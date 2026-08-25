@@ -1,7 +1,9 @@
-﻿@page "/"
+@page "/"
 @rendermode InteractiveServer
 
 @using BrugtBilsHandelsPortal.DTOs.Announcements
+@using BrugtBilsHandelsPortal.DTOs.Common
+@using BrugtBilsHandelsPortal.Models.Entities
 @using BrugtBilsHandelsPortal.Services.Interfaces
 @using BrugtBilsHandelsPortal.Components.Shared
 @inject IAnnouncementService AnnouncementService
@@ -17,7 +19,7 @@
             <h1 class="mb-1">Brugte biler</h1>
 
             <p class="text-muted mb-0">
-                Se de nyeste aktive annoncer.
+                Søg, filtrer og sorter aktive annoncer.
             </p>
         </div>
 
@@ -29,6 +31,182 @@
                 </a>
             </Authorized>
         </AuthorizeView>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <EditForm Model="_search"
+                      OnValidSubmit="ApplySearchAsync"
+                      FormName="announcement-search-form">
+
+                <DataAnnotationsValidator />
+                <ValidationSummary class="text-danger mb-3" />
+
+                <div class="row g-3">
+                    <div class="col-12 col-lg-4">
+                        <label for="query"
+                               class="form-label">
+                            Søg
+                        </label>
+
+                        <InputText id="query"
+                                   class="form-control"
+                                   placeholder="Titel, mærke eller model"
+                                   @bind-Value="_search.Query" />
+                    </div>
+
+                    <div class="col-12 col-md-6 col-lg-3">
+                        <label for="brand"
+                               class="form-label">
+                            Mærke
+                        </label>
+
+                        <InputSelect id="brand"
+                                     class="form-select"
+                                     @bind-Value="_search.BrandId">
+                            <option value="">Alle mærker</option>
+
+                            @foreach (var brand in _carBrands)
+                            {
+                                <option value="@brand.BrandId">
+                                    @brand.BrandName
+                                </option>
+                            }
+                        </InputSelect>
+                    </div>
+
+                    <div class="col-6 col-md-3 col-lg-2">
+                        <label for="min-price"
+                               class="form-label">
+                            Min. pris
+                        </label>
+
+                        <InputNumber id="min-price"
+                                     class="form-control"
+                                     @bind-Value="_search.MinPrice" />
+                    </div>
+
+                    <div class="col-6 col-md-3 col-lg-2">
+                        <label for="max-price"
+                               class="form-label">
+                            Maks. pris
+                        </label>
+
+                        <InputNumber id="max-price"
+                                     class="form-control"
+                                     @bind-Value="_search.MaxPrice" />
+                    </div>
+
+                    <div class="col-6 col-md-3 col-lg-2">
+                        <label for="year"
+                               class="form-label">
+                            Årgang fra
+                        </label>
+
+                        <InputNumber id="year"
+                                     class="form-control"
+                                     @bind-Value="_search.MinProductionYear" />
+                    </div>
+
+                    <div class="col-6 col-md-3 col-lg-2">
+                        <label for="mileage"
+                               class="form-label">
+                            Maks. km
+                        </label>
+
+                        <InputNumber id="mileage"
+                                     class="form-control"
+                                     @bind-Value="_search.MaxMileage" />
+                    </div>
+
+                    <div class="col-12 col-md-6 col-lg-3">
+                        <label for="sort"
+                               class="form-label">
+                            Sortering
+                        </label>
+
+                        <InputSelect id="sort"
+                                     class="form-select"
+                                     @bind-Value="_search.Sort">
+                            <option value="newest">Nyeste først</option>
+                            <option value="price-asc">Laveste pris</option>
+                            <option value="price-desc">Højeste pris</option>
+                            <option value="mileage-asc">Laveste km</option>
+                        </InputSelect>
+                    </div>
+
+                    <div class="col-12 col-lg-5 d-flex
+                                align-items-end gap-2">
+                        <button type="submit"
+                                class="btn btn-primary"
+                                disabled="@_isLoading">
+                            Søg
+                        </button>
+
+                        <button type="button"
+                                class="btn btn-outline-secondary"
+                                disabled="@_isLoading"
+                                @onclick="ResetSearchAsync">
+                            Nulstil
+                        </button>
+                    </div>
+                </div>
+            </EditForm>
+
+            @if (HasActiveFilters())
+            {
+                <div class="d-flex flex-wrap gap-2 mt-3">
+                    @if (!string.IsNullOrWhiteSpace(_search.Query))
+                    {
+                        <span class="badge text-bg-light border">
+                            Søgning: @_search.Query.Trim()
+                        </span>
+                    }
+
+                    @if (_search.BrandId.HasValue)
+                    {
+                        <span class="badge text-bg-light border">
+                            Mærke: @GetSelectedBrandName()
+                        </span>
+                    }
+
+                    @if (_search.MinPrice.HasValue)
+                    {
+                        <span class="badge text-bg-light border">
+                            Min. pris: @($"{_search.MinPrice:N0} kr.")
+                        </span>
+                    }
+
+                    @if (_search.MaxPrice.HasValue)
+                    {
+                        <span class="badge text-bg-light border">
+                            Maks. pris: @($"{_search.MaxPrice:N0} kr.")
+                        </span>
+                    }
+
+                    @if (_search.MinProductionYear.HasValue)
+                    {
+                        <span class="badge text-bg-light border">
+                            Årgang fra: @_search.MinProductionYear
+                        </span>
+                    }
+
+                    @if (_search.MaxMileage.HasValue)
+                    {
+                        <span class="badge text-bg-light border">
+                            Maks. km: @($"{_search.MaxMileage:N0}")
+                        </span>
+                    }
+
+                    @if (_search.Sort != "newest")
+                    {
+                        <span class="badge text-bg-light border">
+                            Sortering: @GetSortText()
+                        </span>
+                    }
+                </div>
+            }
+        </div>
     </div>
 
     @if (_isLoading)
@@ -44,46 +222,223 @@
     else
     {
         <AnnouncementList
-            Announcements="_announcements" />
+            Announcements="_announcements"
+            EmptyTitle="@EmptyTitle"
+            EmptyText="@EmptyText" />
+
+        @if (_page is not null && _page.TotalPages > 1)
+        {
+            <div class="d-flex flex-column flex-sm-row
+                        justify-content-between
+                        align-items-sm-center gap-3 mt-4">
+                <p class="text-muted mb-0">
+                    Side @_page.Page af @_page.TotalPages
+                    - @_page.TotalItems resultater
+                </p>
+
+                <div class="btn-group">
+                    <button type="button"
+                            class="btn btn-outline-primary"
+                            disabled="@(!_page.HasPreviousPage || _isLoading)"
+                            @onclick="PreviousPageAsync">
+                        Forrige
+                    </button>
+
+                    <button type="button"
+                            class="btn btn-outline-primary"
+                            disabled="@(!_page.HasNextPage || _isLoading)"
+                            @onclick="NextPageAsync">
+                        Næste
+                    </button>
+                </div>
+            </div>
+        }
     }
 </div>
 
 @code {
-    // Siden samler filter-state og det aktuelle søgeresultat for annonceoversigten.
+    // Siden gemmer de valgte filtre og henter annoncer igen, når man søger
     private IReadOnlyList<AnnouncementListItemDto>
         _announcements =
             Array.Empty<AnnouncementListItemDto>();
 
-    private bool _isLoading = true;
+    private IReadOnlyList<CarBrand> _carBrands =
+        Array.Empty<CarBrand>();
+
+    private AnnouncementSearchDto _search = new();
+
+    private PagedResult<AnnouncementListItemDto>? _page;
+
+    private bool _isLoading;
     private string? _errorMessage;
 
     protected override async Task OnInitializedAsync()
     {
-        try
-        {
-            var result =
-                await AnnouncementService.SearchActiveAsync(
-                    new AnnouncementSearchDto());
+        _isLoading = true;
 
-            if (result.Succeeded && result.Page is not null)
-            {
-                _announcements = result.Page.Items;
-            }
-            else
-            {
-                _errorMessage =
-                    result.ErrorMessage
-                    ?? "Annoncerne kunne ikke indlæses.";
-            }
-        }
-        catch
+        _carBrands =
+            await AnnouncementService.GetCarBrandsAsync();
+
+        await LoadAnnouncementsAsync();
+    }
+
+    private async Task ApplySearchAsync()
+    {
+        _search.Page = 1;
+
+        await LoadAnnouncementsAsync();
+    }
+
+    private async Task ResetSearchAsync()
+    {
+        _search = new AnnouncementSearchDto();
+
+        await LoadAnnouncementsAsync();
+    }
+
+    private async Task PreviousPageAsync()
+    {
+        if (_page is null || !_page.HasPreviousPage)
         {
+            return;
+        }
+
+        _search.Page--;
+
+        await LoadAnnouncementsAsync();
+    }
+
+    private async Task NextPageAsync()
+    {
+        if (_page is null || !_page.HasNextPage)
+        {
+            return;
+        }
+
+        _search.Page++;
+
+        await LoadAnnouncementsAsync();
+    }
+
+    private async Task LoadAnnouncementsAsync()
+    {
+        _isLoading = true;
+        _errorMessage = null;
+
+        var result =
+            await AnnouncementService.SearchActiveAsync(
+                _search);
+
+        if (result.Succeeded && result.Page is not null)
+        {
+            _page = result.Page;
+            _announcements = result.Page.Items;
+        }
+        else
+        {
+            _page = null;
+            _announcements =
+                Array.Empty<AnnouncementListItemDto>();
+
             _errorMessage =
-                "Annoncerne kunne ikke indlæses.";
+                result.ErrorMessage
+                ?? "Annoncerne kunne ikke indlæses.";
         }
-        finally
+
+        _isLoading = false;
+    }
+
+    private bool HasActiveFilters()
+    {
+        if (!string.IsNullOrWhiteSpace(_search.Query))
         {
-            _isLoading = false;
+            return true;
+        }
+
+        if (_search.BrandId.HasValue)
+        {
+            return true;
+        }
+
+        if (_search.MinPrice.HasValue)
+        {
+            return true;
+        }
+
+        if (_search.MaxPrice.HasValue)
+        {
+            return true;
+        }
+
+        if (_search.MinProductionYear.HasValue)
+        {
+            return true;
+        }
+
+        if (_search.MaxMileage.HasValue)
+        {
+            return true;
+        }
+
+        return _search.Sort != "newest";
+    }
+
+    private string GetSelectedBrandName()
+    {
+        foreach (var brand in _carBrands)
+        {
+            if (brand.BrandId == _search.BrandId)
+            {
+                return brand.BrandName;
+            }
+        }
+
+        return "Ukendt";
+    }
+
+    private string GetSortText()
+    {
+        if (_search.Sort == "price-asc")
+        {
+            return "Laveste pris";
+        }
+
+        if (_search.Sort == "price-desc")
+        {
+            return "Højeste pris";
+        }
+
+        if (_search.Sort == "mileage-asc")
+        {
+            return "Laveste km";
+        }
+
+        return "Nyeste først";
+    }
+
+    private string EmptyTitle
+    {
+        get
+        {
+            if (HasActiveFilters())
+            {
+                return "Ingen resultater";
+            }
+
+            return "Ingen aktive annoncer";
+        }
+    }
+
+    private string EmptyText
+    {
+        get
+        {
+            if (HasActiveFilters())
+            {
+                return "Prøv at ændre søgningen eller nulstil filtrene.";
+            }
+
+            return "Der er ikke oprettet nogen aktive annoncer.";
         }
     }
 }
