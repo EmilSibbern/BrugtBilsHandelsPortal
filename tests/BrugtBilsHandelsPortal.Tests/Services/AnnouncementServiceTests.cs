@@ -492,6 +492,136 @@ public class AnnouncementServiceTests
         Assert.Equal(0, announcementRepository.SearchActiveCallCount);
     }
 
+    [Fact]
+    [Trait("UserStory", "US07")]
+    public async Task GetForEditAsync_AsOwner_ReturnsPrefilledModelAndConcurrencyToken()
+    {
+        var repository = new FakeAnnouncementRepository();
+        var details = CreateAnnouncementDetails(42);
+        details.UpdatedAt = new DateTime(2026, 8, 24, 12, 0, 0);
+        repository.Details[42] = details;
+        var service = CreateService(
+            repository,
+            CreateCarBrandRepository(),
+            userId: 7);
+
+        var model = await service.GetForEditAsync(42);
+
+        Assert.NotNull(model);
+        Assert.Equal(42, model.AnnouncementId);
+        Assert.Equal(1, model.BrandId);
+        Assert.Equal("Octavia", model.Model);
+        Assert.Equal("Skoda Octavia", model.Title);
+        Assert.Equal(details.UpdatedAt, model.ExpectedUpdatedAt);
+    }
+
+    [Fact]
+    [Trait("UserStory", "US07")]
+    public async Task GetForEditAsync_AsDifferentUser_IsRejected()
+    {
+        var repository = new FakeAnnouncementRepository();
+        repository.Details[42] = CreateAnnouncementDetails(42);
+        var service = CreateService(
+            repository,
+            CreateCarBrandRepository(),
+            userId: 99);
+
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => service.GetForEditAsync(42));
+    }
+
+    [Fact]
+    [Trait("UserStory", "US07")]
+    public async Task GetForEditAsync_AsAdministrator_CanEditOtherUsersAnnouncement()
+    {
+        var repository = new FakeAnnouncementRepository();
+        repository.Details[42] = CreateAnnouncementDetails(42);
+        var service = CreateService(
+            repository,
+            CreateCarBrandRepository(),
+            userId: 1,
+            isAdministrator: true);
+
+        var model = await service.GetForEditAsync(42);
+
+        Assert.NotNull(model);
+        Assert.Equal(42, model.AnnouncementId);
+    }
+
+    [Fact]
+    [Trait("UserStory", "US07")]
+    public async Task UpdateAsync_AsOwner_NormalizesAndUpdatesExistingEntities()
+    {
+        var repository = new FakeAnnouncementRepository();
+        var details = CreateAnnouncementDetails(42);
+        details.UpdatedAt = new DateTime(2026, 8, 24, 12, 0, 0);
+        repository.Details[42] = details;
+        var service = CreateService(
+            repository,
+            CreateCarBrandRepository(),
+            userId: 7);
+        var request = CreateValidUpdateRequest(details.UpdatedAt);
+        request.Model = "  Octavia Combi  ";
+        request.Title = "  Opdateret Skoda Octavia  ";
+        request.Description = "  Opdateret beskrivelse.  ";
+        request.Color = "  Blå  ";
+
+        await service.UpdateAsync(request);
+
+        Assert.Equal(1, repository.UpdateCallCount);
+        Assert.NotNull(repository.UpdatedCar);
+        Assert.Equal(10, repository.UpdatedCar.CarId);
+        Assert.Equal("Octavia Combi", repository.UpdatedCar.Model);
+        Assert.Equal("Blå", repository.UpdatedCar.Color);
+        Assert.NotNull(repository.UpdatedAnnouncement);
+        Assert.Equal(42, repository.UpdatedAnnouncement.Id);
+        Assert.Equal(7, repository.UpdatedAnnouncement.UserId);
+        Assert.Equal(
+            "Opdateret Skoda Octavia",
+            repository.UpdatedAnnouncement.Title);
+        Assert.Equal(7, repository.LastUpdateActorUserId);
+        Assert.False(repository.LastUpdateWasAdministrator);
+        Assert.Equal(details.UpdatedAt, repository.LastExpectedUpdatedAt);
+    }
+
+    [Fact]
+    [Trait("UserStory", "US07")]
+    public async Task UpdateAsync_AsDifferentUser_IsRejectedBeforeUpdate()
+    {
+        var repository = new FakeAnnouncementRepository();
+        repository.Details[42] = CreateAnnouncementDetails(42);
+        var service = CreateService(
+            repository,
+            CreateCarBrandRepository(),
+            userId: 99);
+
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => service.UpdateAsync(CreateValidUpdateRequest()));
+
+        Assert.Equal(0, repository.UpdateCallCount);
+    }
+
+    [Fact]
+    [Trait("UserStory", "US07")]
+    public async Task UpdateAsync_WhenConcurrencyCheckFails_IsRejected()
+    {
+        var repository = new FakeAnnouncementRepository
+        {
+            UpdateSucceeds = false
+        };
+        repository.Details[42] = CreateAnnouncementDetails(42);
+        var service = CreateService(
+            repository,
+            CreateCarBrandRepository(),
+            userId: 7);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => service.UpdateAsync(CreateValidUpdateRequest()));
+
+        Assert.Contains("ændret af en anden", exception.Message);
+        Assert.Equal(1, repository.UpdateCallCount);
+    }
+
     private static AnnouncementService CreateService(
         FakeAnnouncementRepository announcementRepository,
         FakeCarBrandRepository carBrandRepository,
@@ -534,6 +664,24 @@ public class AnnouncementServiceTests
             Title = "Skoda Octavia",
             Description = "Velholdt familiebil.",
             Price = 175_000
+        };
+    }
+
+    private static UpdateAnnouncementDto CreateValidUpdateRequest(
+        DateTime? expectedUpdatedAt = null)
+    {
+        return new UpdateAnnouncementDto
+        {
+            AnnouncementId = 42,
+            BrandId = 1,
+            Model = "Octavia",
+            ProductionYear = 2020,
+            Mileage = 85_000,
+            Color = "Sort",
+            Title = "Skoda Octavia",
+            Description = "Velholdt familiebil.",
+            Price = 175_000,
+            ExpectedUpdatedAt = expectedUpdatedAt
         };
     }
 
