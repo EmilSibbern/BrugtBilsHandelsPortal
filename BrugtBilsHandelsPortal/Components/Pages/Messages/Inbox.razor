@@ -36,36 +36,40 @@
             {
                 <article class="list-group-item"
                          @key="message.Id">
-                    <div class="d-flex justify-content-between gap-3">
-                        <div>
-                            <h2 class="h5 mb-1">
-                                @message.AnnouncementTitle
-                            </h2>
+                    <a href="@($"/messages/{message.Id}")"
+                       class="list-group-item list-group-item-action text-decoration-none text-body"
+                       aria-label="@($"Åbn samtale om {message.AnnouncementTitle} med {message.SenderUsername}")"
+                       @key="message.Id">
+                        <div class="d-flex justify-content-between gap-3">
+                            <div>
+                                <h2 class="h5 mb-1">
+                                    @message.AnnouncementTitle
+                                </h2>
 
-                            <p class="mb-1">
-                                Fra:
-                                <strong>
-                                    @message.SenderUsername
-                                </strong>
-                            </p>
+                                <p class="mb-1">
+                                    Fra:
+                                    <strong>
+                                        @message.SenderUsername
+                                    </strong>
+                                </p>
+                            </div>
+
+                            @if (!message.IsRead)
+                            {
+                                <span class="badge text-bg-primary align-self-start">
+                                    Ny
+                                </span>
+                            }
                         </div>
 
-                        @if (!message.IsRead)
-                        {
-                            <span class="badge text-bg-primary">
-                                Ny
-                            </span>
-                        }
-                    </div>
+                        <p class="mb-1 text-truncate">
+                            @message.Text
+                        </p>
 
-                    <p class="mb-1"
-                       style="white-space: pre-line;">
-                        @message.Text
-                    </p>
-
-                    <small class="text-muted">
-                        @message.CreatedAt.ToLocalTime().ToString("dd-MM-yyyy HH:mm")
-                    </small>
+                        <small class="text-muted">
+                            @message.CreatedAt.ToLocalTime().ToString("dd-MM-yyyy HH:mm")
+                        </small>
+                    </a>
                 </article>
             }
         </div>

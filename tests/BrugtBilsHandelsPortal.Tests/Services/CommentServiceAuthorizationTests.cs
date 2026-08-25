@@ -12,6 +12,7 @@ namespace BrugtBilsHandelsPortal.Tests.Services;
 public class CommentServiceAuthorizationTests
 {
     [Fact]
+    [Trait("UserStory", "US14")]
     public async Task GetForAnnouncementAsync_AsGuest_ReturnsPublicComments()
     {
         var commentRepository = new FakeCommentRepository();
@@ -33,6 +34,7 @@ public class CommentServiceAuthorizationTests
     [Theory]
     [InlineData(0)]
     [InlineData(-1)]
+    [Trait("UserStory", "US14")]
     public async Task GetForAnnouncementAsync_WithInvalidId_DoesNotQueryRepository(
         int announcementId)
     {
@@ -49,6 +51,7 @@ public class CommentServiceAuthorizationTests
     }
 
     [Fact]
+    [Trait("UserStory", "US14")]
     public async Task CreateAsync_AsGuest_IsRejectedBeforeDatabaseWrite()
     {
         var commentRepository = new FakeCommentRepository();
@@ -65,6 +68,7 @@ public class CommentServiceAuthorizationTests
     [Theory]
     [InlineData("")]
     [InlineData("   ")]
+    [Trait("UserStory", "US14")]
     public async Task CreateAsync_WithBlankText_IsRejected(
         string text)
     {
@@ -82,6 +86,7 @@ public class CommentServiceAuthorizationTests
     }
 
     [Fact]
+    [Trait("UserStory", "US14")]
     public async Task CreateAsync_SetsUserIdServerSideAndTrimsText()
     {
         var commentRepository = new FakeCommentRepository
@@ -112,6 +117,61 @@ public class CommentServiceAuthorizationTests
     }
 
     [Fact]
+    [Trait("UserStory", "US14")]
+    public async Task CreateAsync_WithMoreThanFifteenHundredCharacters_IsRejected()
+    {
+        var commentRepository = new FakeCommentRepository();
+        var service = CreateService(
+            commentRepository,
+            currentUserId: 9);
+
+        await Assert.ThrowsAsync<ValidationException>(
+            () => service.CreateAsync(
+                CreateRequest(text: new string('a', 1501))));
+
+        Assert.Equal(0, commentRepository.CreateCallCount);
+    }
+
+    [Fact]
+    [Trait("UserStory", "US14")]
+    public async Task CreateAsync_ForInactiveAnnouncement_IsRejected()
+    {
+        var commentRepository = new FakeCommentRepository();
+        var service = CreateService(
+            commentRepository,
+            currentUserId: 9,
+            announcementIsActive: false);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => service.CreateAsync(CreateRequest()));
+
+        Assert.Equal(0, commentRepository.CountCreatedSinceCallCount);
+        Assert.Equal(0, commentRepository.CreateCallCount);
+    }
+
+    [Fact]
+    [Trait("UserStory", "US14")]
+    public async Task CreateAsync_WhenRateLimitIsReached_IsRejected()
+    {
+        var commentRepository = new FakeCommentRepository
+        {
+            CreatedSinceCount = 5
+        };
+
+        var service = CreateService(
+            commentRepository,
+            currentUserId: 9);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => service.CreateAsync(CreateRequest()));
+
+        Assert.Equal(1, commentRepository.CountCreatedSinceCallCount);
+        Assert.Equal(9, commentRepository.LastCountedUserId);
+        Assert.Equal(0, commentRepository.CreateCallCount);
+    }
+
+    [Fact]
+    [Trait("UserStory", "US15")]
     public async Task CreateReply_ForCommentOnDifferentAnnouncement_IsRejected()
     {
         var commentRepository = new FakeCommentRepository();
@@ -133,6 +193,67 @@ public class CommentServiceAuthorizationTests
         await Assert.ThrowsAsync<ValidationException>(
             () => service.CreateAsync(request));
 
+        Assert.Equal(0, commentRepository.CreateCallCount);
+    }
+
+    [Fact]
+    [Trait("UserStory", "US15")]
+    public async Task CreateReply_ForMainComment_SetsParentCommentId()
+    {
+        var commentRepository = new FakeCommentRepository
+        {
+            CreatedCommentId = 17
+        };
+        commentRepository.CommentsById[5] =
+            CreateCommentDto(id: 5, userId: 8);
+        commentRepository.CommentsById[17] = new CommentDto
+        {
+            Id = 17,
+            AnnouncementId = 42,
+            UserId = 9,
+            Username = "køber",
+            Text = "Ja, den er stadig til salg.",
+            ParentCommentId = 5
+        };
+
+        var service = CreateService(
+            commentRepository,
+            currentUserId: 9);
+
+        var result = await service.CreateAsync(
+            CreateRequest(
+                text: "Ja, den er stadig til salg.",
+                parentCommentId: 5));
+
+        Assert.NotNull(commentRepository.CreatedComment);
+        Assert.Equal(5, commentRepository.CreatedComment.ParentCommentId);
+        Assert.Equal(5, result.ParentCommentId);
+    }
+
+    [Fact]
+    [Trait("UserStory", "US15")]
+    public async Task CreateReply_ForReply_IsRejectedBeforeDatabaseWrite()
+    {
+        var commentRepository = new FakeCommentRepository();
+        commentRepository.CommentsById[6] = new CommentDto
+        {
+            Id = 6,
+            AnnouncementId = 42,
+            UserId = 8,
+            Username = "anden-bruger",
+            Text = "Et eksisterende svar",
+            ParentCommentId = 5
+        };
+
+        var service = CreateService(
+            commentRepository,
+            currentUserId: 9);
+
+        await Assert.ThrowsAsync<ValidationException>(
+            () => service.CreateAsync(
+                CreateRequest(parentCommentId: 6)));
+
+        Assert.Equal(0, commentRepository.CountCreatedSinceCallCount);
         Assert.Equal(0, commentRepository.CreateCallCount);
     }
 
@@ -192,7 +313,8 @@ public class CommentServiceAuthorizationTests
     private static CommentService CreateService(
         FakeCommentRepository commentRepository,
         int? currentUserId,
-        bool isAdministrator = false)
+        bool isAdministrator = false,
+        bool announcementIsActive = true)
     {
         var announcementRepository =
             new FakeAnnouncementRepository();
@@ -201,7 +323,7 @@ public class CommentServiceAuthorizationTests
             new AnnouncementDetailsDto
             {
                 Id = 42,
-                IsActive = true,
+                IsActive = announcementIsActive,
                 SellerUserId = 7,
                 SellerUsername = "sælger"
             };
@@ -251,11 +373,14 @@ public class CommentServiceAuthorizationTests
         public long CreatedCommentId { get; set; } = 1;
         public Comment? CreatedComment { get; private set; }
         public int CreateCallCount { get; private set; }
+        public int CreatedSinceCount { get; set; }
+        public int CountCreatedSinceCallCount { get; private set; }
         public int GetForAnnouncementCallCount { get; private set; }
         public int SoftDeleteCallCount { get; private set; }
         public int? LastAnnouncementId { get; private set; }
         public long? LastDeletedCommentId { get; private set; }
         public int? LastDeletedByUserId { get; private set; }
+        public int? LastCountedUserId { get; private set; }
 
         public Task<IReadOnlyList<CommentDto>>
             GetForActiveAnnouncementAsync(int announcementId)
@@ -277,6 +402,15 @@ public class CommentServiceAuthorizationTests
             CreateCallCount++;
             CreatedComment = comment;
             return Task.FromResult(CreatedCommentId);
+        }
+
+        public Task<int> CountCreatedSinceAsync(
+            int userId,
+            DateTime since)
+        {
+            CountCreatedSinceCallCount++;
+            LastCountedUserId = userId;
+            return Task.FromResult(CreatedSinceCount);
         }
 
         public Task<bool> SoftDeleteAsync(

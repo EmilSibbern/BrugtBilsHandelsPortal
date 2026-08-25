@@ -1,15 +1,18 @@
 @using BrugtBilsHandelsPortal.DTOs.Comments
 @using BrugtBilsHandelsPortal.Services.Interfaces
+
 @inject ICommentService CommentService
 @inject ILogger<CommentForm> Logger
 
 <div>
-    <label for="comment-content"
+    <label for="@FieldId"
            class="form-label">
-        Skriv kommentar
+        @(IsReply
+            ? "Skriv svar"
+            : "Skriv kommentar")
     </label>
 
-    <textarea id="comment-content"
+    <textarea id="@FieldId"
               class="form-control"
               maxlength="1500"
               disabled="@_isSubmitting"
@@ -24,26 +27,62 @@
         </div>
     }
 
-    <button type="button"
-            class="btn btn-primary mt-2"
-            disabled="@(_isSubmitting ||
-                      string.IsNullOrWhiteSpace(_text))"
-            @onclick="SubmitAsync">
-        @(_isSubmitting ? "Sender..." : "Send kommentar")
-    </button>
+    <div class="d-flex gap-2 mt-2">
+        <button type="button"
+                class="btn btn-primary"
+                disabled="@(_isSubmitting ||
+                          string.IsNullOrWhiteSpace(_text))"
+                @onclick="SubmitAsync">
+            @if (_isSubmitting)
+            {
+                <span>Sender...</span>
+            }
+            else if (IsReply)
+            {
+                <span>Send svar</span>
+            }
+            else
+            {
+                <span>Send kommentar</span>
+            }
+        </button>
+
+        @if (IsReply)
+        {
+            <button type="button"
+                    class="btn btn-outline-secondary"
+                    disabled="@_isSubmitting"
+                    @onclick="CancelAsync">
+                Annuller
+            </button>
+        }
+    </div>
 </div>
 
 @code {
-    // Indsendelsesflaget forhindrer dobbeltoprettelse ved gentagne klik eller langsomt netværk.
     [Parameter, EditorRequired]
     public int AnnouncementId { get; set; }
 
     [Parameter]
+    public long? ParentCommentId { get; set; }
+
+    [Parameter]
     public EventCallback<CommentDto> OnCreated { get; set; }
+
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
 
     private string _text = string.Empty;
     private string? _errorMessage;
     private bool _isSubmitting;
+
+    private bool IsReply =>
+        ParentCommentId.HasValue;
+
+    private string FieldId =>
+        ParentCommentId.HasValue
+            ? $"reply-content-{ParentCommentId.Value}"
+            : "comment-content";
 
     private async Task SubmitAsync()
     {
@@ -58,16 +97,34 @@
 
         try
         {
-            var comment = await CommentService.CreateAsync(
-                new CreateCommentDto
-                {
-                    AnnouncementId = AnnouncementId,
-                    Text = _text
-                });
+            var comment =
+                await CommentService.CreateAsync(
+                    new CreateCommentDto
+                    {
+                        AnnouncementId =
+                            AnnouncementId,
+
+                        ParentCommentId =
+                            ParentCommentId,
+
+                        Text =
+                            _text
+                    });
 
             _text = string.Empty;
 
             await OnCreated.InvokeAsync(comment);
+        }
+        catch (InvalidOperationException exception)
+            when (exception.Message ==
+                  "Du har skrevet for mange kommentarer. Vent et øjeblik og prøv igen.")
+        {
+            Logger.LogWarning(
+                "Kommentar-rate-limit nået for annonce {AnnouncementId}",
+                AnnouncementId);
+
+            _errorMessage =
+                "Du har skrevet for mange kommentarer. Prøv igen om lidt.";
         }
         catch (Exception exception)
         {
@@ -77,11 +134,26 @@
                 AnnouncementId);
 
             _errorMessage =
-                "Kommentaren kunne ikke oprettes. Prøv igen.";
+                IsReply
+                    ? "Svaret kunne ikke oprettes. Prøv igen."
+                    : "Kommentaren kunne ikke oprettes. Prøv igen.";
         }
         finally
         {
             _isSubmitting = false;
         }
+    }
+
+    private async Task CancelAsync()
+    {
+        if (_isSubmitting)
+        {
+            return;
+        }
+
+        _text = string.Empty;
+        _errorMessage = null;
+
+        await OnCancel.InvokeAsync();
     }
 }
