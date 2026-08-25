@@ -117,39 +117,4 @@ public class FakeUserRepository : IUserRepository
 
         return Task.FromResult(true);
     }
-
-    public Task<IReadOnlyList<User>> GetAllForAdministrationAsync(string? search)
-    {
-        var users = Users.Where(user => string.IsNullOrWhiteSpace(search)
-            || user.Username.Contains(search, StringComparison.OrdinalIgnoreCase)
-            || user.Email.Contains(search, StringComparison.OrdinalIgnoreCase)).ToList();
-        return Task.FromResult<IReadOnlyList<User>>(users);
-    }
-
-    public Task<bool> SetActiveAsync(int userId, bool isActive)
-    {
-        var user = Users.FirstOrDefault(candidate => candidate.Id == userId);
-        if (user is null) return Task.FromResult(false);
-        user.IsActive = isActive;
-        return Task.FromResult(true);
-    }
-
-    public Task<bool> SetRoleAsync(int userId, string roleName)
-    {
-        var user = Users.FirstOrDefault(candidate => candidate.Id == userId);
-        if (user is null) return Task.FromResult(false);
-        user.UserGroupName = roleName;
-        return Task.FromResult(true);
-    }
-
-    public Task<bool> IsAdministratorAsync(int userId)
-    {
-        return Task.FromResult(Users.Any(user => user.Id == userId
-            && user.IsActive && user.UserGroupName == "Administrator"));
-    }
-
-    public Task AddAuditLogAsync(int? userId, string action, int targetUserId, string details)
-    {
-        return Task.CompletedTask;
-    }
 }

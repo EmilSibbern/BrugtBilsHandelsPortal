@@ -117,7 +117,6 @@ builder.Services
 
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<IAdminUserService, AdminUserService>();
 
 // Authorization og authentication state til Blazor
 builder.Services.AddAuthorization();
