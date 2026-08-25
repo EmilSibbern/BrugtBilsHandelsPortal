@@ -99,180 +99,6 @@ public class AnnouncementRepository : IAnnouncementRepository
         }
     }
 
-    public async Task<bool> UpdateAsync(
-        Car car,
-        Announcement announcement,
-        int actorUserId,
-        bool isAdministrator,
-        DateTime? expectedUpdatedAt)
-    {
-        const string updateAnnouncementSql = """
-                                             UPDATE a
-                                             SET
-                                                 Title = @Title,
-                                                 Description = @Description,
-                                                 Price = @Price,
-                                                 UpdatedAt =
-                                                     CASE
-                                                         WHEN @UpdatedAt <=
-                                                              COALESCE(a.UpdatedAt, a.CreatedAt)
-                                                         THEN DATEADD(
-                                                             SECOND,
-                                                             1,
-                                                             COALESCE(a.UpdatedAt, a.CreatedAt))
-                                                         ELSE @UpdatedAt
-                                                     END
-                                             FROM dbo.Announcement AS a
-                                             WHERE a.Id = @AnnouncementId
-                                               AND
-                                               (
-                                                   a.UserId = @ActorUserId
-                                                   OR @IsAdministrator = 1
-                                               )
-                                               AND
-                                               (
-                                                   (
-                                                       a.UpdatedAt IS NULL
-                                                       AND @ExpectedUpdatedAt IS NULL
-                                                   )
-                                                   OR a.UpdatedAt = @ExpectedUpdatedAt
-                                               );
-                                             """;
-
-        const string updateCarSql = """
-                                    UPDATE dbo.Car
-                                    SET
-                                        BrandId = @BrandId,
-                                        Model = @Model,
-                                        ProductionYear = @ProductionYear,
-                                        Mileage = @Mileage,
-                                        Color = @Color
-                                    WHERE CarId = @CarId;
-                                    """;
-
-        await using var connection =
-            _connectionFactory.CreateConnection();
-
-        await connection.OpenAsync();
-
-        await using var transaction =
-            await connection.BeginTransactionAsync();
-
-        try
-        {
-            await using var announcementCommand =
-                connection.CreateCommand();
-
-            announcementCommand.Transaction = transaction;
-            announcementCommand.CommandText =
-                updateAnnouncementSql;
-
-            AddParameter(
-                announcementCommand,
-                "@AnnouncementId",
-                announcement.Id);
-
-            AddParameter(
-                announcementCommand,
-                "@ActorUserId",
-                actorUserId);
-
-            AddParameter(
-                announcementCommand,
-                "@IsAdministrator",
-                isAdministrator);
-
-            AddParameter(
-                announcementCommand,
-                "@ExpectedUpdatedAt",
-                expectedUpdatedAt);
-
-            AddParameter(
-                announcementCommand,
-                "@UpdatedAt",
-                DateTime.UtcNow);
-
-            AddParameter(
-                announcementCommand,
-                "@Title",
-                announcement.Title);
-
-            AddParameter(
-                announcementCommand,
-                "@Description",
-                announcement.Description);
-
-            AddParameter(
-                announcementCommand,
-                "@Price",
-                announcement.Price);
-
-            var updatedAnnouncements =
-                await announcementCommand
-                    .ExecuteNonQueryAsync();
-
-            if (updatedAnnouncements != 1)
-            {
-                await transaction.RollbackAsync();
-                return false;
-            }
-
-            await using var carCommand =
-                connection.CreateCommand();
-
-            carCommand.Transaction = transaction;
-            carCommand.CommandText = updateCarSql;
-
-            AddParameter(
-                carCommand,
-                "@CarId",
-                car.CarId);
-
-            AddParameter(
-                carCommand,
-                "@BrandId",
-                car.BrandId);
-
-            AddParameter(
-                carCommand,
-                "@Model",
-                car.Model);
-
-            AddParameter(
-                carCommand,
-                "@ProductionYear",
-                car.ProductionYear);
-
-            AddParameter(
-                carCommand,
-                "@Mileage",
-                car.Mileage);
-
-            AddParameter(
-                carCommand,
-                "@Color",
-                car.Color);
-
-            var updatedCars =
-                await carCommand.ExecuteNonQueryAsync();
-
-            if (updatedCars != 1)
-            {
-                throw new InvalidOperationException(
-                    "Bilens oplysninger kunne ikke opdateres.");
-            }
-
-            await transaction.CommitAsync();
-
-            return true;
-        }
-        catch
-        {
-            await transaction.RollbackAsync();
-            throw;
-        }
-    }
-
     public Task<AnnouncementDetailsDto?> GetActiveByIdAsync(
         int announcementId)
     {
@@ -302,7 +128,6 @@ public class AnnouncementRepository : IAnnouncementRepository
                                a.Description,
                                a.Price,
                                a.CreatedAt,
-                               a.UpdatedAt,
                                a.IsActive,
 
                                a.UserId AS SellerUserId,
@@ -358,8 +183,6 @@ public class AnnouncementRepository : IAnnouncementRepository
         }
 
         var colorOrdinal = reader.GetOrdinal("Color");
-        var updatedAtOrdinal =
-            reader.GetOrdinal("UpdatedAt");
 
         return new AnnouncementDetailsDto
         {
@@ -377,10 +200,6 @@ public class AnnouncementRepository : IAnnouncementRepository
 
             CreatedAt = reader.GetDateTime(
                 reader.GetOrdinal("CreatedAt")),
-            UpdatedAt =
-                reader.IsDBNull(updatedAtOrdinal)
-                    ? null
-                    : reader.GetDateTime(updatedAtOrdinal),
 
             IsActive = reader.GetBoolean(
                 reader.GetOrdinal("IsActive")),

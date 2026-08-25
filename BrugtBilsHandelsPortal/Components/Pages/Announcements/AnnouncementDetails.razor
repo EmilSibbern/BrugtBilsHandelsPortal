@@ -49,7 +49,9 @@
     else
     {
         <div class="mb-4">
-            <ImageGallery Images="_images" />
+            <ImageGallery Images="_images"
+                          CanManage="_canManageImages"
+                          OnSetPrimary="HandleSetPrimaryAsync"/>
         </div>
 
         <div class="row g-4">
@@ -71,6 +73,14 @@
                     </div>
                 </div>
 
+                @if (_canManageImages)
+                {
+                    <div class="mt-4">
+                        <ImageUpload
+                            AnnouncementId="Id"
+                            OnImagesChanged="HandleImagesChangedAsync"/>
+                    </div>
+                }
             </div>
 
             <div class="col-12 col-lg-4">
@@ -140,14 +150,6 @@
                         </small>
 
                         <div class="d-grid gap-2 mt-3">
-                            @if (_canEditAnnouncement)
-                            {
-                                <a href="@($"/announcements/{Id}/edit")"
-                                   class="btn btn-outline-primary"
-                                   data-testid="edit-announcement">
-                                    Rediger annonce
-                                </a>
-                            }
                             <AuthorizeView>
                                 <Authorized>
                                     @if (!_isOwner)
@@ -269,11 +271,10 @@
         Array.Empty<CommentDto>();
 
     private bool _isLoading = true;
-    private bool _canEditAnnouncement;
+    private bool _canManageImages;
     private bool _isOwner;
     private bool _showLoginRegisterModal;
     private bool _showContactMessage;
-
 
     private string? _errorMessage;
 
@@ -287,7 +288,7 @@
         _errorMessage = null;
         _announcement = null;
         _images = Array.Empty<AnnouncementImageDto>();
-        _canEditAnnouncement = false;
+        _canManageImages = false;
         _isOwner = false;
         _showLoginRegisterModal = false;
         _showContactMessage = false;
@@ -315,13 +316,7 @@
                 && currentUserId.Value ==
                 _announcement.SellerUserId;
 
-            var isAdministrator =
-                await CurrentUserService.IsInRoleAsync(
-                    "Administrator");
-
-            _canEditAnnouncement =
-                _isOwner || isAdministrator;
-
+            _canManageImages = _isOwner;
         }
         catch
         {
@@ -347,12 +342,53 @@
             .GetForAnnouncementAsync(Id);
     }
 
+    private async Task HandleImagesChangedAsync()
+    {
+        try
+        {
+            await LoadImagesAsync();
+        }
+        catch
+        {
+            _errorMessage =
+                "Billederne kunne ikke genindlæses.";
+        }
+    }
+
     private async Task HandleCommentCreatedAsync(
         CommentDto comment)
     {
         // Genindlæs hele tråden, så sortering og eventuelle serverskabte felter altid er korrekte.
         _comments = await CommentService
             .GetForAnnouncementAsync(Id);
+    }
+
+    private async Task HandleSetPrimaryAsync(int imageId)
+    {
+        _errorMessage = null;
+
+        try
+        {
+            var succeeded =
+                await ImageService.SetPrimaryAsync(
+                    Id,
+                    imageId);
+
+            if (!succeeded)
+            {
+                _errorMessage =
+                    "Det primære billede kunne ikke ændres.";
+
+                return;
+            }
+
+            await LoadImagesAsync();
+        }
+        catch
+        {
+            _errorMessage =
+                "Det primære billede kunne ikke ændres.";
+        }
     }
 
     private void OpenLoginRegisterModal()

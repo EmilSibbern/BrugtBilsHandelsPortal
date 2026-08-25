@@ -13,18 +13,11 @@ public class FakeAnnouncementRepository : IAnnouncementRepository
     public int GetByIdCallCount { get; private set; }
     public int GetActiveByIdCallCount { get; private set; }
     public int SearchActiveCallCount { get; private set; }
-    public int UpdateCallCount { get; private set; }
     public int? LastRequestedAnnouncementId { get; private set; }
     public AnnouncementSearchDto? LastSearch { get; private set; }
 
     public Car? CreatedCar { get; private set; }
     public Announcement? CreatedAnnouncement { get; private set; }
-    public Car? UpdatedCar { get; private set; }
-    public Announcement? UpdatedAnnouncement { get; private set; }
-    public int? LastUpdateActorUserId { get; private set; }
-    public bool LastUpdateWasAdministrator { get; private set; }
-    public DateTime? LastExpectedUpdatedAt { get; private set; }
-    public bool UpdateSucceeds { get; set; } = true;
 
     public Dictionary<int, AnnouncementDetailsDto> Details { get; } = [];
     public List<AnnouncementListItemDto> ActiveAnnouncements { get; } = [];
@@ -54,22 +47,6 @@ public class FakeAnnouncementRepository : IAnnouncementRepository
             announcement?.IsActive == true
                 ? announcement
                 : null);
-    }
-
-    public Task<bool> UpdateAsync(
-        Car car,
-        Announcement announcement,
-        int actorUserId,
-        bool isAdministrator,
-        DateTime? expectedUpdatedAt)
-    {
-        UpdateCallCount++;
-        UpdatedCar = car;
-        UpdatedAnnouncement = announcement;
-        LastUpdateActorUserId = actorUserId;
-        LastUpdateWasAdministrator = isAdministrator;
-        LastExpectedUpdatedAt = expectedUpdatedAt;
-        return Task.FromResult(UpdateSucceeds);
     }
 
     public Task<AnnouncementDetailsDto?> GetByIdAsync(

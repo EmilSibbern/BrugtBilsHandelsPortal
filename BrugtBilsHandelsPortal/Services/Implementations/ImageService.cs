@@ -183,43 +183,6 @@ public class ImageService : IImageService
             userId.Value);
     }
 
-    public async Task<bool> DeleteAsync(
-        int announcementId,
-        int imageId,
-        CancellationToken cancellationToken = default)
-    {
-        if (announcementId <= 0 ||
-            imageId <= 0)
-        {
-            return false;
-        }
-
-        var userId =
-            await _currentUserService.GetUserIdAsync();
-
-        if (userId is null)
-        {
-            return false;
-        }
-
-        var fileName =
-            await _imageRepository.DeleteForOwnerAsync(
-                announcementId,
-                imageId,
-                userId.Value);
-
-        if (fileName is null)
-        {
-            return false;
-        }
-
-        await _imageStorage.DeleteAsync(
-            fileName,
-            cancellationToken);
-
-        return true;
-    }
-
     private AnnouncementImageDto MapImage(
         Models.Entities.AnnouncementImage image)
     {

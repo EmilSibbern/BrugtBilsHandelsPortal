@@ -12,21 +12,10 @@ public interface IAnnouncementRepository
         Car car,
         Announcement announcement);
 
-    /// <summary>
-    /// Opdaterer bil og annonce atomisk, hvis brugeren har adgang,
-    /// og annoncen ikke er ændret siden formularen blev indlæst.
-    /// </summary>
-    Task<bool> UpdateAsync(
-        Car car,
-        Announcement announcement,
-        int actorUserId,
-        bool isAdministrator,
-        DateTime? expectedUpdatedAt);
-
     /// <summary>Henter kun annoncen, når den og sælgeren er aktive.</summary>
     Task<AnnouncementDetailsDto?> GetActiveByIdAsync(
         int announcementId);
-
+    
     /// <summary>Søger og sideinddeler aktive annoncer.</summary>
     Task<PagedResult<AnnouncementListItemDto>>
         SearchActiveAsync(
@@ -35,5 +24,4 @@ public interface IAnnouncementRepository
     /// <summary>Henter en annonce uanset aktiv-status til et efterfølgende autorisationstjek.</summary>
     Task<AnnouncementDetailsDto?> GetByIdAsync(
         int announcementId);
-
 }

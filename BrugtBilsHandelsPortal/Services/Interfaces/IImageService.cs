@@ -19,13 +19,4 @@ public interface IImageService
     Task<bool> SetPrimaryAsync(
         int announcementId,
         int imageId);
-
-    /// <summary>
-    /// Fjerner et billede, hvis den aktuelle bruger ejer annoncen.
-    /// Hvis primærbilledet fjernes, vælger repository-laget et nyt.
-    /// </summary>
-    Task<bool> DeleteAsync(
-        int announcementId,
-        int imageId,
-        CancellationToken cancellationToken = default);
 }
