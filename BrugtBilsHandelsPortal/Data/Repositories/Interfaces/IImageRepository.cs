@@ -20,4 +20,9 @@ public interface IImageRepository
         int announcementId,
         int imageId,
         int userId);
+
+    Task<string?> DeleteForOwnerAsync(
+        int announcementId,
+        int imageId,
+        int userId);
 }

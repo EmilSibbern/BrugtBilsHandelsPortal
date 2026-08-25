@@ -1,1 +1,426 @@
-@* TODO: Formular til redigering af egen annonce. *@
+@page "/announcements/{Id:int}/edit"
+@attribute [Authorize]
+@rendermode InteractiveServer
+
+@using System.ComponentModel.DataAnnotations
+@using BrugtBilsHandelsPortal.DTOs.Announcements
+@using BrugtBilsHandelsPortal.DTOs.Images
+@using BrugtBilsHandelsPortal.Models.Entities
+@using BrugtBilsHandelsPortal.Services.Interfaces
+
+@inject IAnnouncementService AnnouncementService
+@inject IImageService ImageService
+@inject NavigationManager Navigation
+
+<PageTitle>Rediger annonce</PageTitle>
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-8">
+            <h1>Rediger annonce</h1>
+
+            @if (_isLoading)
+            {
+                <p>Indlæser annoncen...</p>
+            }
+            else if (_isForbidden)
+            {
+                <div class="alert alert-danger"
+                     role="alert">
+                    Du har ikke adgang til at redigere denne annonce.
+                </div>
+            }
+            else if (_notFound)
+            {
+                <div class="alert alert-warning"
+                     role="alert">
+                    Annoncen findes ikke.
+                </div>
+            }
+            else if (_model is not null)
+            {
+                @if (!string.IsNullOrWhiteSpace(_errorMessage))
+                {
+                    <div class="alert alert-danger"
+                         role="alert">
+                        @_errorMessage
+                    </div>
+                }
+
+                <EditForm Model="_model"
+                          OnValidSubmit="HandleSubmitAsync"
+                          FormName="edit-announcement-form">
+                    <DataAnnotationsValidator />
+
+                    <ValidationSummary
+                        class="text-danger mb-3" />
+
+                    <div class="mb-3">
+                        <label for="brand"
+                               class="form-label">
+                            Mærke
+                        </label>
+
+                        <InputSelect id="brand"
+                                     class="form-select"
+                                     @bind-Value="_model.BrandId"
+                                     disabled="@_isSubmitting">
+                            <option value="0">
+                                Vælg bilmærke
+                            </option>
+
+                            @foreach (var brand in _brands)
+                            {
+                                <option value="@brand.BrandId">
+                                    @brand.BrandName
+                                </option>
+                            }
+                        </InputSelect>
+
+                        <ValidationMessage
+                            For="@(() => _model.BrandId)" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="model"
+                               class="form-label">
+                            Model
+                        </label>
+
+                        <InputText id="model"
+                                   class="form-control"
+                                   @bind-Value="_model.Model"
+                                   disabled="@_isSubmitting" />
+
+                        <ValidationMessage
+                            For="@(() => _model.Model)" />
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="year"
+                                   class="form-label">
+                                Produktionsår
+                            </label>
+
+                            <InputNumber id="year"
+                                         class="form-control"
+                                         @bind-Value="_model.ProductionYear"
+                                         disabled="@_isSubmitting" />
+
+                            <ValidationMessage
+                                For="@(() => _model.ProductionYear)" />
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label for="mileage"
+                                   class="form-label">
+                                Kilometer
+                            </label>
+
+                            <InputNumber id="mileage"
+                                         class="form-control"
+                                         @bind-Value="_model.Mileage"
+                                         disabled="@_isSubmitting" />
+
+                            <ValidationMessage
+                                For="@(() => _model.Mileage)" />
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label for="color"
+                                   class="form-label">
+                                Farve
+                            </label>
+
+                            <InputText id="color"
+                                       class="form-control"
+                                       @bind-Value="_model.Color"
+                                       disabled="@_isSubmitting" />
+
+                            <ValidationMessage
+                                For="@(() => _model.Color)" />
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="title"
+                               class="form-label">
+                            Titel
+                        </label>
+
+                        <InputText id="title"
+                                   class="form-control"
+                                   @bind-Value="_model.Title"
+                                   disabled="@_isSubmitting" />
+
+                        <ValidationMessage
+                            For="@(() => _model.Title)" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="description"
+                               class="form-label">
+                            Beskrivelse
+                        </label>
+
+                        <InputTextArea id="description"
+                                       class="form-control"
+                                       rows="6"
+                                       @bind-Value="_model.Description"
+                                       disabled="@_isSubmitting" />
+
+                        <ValidationMessage
+                            For="@(() => _model.Description)" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="price"
+                               class="form-label">
+                            Pris
+                        </label>
+
+                        <InputNumber id="price"
+                                     class="form-control"
+                                     @bind-Value="_model.Price"
+                                     disabled="@_isSubmitting" />
+
+                        <ValidationMessage
+                            For="@(() => _model.Price)" />
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit"
+                                class="btn btn-primary"
+                                data-testid="save-announcement"
+                                disabled="@_isSubmitting">
+                            @if (_isSubmitting)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2"
+                                      aria-hidden="true"></span>
+                            }
+
+                            @(_isSubmitting
+                                ? "Gemmer..."
+                                : "Gem ændringer")
+                        </button>
+
+                        <a href="@($"/announcements/{Id}")"
+                           class="btn btn-outline-secondary">
+                            Annuller
+                        </a>
+                    </div>
+                </EditForm>
+
+                <section class="mt-5"
+                         aria-labelledby="edit-images-heading">
+                    <h2 id="edit-images-heading"
+                        class="h3">
+                        Billeder
+                    </h2>
+
+                    <ImageGallery Images="_images"
+                                  CanManage="_model.CanManageImages"
+                                  OnSetPrimary="HandleSetPrimaryAsync"
+                                  OnDelete="HandleDeleteImageAsync" />
+
+                    @if (_model.CanManageImages)
+                    {
+                        <div class="mt-4">
+                            <ImageUpload AnnouncementId="Id"
+                                         OnImagesChanged="HandleImagesChangedAsync" />
+                        </div>
+                    }
+                </section>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private UpdateAnnouncementDto? _model;
+
+    private IReadOnlyList<CarBrand> _brands =
+        Array.Empty<CarBrand>();
+
+    private IReadOnlyList<AnnouncementImageDto> _images =
+        Array.Empty<AnnouncementImageDto>();
+
+    private bool _isLoading = true;
+    private bool _isSubmitting;
+    private bool _isForbidden;
+    private bool _notFound;
+
+    private string? _errorMessage;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _isLoading = true;
+        _isForbidden = false;
+        _notFound = false;
+        _errorMessage = null;
+        _model = null;
+        _images = Array.Empty<AnnouncementImageDto>();
+
+        try
+        {
+            _brands =
+                await AnnouncementService
+                    .GetCarBrandsAsync();
+
+            _model =
+                await AnnouncementService
+                    .GetForEditAsync(Id);
+
+            _notFound =
+                _model is null;
+
+            if (_model is not null)
+            {
+                await LoadImagesAsync();
+            }
+        }
+        catch (UnauthorizedAccessException)
+        {
+            _isForbidden = true;
+        }
+        catch
+        {
+            _errorMessage =
+                "Annoncen kunne ikke indlæses. Prøv igen.";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task LoadImagesAsync()
+    {
+        _images = await ImageService
+            .GetForActiveAnnouncementAsync(Id);
+    }
+
+    private async Task HandleImagesChangedAsync()
+    {
+        _errorMessage = null;
+
+        try
+        {
+            await LoadImagesAsync();
+        }
+        catch
+        {
+            _errorMessage =
+                "Billederne kunne ikke genindlæses.";
+        }
+    }
+
+    private async Task HandleSetPrimaryAsync(
+        int imageId)
+    {
+        _errorMessage = null;
+
+        try
+        {
+            var succeeded =
+                await ImageService.SetPrimaryAsync(
+                    Id,
+                    imageId);
+
+            if (!succeeded)
+            {
+                _errorMessage =
+                    "Det primære billede kunne ikke ændres.";
+                return;
+            }
+
+            await LoadImagesAsync();
+        }
+        catch
+        {
+            _errorMessage =
+                "Det primære billede kunne ikke ændres.";
+        }
+    }
+
+    private async Task HandleDeleteImageAsync(
+        int imageId)
+    {
+        _errorMessage = null;
+
+        try
+        {
+            var succeeded =
+                await ImageService.DeleteAsync(
+                    Id,
+                    imageId);
+
+            if (!succeeded)
+            {
+                _errorMessage =
+                    "Billedet kunne ikke fjernes.";
+                return;
+            }
+
+            await LoadImagesAsync();
+        }
+        catch
+        {
+            _errorMessage =
+                "Billedet kunne ikke fjernes. Prøv igen.";
+        }
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        if (_isSubmitting ||
+            _model is null)
+        {
+            return;
+        }
+
+        _isSubmitting = true;
+        _errorMessage = null;
+
+        try
+        {
+            await AnnouncementService.UpdateAsync(
+                _model);
+
+            Navigation.NavigateTo(
+                $"/announcements/{Id}");
+        }
+        catch (ValidationException exception)
+        {
+            _errorMessage =
+                exception.Message;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            _isForbidden = true;
+            _model = null;
+        }
+        catch (InvalidOperationException exception)
+            when (exception.Message.StartsWith(
+                "Annoncen er blevet ændret",
+                StringComparison.Ordinal))
+        {
+            _errorMessage =
+                "Annoncen er blevet ændret af en anden. " +
+                "Genindlæs siden, kontrollér ændringerne og prøv igen.";
+        }
+        catch
+        {
+            _errorMessage =
+                "Annoncen kunne ikke gemmes. Prøv igen.";
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+}

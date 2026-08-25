@@ -158,6 +158,63 @@ public class AnnouncementDetailsTests
         });
     }
 
+    [Fact]
+    [Trait("UserStory", "US07")]
+    public void Owner_SeesEditAnnouncementAction()
+    {
+        using var context = CreateContext(
+            announcement: CreateAnnouncement(),
+            currentUserId: 7,
+            isAuthorized: true,
+            roles: ["User"]);
+
+        var cut = RenderDetails(context);
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Equal(
+                "/announcements/42/edit",
+                cut.Find("[data-testid='edit-announcement']")
+                    .GetAttribute("href"));
+            Assert.Empty(
+                cut.FindAll("[data-testid='delete-image']"));
+        });
+    }
+
+    [Fact]
+    [Trait("UserStory", "US07")]
+    public void DifferentUser_DoesNotSeeEditAnnouncementAction()
+    {
+        using var context = CreateContext(
+            announcement: CreateAnnouncement(),
+            currentUserId: 99,
+            isAuthorized: true,
+            roles: ["User"]);
+
+        var cut = RenderDetails(context);
+
+        cut.WaitForAssertion(() =>
+            Assert.Empty(
+                cut.FindAll("[data-testid='edit-announcement']")));
+    }
+
+    [Fact]
+    [Trait("UserStory", "US07")]
+    public void Administrator_SeesEditAnnouncementAction()
+    {
+        using var context = CreateContext(
+            announcement: CreateAnnouncement(),
+            currentUserId: 1,
+            isAuthorized: true,
+            roles: ["Administrator"]);
+
+        var cut = RenderDetails(context);
+
+        cut.WaitForAssertion(() =>
+            Assert.NotNull(
+                cut.Find("[data-testid='edit-announcement']")));
+    }
+
     private static BunitContext CreateContext(
         AnnouncementDetailsDto? announcement = null,
         IReadOnlyList<AnnouncementImageDto>? images = null,
@@ -182,7 +239,9 @@ public class AnnouncementDetailsTests
         context.Services.AddSingleton<IImageService>(
             new DetailsImageService(images ?? []));
         context.Services.AddSingleton<ICurrentUserService>(
-            new DetailsCurrentUserService(currentUserId));
+            new DetailsCurrentUserService(
+                currentUserId,
+                roles?.Contains("Administrator") == true));
         context.Services.AddSingleton<ICommentService>(
             new DetailsCommentService(
             [
@@ -267,6 +326,13 @@ public class AnnouncementDetailsTests
             CreateAnnouncementDto request) =>
             throw new NotSupportedException();
 
+        public Task<UpdateAnnouncementDto?> GetForEditAsync(
+            int announcementId) =>
+            throw new NotSupportedException();
+
+        public Task UpdateAsync(UpdateAnnouncementDto request) =>
+            throw new NotSupportedException();
+
         public Task<AnnouncementSearchResult> SearchActiveAsync(
             AnnouncementSearchDto search) =>
             throw new NotSupportedException();
@@ -288,9 +354,17 @@ public class AnnouncementDetailsTests
             int announcementId,
             int imageId) =>
             throw new NotSupportedException();
+
+        public Task<bool> DeleteAsync(
+            int announcementId,
+            int imageId,
+            CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
     }
 
-    private sealed class DetailsCurrentUserService(int? userId)
+    private sealed class DetailsCurrentUserService(
+        int? userId,
+        bool isAdministrator)
         : ICurrentUserService
     {
         public Task<int?> GetUserIdAsync() =>
@@ -300,7 +374,9 @@ public class AnnouncementDetailsTests
             Task.FromResult(userId.HasValue);
 
         public Task<bool> IsInRoleAsync(string role) =>
-            Task.FromResult(false);
+            Task.FromResult(
+                role == "Administrator"
+                && isAdministrator);
     }
 
     private sealed class DetailsCommentService(
