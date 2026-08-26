@@ -150,6 +150,14 @@ public class HomeTests
             CreateAnnouncementDto request) =>
             throw new NotSupportedException();
 
+        public Task<UpdateAnnouncementDto?> GetForEditAsync(
+            int announcementId) =>
+            throw new NotSupportedException();
+
+        public Task UpdateAsync(
+            UpdateAnnouncementDto request) =>
+            throw new NotSupportedException();
+
         public Task<AnnouncementDetailsDto?> GetDetailsAsync(
             int announcementId) =>
             throw new NotSupportedException();

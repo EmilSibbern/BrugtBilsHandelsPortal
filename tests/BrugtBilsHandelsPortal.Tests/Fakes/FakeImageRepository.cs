@@ -15,6 +15,9 @@ public class FakeImageRepository : IImageRepository
     public int SetPrimaryCallCount { get; private set; }
     public int? LastPrimaryImageId { get; private set; }
     public bool SetPrimaryResult { get; set; } = true;
+    public int DeleteCallCount { get; private set; }
+    public int? LastDeletedImageId { get; private set; }
+    public string? DeleteFileNameToReturn { get; set; }
 
     public int? LastAnnouncementId { get; private set; }
     public int? LastUserId { get; private set; }
@@ -92,5 +95,17 @@ public class FakeImageRepository : IImageRepository
         }
 
         return Task.FromResult(SetPrimaryResult);
+    }
+
+    public Task<string?> DeleteForOwnerAsync(
+        int announcementId,
+        int imageId,
+        int userId)
+    {
+        DeleteCallCount++;
+        LastAnnouncementId = announcementId;
+        LastDeletedImageId = imageId;
+        LastUserId = userId;
+        return Task.FromResult(DeleteFileNameToReturn);
     }
 }

@@ -110,6 +110,165 @@ public class AnnouncementService : IAnnouncementService
         return CreateAnnouncementResult.Successful(
             announcementId);
     }
+
+    public async Task<UpdateAnnouncementDto?> GetForEditAsync(
+        int announcementId)
+    {
+        if (announcementId <= 0)
+        {
+            return null;
+        }
+
+        var currentUserId =
+            await _currentUserService.GetUserIdAsync();
+
+        if (currentUserId is null)
+        {
+            throw new UnauthorizedAccessException(
+                "Du skal være logget ind for at redigere en annonce.");
+        }
+
+        var announcement =
+            await _announcementRepository.GetByIdAsync(
+                announcementId);
+
+        if (announcement is null)
+        {
+            return null;
+        }
+
+        var isAdministrator =
+            await _currentUserService.IsInRoleAsync(
+                "Administrator");
+
+        var isOwner =
+            announcement.SellerUserId == currentUserId.Value;
+
+        if (!isOwner && !isAdministrator)
+        {
+            throw new UnauthorizedAccessException(
+                "Du har ikke adgang til at redigere annoncen.");
+        }
+
+        return new UpdateAnnouncementDto
+        {
+            AnnouncementId = announcement.Id,
+            BrandId = announcement.BrandId,
+            Model = announcement.Model,
+            ProductionYear = announcement.ProductionYear,
+            Mileage = announcement.Mileage,
+            Color = announcement.Color,
+            Title = announcement.Title,
+            Description = announcement.Description,
+            Price = announcement.Price,
+            ExpectedUpdatedAt = announcement.UpdatedAt,
+            CanManageImages = isOwner
+        };
+    }
+
+    public async Task UpdateAsync(
+        UpdateAnnouncementDto request)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        var validationResults = new List<ValidationResult>();
+        var isValid = Validator.TryValidateObject(
+            request,
+            new ValidationContext(request),
+            validationResults,
+            validateAllProperties: true);
+
+        if (!isValid)
+        {
+            throw new ValidationException(
+                validationResults.First().ErrorMessage
+                ?? "Annonceoplysningerne er ugyldige.");
+        }
+
+        var currentUserId =
+            await _currentUserService.GetUserIdAsync();
+
+        if (currentUserId is null)
+        {
+            throw new UnauthorizedAccessException(
+                "Du skal være logget ind for at redigere en annonce.");
+        }
+
+        if (request.ProductionYear > DateTime.UtcNow.Year + 1)
+        {
+            throw new ValidationException(
+                "Produktionsåret kan ikke ligge i fremtiden.");
+        }
+
+        var brandExists =
+            await _carBrandRepository.ExistsAsync(request.BrandId);
+
+        if (!brandExists)
+        {
+            throw new ValidationException(
+                "Det valgte bilmærke findes ikke.");
+        }
+
+        var existingAnnouncement =
+            await _announcementRepository.GetByIdAsync(
+                request.AnnouncementId);
+
+        if (existingAnnouncement is null)
+        {
+            throw new InvalidOperationException(
+                "Annoncen findes ikke.");
+        }
+
+        var isAdministrator =
+            await _currentUserService.IsInRoleAsync(
+                "Administrator");
+        var isOwner =
+            existingAnnouncement.SellerUserId == currentUserId.Value;
+
+        if (!isOwner && !isAdministrator)
+        {
+            throw new UnauthorizedAccessException(
+                "Du har ikke adgang til at redigere annoncen.");
+        }
+
+        var car = new Car
+        {
+            CarId = existingAnnouncement.CarId,
+            BrandId = request.BrandId,
+            Model = request.Model.Trim(),
+            ProductionYear = checked((short)request.ProductionYear),
+            Mileage = request.Mileage,
+            Color = string.IsNullOrWhiteSpace(request.Color)
+                ? null
+                : request.Color.Trim()
+        };
+
+        var announcement = new Announcement
+        {
+            Id = existingAnnouncement.Id,
+            UserId = existingAnnouncement.SellerUserId,
+            CarId = existingAnnouncement.CarId,
+            Title = request.Title.Trim(),
+            Description = request.Description.Trim(),
+            Price = request.Price,
+            IsActive = existingAnnouncement.IsActive
+        };
+
+        var wasUpdated =
+            await _announcementRepository.UpdateAsync(
+                car,
+                announcement,
+                currentUserId.Value,
+                isAdministrator,
+                request.ExpectedUpdatedAt);
+
+        if (!wasUpdated)
+        {
+            throw new InvalidOperationException(
+                "Annoncen er blevet ændret af en anden bruger. Genindlæs siden og prøv igen.");
+        }
+    }
+
     public async Task<AnnouncementDetailsDto?> GetDetailsAsync(
         int announcementId)
     {

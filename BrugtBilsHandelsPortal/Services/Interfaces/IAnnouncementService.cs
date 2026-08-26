@@ -15,6 +15,14 @@ public interface IAnnouncementService
     Task<CreateAnnouncementResult> CreateAsync(
         CreateAnnouncementDto request);
 
+    /// <summary>Henter annoncefelterne til redigering for ejer eller administrator.</summary>
+    Task<UpdateAnnouncementDto?> GetForEditAsync(
+        int announcementId);
+
+    /// <summary>Validerer og opdaterer en annonce for ejer eller administrator.</summary>
+    Task UpdateAsync(
+        UpdateAnnouncementDto request);
+
     /// <summary>
     /// Henter en annonce, hvis den er aktiv, eller hvis den aktuelle bruger må se en inaktiv annonce.
     /// </summary>
