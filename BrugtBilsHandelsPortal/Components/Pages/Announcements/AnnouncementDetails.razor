@@ -8,13 +8,13 @@
 @using BrugtBilsHandelsPortal.DTOs.Images
 @using BrugtBilsHandelsPortal.DTOs.Messages
 @using BrugtBilsHandelsPortal.Security
-@using BrugtBilsHandelsPortal.Services.Implementations
 @using BrugtBilsHandelsPortal.Services.Interfaces
 
 @inject IAnnouncementService AnnouncementService
 @inject IImageService ImageService
 @inject ICurrentUserService CurrentUserService
 @inject ICommentService CommentService
+
 <PageTitle>@PageTitle</PageTitle>
 
 <div class="container py-4">
@@ -48,8 +48,38 @@
     }
     else
     {
+        @if (!string.IsNullOrWhiteSpace(
+            _actionSuccessMessage))
+        {
+            <div class="alert alert-success"
+                 role="status"
+                 data-testid="deactivate-success">
+                @_actionSuccessMessage
+            </div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(
+            _actionErrorMessage))
+        {
+            <div class="alert alert-danger"
+                 role="alert"
+                 data-testid="deactivate-error">
+                @_actionErrorMessage
+            </div>
+        }
+
+        @if (!_announcement.IsActive)
+        {
+            <div class="alert alert-secondary"
+                 role="status"
+                 data-testid="inactive-announcement">
+                Denne annonce er deaktiveret og vises
+                ikke længere offentligt.
+            </div>
+        }
+
         <div class="mb-4">
-            <ImageGallery Images="_images" />
+            <ImageGallery Images="_images"/>
         </div>
 
         <div class="row g-4">
@@ -70,7 +100,6 @@
                         </p>
                     </div>
                 </div>
-
             </div>
 
             <div class="col-12 col-lg-4">
@@ -110,7 +139,8 @@
                             </dt>
 
                             <dd class="col-7">
-                                @FormatMileage(_announcement.Mileage)
+                                @FormatMileage(
+                                    _announcement.Mileage)
                             </dd>
 
                             <dt class="col-5">
@@ -118,7 +148,8 @@
                             </dt>
 
                             <dd class="col-7">
-                                @DisplayValue(_announcement.Color)
+                                @DisplayValue(
+                                    _announcement.Color)
                             </dd>
                         </dl>
                     </div>
@@ -148,61 +179,124 @@
                                     Rediger annonce
                                 </a>
                             }
-                            <AuthorizeView>
-                                <Authorized>
-                                    @if (!_isOwner)
-                                    {
+
+                            @if (_isOwner &&
+                                 _announcement.IsActive)
+                            {
+                                <button type="button"
+                                        class="btn btn-outline-danger"
+                                        data-testid="deactivate-announcement"
+                                        disabled="@_isDeactivating"
+                                        @onclick="ShowDeactivateConfirmation">
+                                    Deaktivér annonce
+                                </button>
+                            }
+
+                            @if (_showDeactivateConfirmation)
+                            {
+                                <div class="border border-danger rounded p-3"
+                                     data-testid="deactivate-confirmation">
+                                    <p class="mb-3">
+                                        Er du sikker på, at du vil
+                                        deaktivere annoncen? Den vil
+                                        ikke længere være synlig i den
+                                        offentlige oversigt.
+                                    </p>
+
+                                    <div class="d-flex gap-2">
+                                        <button type="button"
+                                                class="btn btn-danger"
+                                                data-testid="confirm-deactivate"
+                                                disabled="@_isDeactivating"
+                                                @onclick="HandleDeactivateAsync">
+                                            @if (_isDeactivating)
+                                            {
+                                                <span>
+                                                    Deaktiverer...
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span>
+                                                    Ja, deaktivér
+                                                </span>
+                                            }
+                                        </button>
+
+                                        <button type="button"
+                                                class="btn btn-outline-secondary"
+                                                data-testid="cancel-deactivate"
+                                                disabled="@_isDeactivating"
+                                                @onclick="HideDeactivateConfirmation">
+                                            Annuller
+                                        </button>
+                                    </div>
+                                </div>
+                            }
+
+                            @if (_announcement.IsActive)
+                            {
+                                <AuthorizeView>
+                                    <Authorized>
+                                        @if (!_isOwner)
+                                        {
+                                            <button type="button"
+                                                    class="btn btn-primary"
+                                                    data-testid="contact-seller"
+                                                    @onclick="StartContact">
+                                                Kontakt sælger
+                                            </button>
+                                        }
+
+                                        <div data-testid="comment-form">
+                                            <CommentForm
+                                                AnnouncementId="Id"
+                                                OnCreated="HandleCommentCreatedAsync"/>
+                                        </div>
+                                    </Authorized>
+
+                                    <NotAuthorized>
                                         <button type="button"
                                                 class="btn btn-primary"
                                                 data-testid="contact-seller"
-                                                @onclick="StartContact">
+                                                @onclick="OpenLoginRegisterModal">
                                             Kontakt sælger
                                         </button>
-                                    }
 
-                                    <div data-testid="comment-form">
-                                        <CommentForm AnnouncementId="Id"
-                                                     OnCreated="HandleCommentCreatedAsync"/>
-                                    </div>
-                                </Authorized>
-
-                                <NotAuthorized>
-                                    <button type="button"
-                                            class="btn btn-primary"
-                                            data-testid="contact-seller"
-                                            @onclick="OpenLoginRegisterModal">
-                                        Kontakt sælger
-                                    </button>
-
-                                    <button type="button"
-                                            class="btn btn-outline-primary"
-                                            data-testid="add-comment"
-                                            @onclick="OpenLoginRegisterModal">
-                                        Skriv kommentar
-                                    </button>
-                                </NotAuthorized>
-                            </AuthorizeView>
+                                        <button type="button"
+                                                class="btn btn-outline-primary"
+                                                data-testid="add-comment"
+                                                @onclick="OpenLoginRegisterModal">
+                                            Skriv kommentar
+                                        </button>
+                                    </NotAuthorized>
+                                </AuthorizeView>
+                            }
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <section class="mt-4"
-                 data-testid="public-comments">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <h2 class="h4">
-                        Kommentarer
-                    </h2>
+        @if (_announcement.IsActive)
+        {
+            <section class="mt-4"
+                     data-testid="public-comments">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h2 class="h4">
+                            Kommentarer
+                        </h2>
 
-                    <CommentList AnnouncementId="Id"
-                                 Comments="_comments"
-                                 OnCreated="HandleCommentCreatedAsync"
-                                 OnLoginRequired="OpenLoginRegisterModal"/>
+                        <CommentList
+                            AnnouncementId="Id"
+                            Comments="_comments"
+                            OnCreated="HandleCommentCreatedAsync"
+                            OnLoginRequired="OpenLoginRegisterModal"/>
+                    </div>
                 </div>
-            </div>
-        </section>
+            </section>
+        }
 
         <AuthorizeView Roles="Administrator">
             <div class="mt-4"
@@ -214,7 +308,8 @@
                         </h2>
 
                         <p class="text-muted">
-                            Administratorhandlinger til annoncen placeres her.
+                            Administratorhandlinger til annoncen
+                            placeres her.
                         </p>
                     </div>
                 </div>
@@ -256,9 +351,10 @@
 </div>
 
 @code {
-
-    // Route-parameteren kan ændres uden at komponenten genskabes, så state nulstilles ved hvert opslag.
-    [Parameter] public int Id { get; set; }
+    // Route-parameteren kan ændres uden at komponenten
+    // genskabes, så state nulstilles ved hvert opslag.
+    [Parameter]
+    public int Id { get; set; }
 
     private AnnouncementDetailsDto? _announcement;
 
@@ -273,30 +369,41 @@
     private bool _isOwner;
     private bool _showLoginRegisterModal;
     private bool _showContactMessage;
-
+    private bool _showDeactivateConfirmation;
+    private bool _isDeactivating;
 
     private string? _errorMessage;
+    private string? _actionSuccessMessage;
+    private string? _actionErrorMessage;
 
     private string PageTitle =>
         _announcement?.Title ?? "Annonce";
 
     protected override async Task OnParametersSetAsync()
     {
-        // Undgå at vise data fra den forrige annonce, mens den nye indlæses.
+        // Undgå at vise data fra den forrige annonce,
+        // mens den nye indlæses.
         _isLoading = true;
         _errorMessage = null;
+        _actionSuccessMessage = null;
+        _actionErrorMessage = null;
         _announcement = null;
-        _images = Array.Empty<AnnouncementImageDto>();
+        _images =
+            Array.Empty<AnnouncementImageDto>();
+        _comments =
+            Array.Empty<CommentDto>();
         _canEditAnnouncement = false;
         _isOwner = false;
         _showLoginRegisterModal = false;
         _showContactMessage = false;
-        _comments = Array.Empty<CommentDto>();
+        _showDeactivateConfirmation = false;
+        _isDeactivating = false;
 
         try
         {
             _announcement =
-                await AnnouncementService.GetDetailsAsync(Id);
+                await AnnouncementService
+                    .GetDetailsAsync(Id);
 
             if (_announcement is null)
             {
@@ -304,24 +411,30 @@
             }
 
             await LoadImagesAsync();
-            await LoadCommentsAsync();
+
+            if (_announcement.IsActive)
+            {
+                await LoadCommentsAsync();
+            }
 
             var currentUserId =
-                await CurrentUserService.GetUserIdAsync();
+                await CurrentUserService
+                    .GetUserIdAsync();
 
-            // UI-rettigheden er kun præsentation; service-laget håndhæver stadig ejerskab ved ændringer.
+            // UI-rettigheden er kun præsentation;
+            // service-laget håndhæver stadig ejerskab.
             _isOwner =
                 currentUserId.HasValue
                 && currentUserId.Value ==
                 _announcement.SellerUserId;
 
             var isAdministrator =
-                await CurrentUserService.IsInRoleAsync(
-                    "Administrator");
+                await CurrentUserService
+                    .IsInRoleAsync(
+                        "Administrator");
 
             _canEditAnnouncement =
                 _isOwner || isAdministrator;
-
         }
         catch
         {
@@ -343,16 +456,80 @@
 
     private async Task LoadCommentsAsync()
     {
-        _comments = await CommentService
-            .GetForAnnouncementAsync(Id);
+        _comments =
+            await CommentService
+                .GetForAnnouncementAsync(Id);
     }
 
     private async Task HandleCommentCreatedAsync(
         CommentDto comment)
     {
-        // Genindlæs hele tråden, så sortering og eventuelle serverskabte felter altid er korrekte.
-        _comments = await CommentService
-            .GetForAnnouncementAsync(Id);
+        // Genindlæs hele tråden, så sortering og
+        // serverskabte felter altid er korrekte.
+        _comments =
+            await CommentService
+                .GetForAnnouncementAsync(Id);
+    }
+
+    private void ShowDeactivateConfirmation()
+    {
+        _actionErrorMessage = null;
+        _actionSuccessMessage = null;
+        _showDeactivateConfirmation = true;
+    }
+
+    private void HideDeactivateConfirmation()
+    {
+        if (!_isDeactivating)
+        {
+            _showDeactivateConfirmation = false;
+        }
+    }
+
+    private async Task HandleDeactivateAsync()
+    {
+        if (_isDeactivating)
+        {
+            return;
+        }
+
+        _isDeactivating = true;
+        _actionErrorMessage = null;
+        _actionSuccessMessage = null;
+
+        try
+        {
+            await AnnouncementService
+                .DeactivateAsync(Id);
+
+            if (_announcement is not null)
+            {
+                _announcement.IsActive = false;
+            }
+
+            _showDeactivateConfirmation = false;
+            _actionSuccessMessage =
+                "Annoncen er deaktiveret og vises ikke længere offentligt.";
+        }
+        catch (UnauthorizedAccessException exception)
+        {
+            _actionErrorMessage =
+                exception.Message;
+        }
+        catch (InvalidOperationException exception)
+        {
+            _actionErrorMessage =
+                exception.Message;
+        }
+        catch
+        {
+            _actionErrorMessage =
+                "Annoncen kunne ikke deaktiveres. Prøv igen.";
+        }
+        finally
+        {
+            _isDeactivating = false;
+        }
     }
 
     private void OpenLoginRegisterModal()
@@ -370,25 +547,27 @@
         _showContactMessage = true;
     }
 
-    private static string FormatPrice(int price)
+    private static string FormatPrice(
+        int price)
     {
         return $"{price:N0} kr.";
     }
 
-    private static string FormatMileage(int mileage)
+    private static string FormatMileage(
+        int mileage)
     {
         return $"{mileage:N0} km";
     }
 
-    private static string DisplayValue(string? value)
+    private static string DisplayValue(
+        string? value)
     {
         return string.IsNullOrWhiteSpace(value)
             ? "Ikke angivet"
             : value;
     }
 
-    private void HandleMessageSent(
-        MessageDto message)
+    private void HandleMessageSent(MessageDto message)
     {
         _showContactMessage = false;
     }
@@ -397,5 +576,4 @@
     {
         _showContactMessage = false;
     }
-
 }

@@ -35,8 +35,7 @@ public class AnnouncementService : IAnnouncementService
         return _carBrandRepository.GetAllAsync();
     }
 
-    public async Task<CreateAnnouncementResult> CreateAsync(
-        CreateAnnouncementDto request)
+    public async Task<CreateAnnouncementResult> CreateAsync(CreateAnnouncementDto request)
     {
         var validationResults = new List<ValidationResult>();
 
@@ -166,8 +165,7 @@ public class AnnouncementService : IAnnouncementService
         };
     }
 
-    public async Task UpdateAsync(
-        UpdateAnnouncementDto request)
+    public async Task UpdateAsync(UpdateAnnouncementDto request)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -266,6 +264,59 @@ public class AnnouncementService : IAnnouncementService
         {
             throw new InvalidOperationException(
                 "Annoncen er blevet ændret af en anden bruger. Genindlæs siden og prøv igen.");
+        }
+    }
+
+    public async Task DeactivateAsync(
+        int announcementId)
+    {
+        if (announcementId <= 0)
+        {
+            throw new ValidationException(
+                "Annoncen er ugyldig.");
+        }
+
+        var currentUserId =
+            await _currentUserService.GetUserIdAsync();
+
+        if (currentUserId is null)
+        {
+            throw new UnauthorizedAccessException(
+                "Du skal være logget ind for at deaktivere en annonce.");
+        }
+
+        var announcement =
+            await _announcementRepository.GetByIdAsync(
+                announcementId);
+
+        if (announcement is null)
+        {
+            throw new InvalidOperationException(
+                "Annoncen findes ikke.");
+        }
+
+        if (announcement.SellerUserId != currentUserId.Value)
+        {
+            throw new UnauthorizedAccessException(
+                "Du har ikke adgang til at deaktivere annoncen.");
+        }
+
+        if (!announcement.IsActive)
+        {
+            throw new InvalidOperationException(
+                "Annoncen er allerede deaktiveret.");
+        }
+
+        var wasDeactivated =
+            await _announcementRepository
+                .DeactivateForOwnerAsync(
+                    announcementId,
+                    currentUserId.Value);
+
+        if (!wasDeactivated)
+        {
+            throw new InvalidOperationException(
+                "Annoncen kunne ikke deaktiveres. Genindlæs siden og prøv igen.");
         }
     }
 

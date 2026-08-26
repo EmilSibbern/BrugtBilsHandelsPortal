@@ -23,17 +23,24 @@ public interface IAnnouncementRepository
         bool isAdministrator,
         DateTime? expectedUpdatedAt);
 
+    /// <summary>
+    /// Deaktiverer en aktiv annonce, hvis den tilhører den angivne bruger.
+    /// Returnerer false, hvis annoncen ikke findes, allerede er inaktiv
+    /// eller tilhører en anden bruger.
+    /// </summary>
+    Task<bool> DeactivateForOwnerAsync(
+        int announcementId,
+        int ownerUserId);
+
     /// <summary>Henter kun annoncen, når den og sælgeren er aktive.</summary>
     Task<AnnouncementDetailsDto?> GetActiveByIdAsync(
         int announcementId);
 
     /// <summary>Søger og sideinddeler aktive annoncer.</summary>
-    Task<PagedResult<AnnouncementListItemDto>>
-        SearchActiveAsync(
-            AnnouncementSearchDto search);
+    Task<PagedResult<AnnouncementListItemDto>> SearchActiveAsync(
+        AnnouncementSearchDto search);
 
     /// <summary>Henter en annonce uanset aktiv-status til et efterfølgende autorisationstjek.</summary>
     Task<AnnouncementDetailsDto?> GetByIdAsync(
         int announcementId);
-
 }

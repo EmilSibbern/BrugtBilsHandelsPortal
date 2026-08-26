@@ -215,6 +215,124 @@ public class AnnouncementDetailsTests
                 cut.Find("[data-testid='edit-announcement']")));
     }
 
+    [Fact]
+    [Trait("UserStory", "US08")]
+    public void Owner_SeesDeactivateAction()
+    {
+        using var context = CreateContext(
+            announcement: CreateAnnouncement(),
+            currentUserId: 7,
+            isAuthorized: true,
+            roles: ["User"]);
+
+        var cut = RenderDetails(context);
+
+        cut.WaitForAssertion(() =>
+            Assert.NotNull(
+                cut.Find("[data-testid='deactivate-announcement']")));
+    }
+
+    [Fact]
+    [Trait("UserStory", "US08")]
+    public void DifferentUser_DoesNotSeeDeactivateAction()
+    {
+        using var context = CreateContext(
+            announcement: CreateAnnouncement(),
+            currentUserId: 99,
+            isAuthorized: true,
+            roles: ["User"]);
+
+        var cut = RenderDetails(context);
+
+        cut.WaitForAssertion(() =>
+            Assert.Empty(
+                cut.FindAll("[data-testid='deactivate-announcement']")));
+    }
+
+    [Fact]
+    [Trait("UserStory", "US08")]
+    public void DeactivateAction_ShowsAndCancelsConfirmation()
+    {
+        using var context = CreateContext(
+            announcement: CreateAnnouncement(),
+            currentUserId: 7,
+            isAuthorized: true,
+            roles: ["User"]);
+        var cut = RenderDetails(context);
+
+        cut.Find("[data-testid='deactivate-announcement']").Click();
+
+        Assert.NotNull(
+            cut.Find("[data-testid='deactivate-confirmation']"));
+
+        cut.Find("[data-testid='cancel-deactivate']").Click();
+
+        Assert.Empty(
+            cut.FindAll("[data-testid='deactivate-confirmation']"));
+    }
+
+    [Fact]
+    [Trait("UserStory", "US08")]
+    public void ConfirmDeactivate_UpdatesPageToInactiveState()
+    {
+        using var context = CreateContext(
+            announcement: CreateAnnouncement(),
+            currentUserId: 7,
+            isAuthorized: true,
+            roles: ["User"]);
+        var service = Assert.IsType<DetailsAnnouncementService>(
+            context.Services.GetRequiredService<IAnnouncementService>());
+        var cut = RenderDetails(context);
+
+        cut.Find("[data-testid='deactivate-announcement']").Click();
+        cut.Find("[data-testid='confirm-deactivate']").Click();
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Equal(1, service.DeactivateCallCount);
+            Assert.Equal(42, service.LastDeactivatedAnnouncementId);
+            Assert.NotNull(
+                cut.Find("[data-testid='deactivate-success']"));
+            Assert.NotNull(
+                cut.Find("[data-testid='inactive-announcement']"));
+            Assert.Empty(
+                cut.FindAll("[data-testid='deactivate-announcement']"));
+            Assert.Empty(
+                cut.FindAll("[data-testid='deactivate-confirmation']"));
+        });
+    }
+
+    [Fact]
+    [Trait("UserStory", "US08")]
+    public void ConfirmDeactivate_WhenServiceFails_ShowsErrorAndKeepsAction()
+    {
+        using var context = CreateContext(
+            announcement: CreateAnnouncement(),
+            currentUserId: 7,
+            isAuthorized: true,
+            roles: ["User"]);
+        var service = Assert.IsType<DetailsAnnouncementService>(
+            context.Services.GetRequiredService<IAnnouncementService>());
+        service.DeactivateException = new InvalidOperationException(
+            "Annoncen kunne ikke deaktiveres.");
+        var cut = RenderDetails(context);
+
+        cut.Find("[data-testid='deactivate-announcement']").Click();
+        cut.Find("[data-testid='confirm-deactivate']").Click();
+
+        cut.WaitForAssertion(() =>
+        {
+            var error = cut.Find("[data-testid='deactivate-error']");
+            Assert.Contains(
+                "Annoncen kunne ikke deaktiveres",
+                error.TextContent);
+            Assert.NotNull(
+                cut.Find("[data-testid='deactivate-announcement']"));
+            Assert.Empty(
+                cut.FindAll("[data-testid='inactive-announcement']"));
+        });
+    }
+
     private static BunitContext CreateContext(
         AnnouncementDetailsDto? announcement = null,
         IReadOnlyList<AnnouncementImageDto>? images = null,
@@ -275,6 +393,7 @@ public class AnnouncementDetailsTests
             Description = "Velholdt familiebil.",
             Price = 175_000,
             CreatedAt = new DateTime(2026, 8, 23),
+            IsActive = true,
             SellerUserId = 7,
             SellerUsername = "sælger",
             CarId = 10,
@@ -307,6 +426,10 @@ public class AnnouncementDetailsTests
         AnnouncementDetailsDto? announcement,
         Exception? detailsException) : IAnnouncementService
     {
+        public Exception? DeactivateException { get; set; }
+        public int DeactivateCallCount { get; private set; }
+        public int? LastDeactivatedAnnouncementId { get; private set; }
+
         public Task<AnnouncementDetailsDto?> GetDetailsAsync(
             int announcementId)
         {
@@ -332,6 +455,16 @@ public class AnnouncementDetailsTests
 
         public Task UpdateAsync(UpdateAnnouncementDto request) =>
             throw new NotSupportedException();
+
+        public Task DeactivateAsync(int announcementId)
+        {
+            DeactivateCallCount++;
+            LastDeactivatedAnnouncementId = announcementId;
+
+            return DeactivateException is null
+                ? Task.CompletedTask
+                : Task.FromException(DeactivateException);
+        }
 
         public Task<AnnouncementSearchResult> SearchActiveAsync(
             AnnouncementSearchDto search) =>

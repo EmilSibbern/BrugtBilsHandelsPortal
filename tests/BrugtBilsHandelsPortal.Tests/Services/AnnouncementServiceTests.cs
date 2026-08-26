@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using BrugtBilsHandelsPortal.DTOs.Announcements;
 using BrugtBilsHandelsPortal.Models.Entities;
 using BrugtBilsHandelsPortal.Services.Implementations;
@@ -620,6 +621,137 @@ public class AnnouncementServiceTests
 
         Assert.Contains("ændret af en anden", exception.Message);
         Assert.Equal(1, repository.UpdateCallCount);
+    }
+
+    [Fact]
+    [Trait("UserStory", "US08")]
+    public async Task DeactivateAsync_AsOwner_DeactivatesOwnActiveAnnouncement()
+    {
+        var repository = new FakeAnnouncementRepository();
+        repository.Details[42] = CreateAnnouncementDetails(42);
+        var service = CreateService(
+            repository,
+            CreateCarBrandRepository(),
+            userId: 7);
+
+        await service.DeactivateAsync(42);
+
+        Assert.Equal(1, repository.DeactivateCallCount);
+        Assert.Equal(42, repository.LastDeactivatedAnnouncementId);
+        Assert.Equal(7, repository.LastDeactivateOwnerUserId);
+    }
+
+    [Fact]
+    [Trait("UserStory", "US08")]
+    public async Task DeactivateAsync_AsDifferentUser_IsRejectedBeforeMutation()
+    {
+        var repository = new FakeAnnouncementRepository();
+        repository.Details[42] = CreateAnnouncementDetails(42);
+        var service = CreateService(
+            repository,
+            CreateCarBrandRepository(),
+            userId: 99);
+
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => service.DeactivateAsync(42));
+
+        Assert.Equal(0, repository.DeactivateCallCount);
+    }
+
+    [Fact]
+    [Trait("UserStory", "US08")]
+    public async Task DeactivateAsync_AsGuest_IsRejectedBeforeLookup()
+    {
+        var repository = new FakeAnnouncementRepository();
+        repository.Details[42] = CreateAnnouncementDetails(42);
+        var service = CreateService(
+            repository,
+            CreateCarBrandRepository(),
+            userId: null);
+
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => service.DeactivateAsync(42));
+
+        Assert.Equal(0, repository.GetByIdCallCount);
+        Assert.Equal(0, repository.DeactivateCallCount);
+    }
+
+    [Fact]
+    [Trait("UserStory", "US08")]
+    public async Task DeactivateAsync_WhenAlreadyInactive_IsRejected()
+    {
+        var repository = new FakeAnnouncementRepository();
+        repository.Details[42] = CreateAnnouncementDetails(
+            42,
+            isActive: false);
+        var service = CreateService(
+            repository,
+            CreateCarBrandRepository(),
+            userId: 7);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => service.DeactivateAsync(42));
+
+        Assert.Contains("allerede deaktiveret", exception.Message);
+        Assert.Equal(0, repository.DeactivateCallCount);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    [Trait("UserStory", "US08")]
+    public async Task DeactivateAsync_WithInvalidId_IsRejectedBeforeLookup(
+        int announcementId)
+    {
+        var repository = new FakeAnnouncementRepository();
+        var service = CreateService(
+            repository,
+            CreateCarBrandRepository(),
+            userId: 7);
+
+        await Assert.ThrowsAsync<ValidationException>(
+            () => service.DeactivateAsync(announcementId));
+
+        Assert.Equal(0, repository.GetByIdCallCount);
+        Assert.Equal(0, repository.DeactivateCallCount);
+    }
+
+    [Fact]
+    [Trait("UserStory", "US08")]
+    public async Task DeactivateAsync_WhenAnnouncementDoesNotExist_IsRejected()
+    {
+        var repository = new FakeAnnouncementRepository();
+        var service = CreateService(
+            repository,
+            CreateCarBrandRepository(),
+            userId: 7);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => service.DeactivateAsync(42));
+
+        Assert.Contains("findes ikke", exception.Message);
+        Assert.Equal(0, repository.DeactivateCallCount);
+    }
+
+    [Fact]
+    [Trait("UserStory", "US08")]
+    public async Task DeactivateAsync_WhenRepositoryRejectsMutation_ShowsRetryError()
+    {
+        var repository = new FakeAnnouncementRepository
+        {
+            DeactivateSucceeds = false
+        };
+        repository.Details[42] = CreateAnnouncementDetails(42);
+        var service = CreateService(
+            repository,
+            CreateCarBrandRepository(),
+            userId: 7);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => service.DeactivateAsync(42));
+
+        Assert.Contains("Genindlæs siden", exception.Message);
+        Assert.Equal(1, repository.DeactivateCallCount);
     }
 
     private static AnnouncementService CreateService(

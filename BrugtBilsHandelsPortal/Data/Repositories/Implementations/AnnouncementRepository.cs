@@ -273,6 +273,55 @@ public class AnnouncementRepository : IAnnouncementRepository
         }
     }
 
+    public async Task<bool> DeactivateForOwnerAsync(
+        int announcementId,
+        int ownerUserId)
+    {
+        const string sql = """
+                           UPDATE dbo.Announcement
+                           SET
+                               IsActive = 0,
+                               UpdatedAt =
+                                   CASE
+                                       WHEN SYSUTCDATETIME() <=
+                                            COALESCE(UpdatedAt, CreatedAt)
+                                       THEN DATEADD(
+                                           SECOND,
+                                           1,
+                                           COALESCE(UpdatedAt, CreatedAt))
+                                       ELSE SYSUTCDATETIME()
+                                   END
+                           WHERE Id = @AnnouncementId
+                             AND UserId = @OwnerUserId
+                             AND IsActive = 1;
+                           """;
+
+        await using var connection =
+            _connectionFactory.CreateConnection();
+
+        await connection.OpenAsync();
+
+        await using var command =
+            connection.CreateCommand();
+
+        command.CommandText = sql;
+
+        AddParameter(
+            command,
+            "@AnnouncementId",
+            announcementId);
+
+        AddParameter(
+            command,
+            "@OwnerUserId",
+            ownerUserId);
+
+        var affectedRows =
+            await command.ExecuteNonQueryAsync();
+
+        return affectedRows == 1;
+    }
+
     public Task<AnnouncementDetailsDto?> GetActiveByIdAsync(
         int announcementId)
     {

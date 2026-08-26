@@ -206,6 +206,9 @@ public class EditAnnouncementTests
                 : Task.FromException(UpdateException);
         }
 
+        public Task DeactivateAsync(int announcementId) =>
+            throw new NotSupportedException();
+
         public Task<CreateAnnouncementResult> CreateAsync(
             CreateAnnouncementDto request) =>
             throw new NotSupportedException();

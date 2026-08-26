@@ -14,6 +14,7 @@ public class FakeAnnouncementRepository : IAnnouncementRepository
     public int GetActiveByIdCallCount { get; private set; }
     public int SearchActiveCallCount { get; private set; }
     public int UpdateCallCount { get; private set; }
+    public int DeactivateCallCount { get; private set; }
     public int? LastRequestedAnnouncementId { get; private set; }
     public AnnouncementSearchDto? LastSearch { get; private set; }
 
@@ -25,6 +26,9 @@ public class FakeAnnouncementRepository : IAnnouncementRepository
     public bool LastUpdateWasAdministrator { get; private set; }
     public DateTime? LastExpectedUpdatedAt { get; private set; }
     public bool UpdateSucceeds { get; set; } = true;
+    public bool DeactivateSucceeds { get; set; } = true;
+    public int? LastDeactivatedAnnouncementId { get; private set; }
+    public int? LastDeactivateOwnerUserId { get; private set; }
 
     public Dictionary<int, AnnouncementDetailsDto> Details { get; } = [];
     public List<AnnouncementListItemDto> ActiveAnnouncements { get; } = [];
@@ -70,6 +74,17 @@ public class FakeAnnouncementRepository : IAnnouncementRepository
         LastUpdateWasAdministrator = isAdministrator;
         LastExpectedUpdatedAt = expectedUpdatedAt;
         return Task.FromResult(UpdateSucceeds);
+    }
+
+    public Task<bool> DeactivateForOwnerAsync(
+        int announcementId,
+        int ownerUserId)
+    {
+        DeactivateCallCount++;
+        LastDeactivatedAnnouncementId = announcementId;
+        LastDeactivateOwnerUserId = ownerUserId;
+
+        return Task.FromResult(DeactivateSucceeds);
     }
 
     public Task<AnnouncementDetailsDto?> GetByIdAsync(
