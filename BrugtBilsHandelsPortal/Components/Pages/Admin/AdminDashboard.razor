@@ -4,7 +4,76 @@
 <PageTitle>Administration</PageTitle>
 
 <div class="container py-4">
-    <h1>Administration</h1>
+    <div class="mb-4">
+        <h1>Administration</h1>
 
-    <p>Vælg et administrationsområde i navigationen.</p>
+        <p class="text-muted">
+            Vælg det område, du vil administrere.
+        </p>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-12 col-md-6 col-xl-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body d-flex flex-column">
+                    <h2 class="h4">
+                        Brugere
+                    </h2>
+
+                    <p class="text-muted flex-grow-1">
+                        Find brugere, se kontostatus og
+                        deaktivér konti ved misbrug.
+                    </p>
+
+                    <a href="/admin/users"
+                       class="btn btn-primary"
+                       data-testid="manage-users-link">
+                        Administrér brugere
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-6 col-xl-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body d-flex flex-column">
+                    <h2 class="h4">
+                        Annoncer og billeder
+                    </h2>
+
+                    <p class="text-muted flex-grow-1">
+                        Moderation af annoncer og billeder
+                        implementeres i US17.
+                    </p>
+
+                    <button type="button"
+                            class="btn btn-outline-secondary"
+                            disabled>
+                        Kommer senere
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-6 col-xl-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body d-flex flex-column">
+                    <h2 class="h4">
+                        Kommentarer
+                    </h2>
+
+                    <p class="text-muted flex-grow-1">
+                        Moderation af kommentarer
+                        implementeres i US18.
+                    </p>
+
+                    <button type="button"
+                            class="btn btn-outline-secondary"
+                            disabled>
+                        Kommer senere
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>

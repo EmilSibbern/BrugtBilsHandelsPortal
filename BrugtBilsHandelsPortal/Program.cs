@@ -13,7 +13,20 @@ using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
 using BrugtBilsHandelsPortal.Configuration;
 using BrugtBilsHandelsPortal.Storage;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication;
+
 var builder = WebApplication.CreateBuilder(args);
+
+static async Task RejectCookieAsync(
+    CookieValidatePrincipalContext context)
+{
+    context.RejectPrincipal();
+
+    await context.HttpContext.SignOutAsync(
+        CookieAuthenticationDefaults
+            .AuthenticationScheme);
+}
 
 // Razor Components og Interactive Server
 builder.Services
@@ -29,6 +42,14 @@ builder.Services.AddScoped<
 builder.Services.AddScoped<
     IUserRepository,
     UserRepository>();
+
+builder.Services.AddScoped<
+    IAuditLogRepository,
+    AuditLogRepository>();
+
+builder.Services.AddScoped<
+    IAdminUserService,
+    AdminUserService>();
 
 // Password hashing
 builder.Services.AddScoped<
@@ -113,6 +134,59 @@ builder.Services
 
         // Forlænger levetiden, når brugeren er aktiv.
         options.SlidingExpiration = true;
+
+        // Kontrollér ved efterfølgende HTTP-requests, at
+        // brugeren stadig er aktiv og har samme rolle.
+        options.Events.OnValidatePrincipal =
+            async context =>
+            {
+                var userIdValue =
+                    context.Principal?
+                        .FindFirst(
+                            ClaimTypes.NameIdentifier)?
+                        .Value;
+
+                if (!int.TryParse(
+                    userIdValue,
+                    out var userId))
+                {
+                    await RejectCookieAsync(context);
+                    return;
+                }
+
+                var userRepository =
+                    context.HttpContext
+                        .RequestServices
+                        .GetRequiredService<
+                            IUserRepository>();
+
+                // GetByIdAsync returnerer kun aktive brugere.
+                var activeUser =
+                    await userRepository
+                        .GetByIdAsync(userId);
+
+                if (activeUser is null)
+                {
+                    await RejectCookieAsync(context);
+                    return;
+                }
+
+                var cookieRole =
+                    context.Principal?
+                        .FindFirst(
+                            ClaimTypes.Role)?
+                        .Value;
+
+                // Ved en rolleændring skal brugeren logge ind
+                // igen og få en ny rolleclaim.
+                if (!string.Equals(
+                    cookieRole,
+                    activeUser.UserGroupName,
+                    StringComparison.Ordinal))
+                {
+                    await RejectCookieAsync(context);
+                }
+            };
     });
 
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();

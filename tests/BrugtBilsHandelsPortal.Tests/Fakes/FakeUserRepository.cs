@@ -1,4 +1,6 @@
 using BrugtBilsHandelsPortal.Data.Repositories.Interfaces;
+using BrugtBilsHandelsPortal.DTOs.Common;
+using BrugtBilsHandelsPortal.DTOs.Users;
 using BrugtBilsHandelsPortal.Models.Entities;
 
 namespace BrugtBilsHandelsPortal.Tests.Fakes;
@@ -8,6 +10,22 @@ public class FakeUserRepository : IUserRepository
     public List<User> Users { get; } = [];
 
     public User? CreatedUser { get; private set; }
+    public int SearchForAdministrationCallCount { get; private set; }
+    public int DeactivateWithAuditCallCount { get; private set; }
+    public int ReactivateWithAuditCallCount { get; private set; }
+    public AdminUserSearchDto? LastAdminSearch { get; private set; }
+    public int? LastTargetUserId { get; private set; }
+    public int? LastAdministratorUserId { get; private set; }
+    public Guid? LastCorrelationId { get; private set; }
+    public int? LastReactivatedUserId { get; private set; }
+    public int? LastReactivationAdministratorUserId { get; private set; }
+    public Guid? LastReactivationCorrelationId { get; private set; }
+
+    public AdminUserDeactivationStatus DeactivationStatus { get; set; } =
+        AdminUserDeactivationStatus.Succeeded;
+
+    public AdminUserActivationStatus ActivationStatus { get; set; } =
+        AdminUserActivationStatus.Succeeded;
 
     public Task<bool> TestConnectionAsync()
     {
@@ -116,5 +134,93 @@ public class FakeUserRepository : IUserRepository
         existingUser.Address = user.Address;
 
         return Task.FromResult(true);
+    }
+
+    public Task<PagedResult<AdminUserDto>>
+        SearchForAdministrationAsync(
+            AdminUserSearchDto search)
+    {
+        SearchForAdministrationCallCount++;
+        LastAdminSearch = search;
+
+        IEnumerable<User> query = Users;
+
+        if (!string.IsNullOrWhiteSpace(search.Query))
+        {
+            query = query.Where(user =>
+                user.Username.Contains(
+                    search.Query,
+                    StringComparison.OrdinalIgnoreCase)
+                || user.Email.Contains(
+                    search.Query,
+                    StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (search.IsActive.HasValue)
+        {
+            query = query.Where(user =>
+                user.IsActive == search.IsActive.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(search.Role))
+        {
+            query = query.Where(user =>
+                string.Equals(
+                    user.UserGroupName,
+                    search.Role,
+                    StringComparison.Ordinal));
+        }
+
+        var matchingUsers = query.ToList();
+        var users = matchingUsers
+            .Skip((search.Page - 1) * search.PageSize)
+            .Take(search.PageSize)
+            .Select(user => new AdminUserDto
+            {
+                Id = user.Id,
+                Username = user.Username,
+                Email = user.Email,
+                Role = user.UserGroupName,
+                IsActive = user.IsActive,
+                CreatedAt = user.CreatedAt
+            })
+            .ToArray();
+
+        return Task.FromResult(
+            new PagedResult<AdminUserDto>
+            {
+                Items = users,
+                Page = search.Page,
+                PageSize = search.PageSize,
+                TotalItems = matchingUsers.Count
+            });
+    }
+
+    public Task<AdminUserDeactivationStatus>
+        DeactivateWithAuditAsync(
+            int targetUserId,
+            int administratorUserId,
+            Guid correlationId)
+    {
+        DeactivateWithAuditCallCount++;
+        LastTargetUserId = targetUserId;
+        LastAdministratorUserId = administratorUserId;
+        LastCorrelationId = correlationId;
+
+        return Task.FromResult(DeactivationStatus);
+    }
+
+    public Task<AdminUserActivationStatus>
+        ReactivateWithAuditAsync(
+            int targetUserId,
+            int administratorUserId,
+            Guid correlationId)
+    {
+        ReactivateWithAuditCallCount++;
+        LastReactivatedUserId = targetUserId;
+        LastReactivationAdministratorUserId = administratorUserId;
+        LastReactivationCorrelationId = correlationId;
+
+        return Task.FromResult(ActivationStatus);
     }
 }
