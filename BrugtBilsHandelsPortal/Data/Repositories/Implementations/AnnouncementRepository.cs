@@ -107,7 +107,7 @@ public class AnnouncementRepository : IAnnouncementRepository
         DateTime? expectedUpdatedAt)
     {
         const string updateAnnouncementSql = """
-                                             UPDATE a
+                                             UPDATE announcement
                                              SET
                                                  Title = @Title,
                                                  Description = @Description,
@@ -115,27 +115,27 @@ public class AnnouncementRepository : IAnnouncementRepository
                                                  UpdatedAt =
                                                      CASE
                                                          WHEN @UpdatedAt <=
-                                                              COALESCE(a.UpdatedAt, a.CreatedAt)
+                                                              COALESCE(announcement.UpdatedAt, announcement.CreatedAt)
                                                          THEN DATEADD(
                                                              SECOND,
                                                              1,
-                                                             COALESCE(a.UpdatedAt, a.CreatedAt))
+                                                             COALESCE(announcement.UpdatedAt, announcement.CreatedAt))
                                                          ELSE @UpdatedAt
                                                      END
-                                             FROM dbo.Announcement AS a
-                                             WHERE a.Id = @AnnouncementId
+                                             FROM dbo.Announcement AS announcement
+                                             WHERE announcement.Id = @AnnouncementId
                                                AND
                                                (
-                                                   a.UserId = @ActorUserId
+                                                   announcement.UserId = @ActorUserId
                                                    OR @IsAdministrator = 1
                                                )
                                                AND
                                                (
                                                    (
-                                                       a.UpdatedAt IS NULL
+                                                       announcement.UpdatedAt IS NULL
                                                        AND @ExpectedUpdatedAt IS NULL
                                                    )
-                                                   OR a.UpdatedAt = @ExpectedUpdatedAt
+                                                   OR announcement.UpdatedAt = @ExpectedUpdatedAt
                                                );
                                              """;
 
@@ -273,6 +273,159 @@ public class AnnouncementRepository : IAnnouncementRepository
         }
     }
 
+    public async Task<IReadOnlyList<AnnouncementListItemDto>>
+        GetByUserIdAsync(
+            int userId)
+    {
+        const string sql = """
+                           SELECT
+                               announcement.Id,
+                               announcement.Title,
+                               announcement.Price,
+                               announcement.CreatedAt,
+                               announcement.IsActive,
+                               carBrand.BrandName,
+                               car.Model,
+                               car.ProductionYear,
+                               car.Mileage,
+                               primaryImage.FileName AS PrimaryImageFileName
+                           FROM dbo.Announcement AS announcement
+                           INNER JOIN dbo.Users AS seller
+                               ON seller.Id = announcement.UserId
+                           INNER JOIN dbo.Car AS car
+                               ON car.CarId = announcement.CarId
+                           INNER JOIN dbo.CarBrand AS carBrand
+                               ON carBrand.BrandId = car.BrandId
+                           OUTER APPLY
+                           (
+                               SELECT TOP (1) image.FileName
+                               FROM dbo.Images AS image
+                               WHERE image.AnnouncementId = announcement.Id
+                               ORDER BY image.IsPrimary DESC,
+                                        image.SortOrder,
+                                        image.Id
+                           ) AS primaryImage
+                           WHERE announcement.UserId = @UserId
+                             AND seller.IsActive = 1
+                           ORDER BY announcement.CreatedAt DESC,
+                                    announcement.Id DESC;
+                           """;
+
+        await using var connection =
+            _connectionFactory.CreateConnection();
+
+        await connection.OpenAsync();
+
+        await using var command =
+            connection.CreateCommand();
+
+        command.CommandText = sql;
+
+        AddParameter(
+            command,
+            "@UserId",
+            userId);
+
+        await using var reader =
+            await command.ExecuteReaderAsync();
+
+        var announcements =
+            new List<AnnouncementListItemDto>();
+
+        var imageOrdinal =
+            reader.GetOrdinal("PrimaryImageFileName");
+
+        while (await reader.ReadAsync())
+        {
+            announcements.Add(
+                new AnnouncementListItemDto
+                {
+                    Id = reader.GetInt32(
+                        reader.GetOrdinal("Id")),
+
+                    Title = reader.GetString(
+                        reader.GetOrdinal("Title")),
+
+                    Price = reader.GetInt32(
+                        reader.GetOrdinal("Price")),
+
+                    CreatedAt = reader.GetDateTime(
+                        reader.GetOrdinal("CreatedAt")),
+
+                    IsActive = reader.GetBoolean(
+                        reader.GetOrdinal("IsActive")),
+
+                    BrandName = reader.GetString(
+                        reader.GetOrdinal("BrandName")),
+
+                    Model = reader.GetString(
+                        reader.GetOrdinal("Model")),
+
+                    ProductionYear = reader.GetInt16(
+                        reader.GetOrdinal("ProductionYear")),
+
+                    Mileage = reader.GetInt32(
+                        reader.GetOrdinal("Mileage")),
+
+                    PrimaryImageFileName =
+                        reader.IsDBNull(imageOrdinal)
+                            ? null
+                            : reader.GetString(imageOrdinal)
+                });
+        }
+
+        return announcements;
+    }
+
+    public async Task<bool> ActivateForOwnerAsync(
+        int announcementId,
+        int ownerUserId)
+    {
+        const string sql = """
+                           UPDATE dbo.Announcement
+                           SET
+                               IsActive = 1,
+                               UpdatedAt =
+                                   CASE
+                                       WHEN SYSUTCDATETIME() <=
+                                            COALESCE(UpdatedAt, CreatedAt)
+                                       THEN DATEADD(
+                                           SECOND,
+                                           1,
+                                           COALESCE(UpdatedAt, CreatedAt))
+                                       ELSE SYSUTCDATETIME()
+                                   END
+                           WHERE Id = @AnnouncementId
+                             AND UserId = @OwnerUserId
+                             AND IsActive = 0;
+                           """;
+
+        await using var connection =
+            _connectionFactory.CreateConnection();
+
+        await connection.OpenAsync();
+
+        await using var command =
+            connection.CreateCommand();
+
+        command.CommandText = sql;
+
+        AddParameter(
+            command,
+            "@AnnouncementId",
+            announcementId);
+
+        AddParameter(
+            command,
+            "@OwnerUserId",
+            ownerUserId);
+
+        var affectedRows =
+            await command.ExecuteNonQueryAsync();
+
+        return affectedRows == 1;
+    }
+
     public async Task<bool> DeactivateForOwnerAsync(
         int announcementId,
         int ownerUserId)
@@ -346,38 +499,38 @@ public class AnnouncementRepository : IAnnouncementRepository
     {
         const string sql = """
                            SELECT TOP (1)
-                               a.Id,
-                               a.Title,
-                               a.Description,
-                               a.Price,
-                               a.CreatedAt,
-                               a.UpdatedAt,
-                               a.IsActive,
+                               announcement.Id,
+                               announcement.Title,
+                               announcement.Description,
+                               announcement.Price,
+                               announcement.CreatedAt,
+                               announcement.UpdatedAt,
+                               announcement.IsActive,
 
-                               a.UserId AS SellerUserId,
-                               u.Username AS SellerUsername,
+                               announcement.UserId AS SellerUserId,
+                               seller.Username AS SellerUsername,
 
-                               c.CarId,
-                               c.BrandId,
-                               cb.BrandName,
-                               c.Model,
-                               c.ProductionYear,
-                               c.Mileage,
-                               c.Color
-                           FROM dbo.Announcement AS a
-                           INNER JOIN dbo.Users AS u
-                               ON u.Id = a.UserId
-                           INNER JOIN dbo.Car AS c
-                               ON c.CarId = a.CarId
-                           INNER JOIN dbo.CarBrand AS cb
-                               ON cb.BrandId = c.BrandId
-                           WHERE a.Id = @AnnouncementId
+                               car.CarId,
+                               car.BrandId,
+                               carBrand.BrandName,
+                               car.Model,
+                               car.ProductionYear,
+                               car.Mileage,
+                               car.Color
+                           FROM dbo.Announcement AS announcement
+                           INNER JOIN dbo.Users AS seller
+                               ON seller.Id = announcement.UserId
+                           INNER JOIN dbo.Car AS car
+                               ON car.CarId = announcement.CarId
+                           INNER JOIN dbo.CarBrand AS carBrand
+                               ON carBrand.BrandId = car.BrandId
+                           WHERE announcement.Id = @AnnouncementId
                              AND
                              (
                                  @OnlyActive = 0
-                                 OR a.IsActive = 1
+                                 OR announcement.IsActive = 1
                              )
-                             AND u.IsActive = 1;
+                             AND seller.IsActive = 1;
                            """;
 
         await using var connection =

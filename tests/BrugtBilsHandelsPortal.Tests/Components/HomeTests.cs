@@ -158,6 +158,13 @@ public class HomeTests
             UpdateAnnouncementDto request) =>
             throw new NotSupportedException();
 
+        public Task<IReadOnlyList<AnnouncementListItemDto>>
+            GetMineAsync() =>
+            throw new NotSupportedException();
+
+        public Task ActivateAsync(int announcementId) =>
+            throw new NotSupportedException();
+
         public Task DeactivateAsync(int announcementId) =>
             throw new NotSupportedException();
 

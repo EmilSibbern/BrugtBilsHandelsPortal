@@ -267,6 +267,74 @@ public class AnnouncementService : IAnnouncementService
         }
     }
 
+    public async Task<IReadOnlyList<AnnouncementListItemDto>>
+        GetMineAsync()
+    {
+        var currentUserId =
+            await _currentUserService.GetUserIdAsync();
+
+        if (currentUserId is null)
+        {
+            return Array.Empty<AnnouncementListItemDto>();
+        }
+
+        return await _announcementRepository
+            .GetByUserIdAsync(currentUserId.Value);
+    }
+
+    public async Task ActivateAsync(
+        int announcementId)
+    {
+        if (announcementId <= 0)
+        {
+            throw new ValidationException(
+                "Annoncen er ugyldig.");
+        }
+
+        var currentUserId =
+            await _currentUserService.GetUserIdAsync();
+
+        if (currentUserId is null)
+        {
+            throw new UnauthorizedAccessException(
+                "Du skal være logget ind for at aktivere en annonce.");
+        }
+
+        var announcement =
+            await _announcementRepository.GetByIdAsync(
+                announcementId);
+
+        if (announcement is null)
+        {
+            throw new InvalidOperationException(
+                "Annoncen findes ikke.");
+        }
+
+        if (announcement.SellerUserId != currentUserId.Value)
+        {
+            throw new UnauthorizedAccessException(
+                "Du har ikke adgang til at aktivere annoncen.");
+        }
+
+        if (announcement.IsActive)
+        {
+            throw new InvalidOperationException(
+                "Annoncen er allerede aktiv.");
+        }
+
+        var wasActivated =
+            await _announcementRepository
+                .ActivateForOwnerAsync(
+                    announcementId,
+                    currentUserId.Value);
+
+        if (!wasActivated)
+        {
+            throw new InvalidOperationException(
+                "Annoncen kunne ikke aktiveres. Genindlæs siden og prøv igen.");
+        }
+    }
+
     public async Task DeactivateAsync(
         int announcementId)
     {

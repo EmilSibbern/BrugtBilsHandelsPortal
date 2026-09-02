@@ -14,5 +14,7 @@ public class AnnouncementListItemDto
     public int ProductionYear { get; set; }
     public int Mileage { get; set; }
 
+    public bool IsActive { get; set; }
+
     public string? PrimaryImageFileName { get; set; }
 }

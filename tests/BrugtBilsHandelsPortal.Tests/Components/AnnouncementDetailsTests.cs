@@ -456,6 +456,13 @@ public class AnnouncementDetailsTests
         public Task UpdateAsync(UpdateAnnouncementDto request) =>
             throw new NotSupportedException();
 
+        public Task<IReadOnlyList<AnnouncementListItemDto>>
+            GetMineAsync() =>
+            throw new NotSupportedException();
+
+        public Task ActivateAsync(int announcementId) =>
+            throw new NotSupportedException();
+
         public Task DeactivateAsync(int announcementId)
         {
             DeactivateCallCount++;

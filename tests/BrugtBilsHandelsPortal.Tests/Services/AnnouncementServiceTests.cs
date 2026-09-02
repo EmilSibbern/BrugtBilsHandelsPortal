@@ -624,6 +624,93 @@ public class AnnouncementServiceTests
     }
 
     [Fact]
+    [Trait("UserStory", "US09")]
+    public async Task GetMineAsync_AsUser_ReturnsCurrentUsersAnnouncements()
+    {
+        var repository = new FakeAnnouncementRepository();
+
+        repository.UserAnnouncements.Add(
+            CreateAnnouncementListItem(
+                id: 42,
+                title: "Min Skoda"));
+
+        var service = CreateService(
+            repository,
+            CreateCarBrandRepository(),
+            userId: 7);
+
+        var announcements =
+            await service.GetMineAsync();
+
+        var announcement = Assert.Single(announcements);
+        Assert.Equal(42, announcement.Id);
+        Assert.Equal("Min Skoda", announcement.Title);
+        Assert.Equal(7, repository.LastRequestedUserId);
+        Assert.Equal(1, repository.GetByUserIdCallCount);
+    }
+
+    [Fact]
+    [Trait("UserStory", "US09")]
+    public async Task GetMineAsync_AsGuest_DoesNotCallRepository()
+    {
+        var repository = new FakeAnnouncementRepository();
+
+        var service = CreateService(
+            repository,
+            CreateCarBrandRepository(),
+            userId: null);
+
+        var announcements =
+            await service.GetMineAsync();
+
+        Assert.Empty(announcements);
+        Assert.Equal(0, repository.GetByUserIdCallCount);
+    }
+
+    [Fact]
+    [Trait("UserStory", "US09")]
+    public async Task ActivateAsync_AsOwner_ActivatesOwnInactiveAnnouncement()
+    {
+        var repository = new FakeAnnouncementRepository();
+
+        repository.Details[42] = CreateAnnouncementDetails(
+            42,
+            isActive: false);
+
+        var service = CreateService(
+            repository,
+            CreateCarBrandRepository(),
+            userId: 7);
+
+        await service.ActivateAsync(42);
+
+        Assert.Equal(1, repository.ActivateCallCount);
+        Assert.Equal(42, repository.LastActivatedAnnouncementId);
+        Assert.Equal(7, repository.LastActivateOwnerUserId);
+    }
+
+    [Fact]
+    [Trait("UserStory", "US09")]
+    public async Task ActivateAsync_AsDifferentUser_IsRejectedBeforeMutation()
+    {
+        var repository = new FakeAnnouncementRepository();
+
+        repository.Details[42] = CreateAnnouncementDetails(
+            42,
+            isActive: false);
+
+        var service = CreateService(
+            repository,
+            CreateCarBrandRepository(),
+            userId: 99);
+
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => service.ActivateAsync(42));
+
+        Assert.Equal(0, repository.ActivateCallCount);
+    }
+
+    [Fact]
     [Trait("UserStory", "US08")]
     public async Task DeactivateAsync_AsOwner_DeactivatesOwnActiveAnnouncement()
     {
