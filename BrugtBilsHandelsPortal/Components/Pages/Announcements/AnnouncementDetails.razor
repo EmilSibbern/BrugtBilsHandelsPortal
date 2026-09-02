@@ -49,7 +49,7 @@
     else
     {
         @if (!string.IsNullOrWhiteSpace(
-            _actionSuccessMessage))
+                     _actionSuccessMessage))
         {
             <div class="alert alert-success"
                  role="status"
@@ -59,7 +59,7 @@
         }
 
         @if (!string.IsNullOrWhiteSpace(
-            _actionErrorMessage))
+                     _actionErrorMessage))
         {
             <div class="alert alert-danger"
                  role="alert"
@@ -351,10 +351,10 @@
 </div>
 
 @code {
+
     // Route-parameteren kan ændres uden at komponenten
     // genskabes, så state nulstilles ved hvert opslag.
-    [Parameter]
-    public int Id { get; set; }
+    [Parameter] public int Id { get; set; }
 
     private AnnouncementDetailsDto? _announcement;
 
@@ -576,4 +576,5 @@
     {
         _showContactMessage = false;
     }
+
 }

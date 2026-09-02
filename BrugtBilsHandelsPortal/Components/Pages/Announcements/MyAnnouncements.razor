@@ -10,22 +10,33 @@
 
 <PageTitle>Mine annoncer</PageTitle>
 
-<div class="container py-4">
-    <div class="d-flex justify-content-between
-                align-items-center mb-4">
-        <h1 class="mb-0">
-            Mine annoncer
-        </h1>
+<div class="container py-4 my-announcements-page">
+    <div class="page-header d-flex flex-column flex-sm-row
+                justify-content-between align-items-sm-end
+                gap-3 mb-4">
+        <div>
+            <p class="page-kicker mb-2">Dit bilmarked</p>
+
+            <h1 class="mb-1">Mine annoncer</h1>
+
+            <p class="text-muted mb-0">
+                Rediger dine annoncer, og vælg hvilke der skal være synlige.
+            </p>
+        </div>
 
         <a href="/announcements/create"
-           class="btn btn-primary">
+           class="btn btn-primary flex-shrink-0">
             Opret annonce
         </a>
     </div>
 
     @if (_isLoading)
     {
-        <p>Indlæser dine annoncer...</p>
+        <div class="loading-state" role="status">
+            <span class="spinner-border spinner-border-sm"
+                  aria-hidden="true"></span>
+            <span>Indlæser dine annoncer...</span>
+        </div>
     }
     else
     {
@@ -47,9 +58,16 @@
 
         @if (_announcements.Count == 0)
         {
-            <div class="alert alert-info"
-                 role="alert">
-                Du har ikke oprettet nogen annoncer endnu.
+            <div class="empty-state" role="status">
+                <div class="empty-state-icon" aria-hidden="true">+</div>
+                <h2 class="h4 mb-2">Ingen annoncer endnu</h2>
+                <p class="text-muted mb-4">
+                    Du har ikke oprettet nogen annoncer endnu.
+                </p>
+                <a href="/announcements/create"
+                   class="btn btn-primary">
+                    Opret din første annonce
+                </a>
             </div>
         }
         else
@@ -58,12 +76,12 @@
                 @foreach (var announcement in _announcements)
                 {
                     <div class="col-12 col-md-6 col-xl-4">
-                        <div class="card h-100 shadow-sm">
-                            <div class="ratio ratio-16x9 bg-light">
+                        <article class="card announcement-card h-100 shadow-sm">
+                            <div class="ratio ratio-16x9 bg-light announcement-image">
                                 @if (string.IsNullOrWhiteSpace(
                                          announcement.PrimaryImageFileName))
                                 {
-                                    <div class="d-flex align-items-center
+                                    <div class="image-placeholder d-flex align-items-center
                                                 justify-content-center
                                                 text-secondary">
                                         Intet billede
@@ -77,7 +95,7 @@
                                 }
                             </div>
 
-                            <div class="card-body d-flex flex-column">
+                            <div class="card-body d-flex flex-column p-4">
                                 <div class="d-flex justify-content-between
                                             gap-2 mb-2">
                                     <h2 class="h5 card-title mb-0">
@@ -86,13 +104,13 @@
 
                                     @if (announcement.IsActive)
                                     {
-                                        <span class="badge text-bg-success">
+                                        <span class="badge status-badge status-active">
                                             Aktiv
                                         </span>
                                     }
                                     else
                                     {
-                                        <span class="badge text-bg-secondary">
+                                        <span class="badge status-badge status-inactive">
                                             Inaktiv
                                         </span>
                                     }
@@ -108,7 +126,8 @@
                                     @($"{announcement.Mileage:N0} km")
                                 </p>
 
-                                <p class="fs-4 fw-semibold text-primary mt-auto">
+                                <p class="announcement-price fs-4 fw-semibold
+                                          text-primary mt-auto mb-3">
                                     @($"{announcement.Price:N0} kr.")
                                 </p>
 
@@ -128,7 +147,7 @@
                                     </button>
                                 </div>
                             </div>
-                        </div>
+                        </article>
                     </div>
                 }
             </div>
