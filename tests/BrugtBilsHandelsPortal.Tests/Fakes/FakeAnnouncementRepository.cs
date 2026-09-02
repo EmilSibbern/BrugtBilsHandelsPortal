@@ -14,8 +14,11 @@ public class FakeAnnouncementRepository : IAnnouncementRepository
     public int GetActiveByIdCallCount { get; private set; }
     public int SearchActiveCallCount { get; private set; }
     public int UpdateCallCount { get; private set; }
+    public int GetByUserIdCallCount { get; private set; }
+    public int ActivateCallCount { get; private set; }
     public int DeactivateCallCount { get; private set; }
     public int? LastRequestedAnnouncementId { get; private set; }
+    public int? LastRequestedUserId { get; private set; }
     public AnnouncementSearchDto? LastSearch { get; private set; }
 
     public Car? CreatedCar { get; private set; }
@@ -26,12 +29,16 @@ public class FakeAnnouncementRepository : IAnnouncementRepository
     public bool LastUpdateWasAdministrator { get; private set; }
     public DateTime? LastExpectedUpdatedAt { get; private set; }
     public bool UpdateSucceeds { get; set; } = true;
+    public bool ActivateSucceeds { get; set; } = true;
     public bool DeactivateSucceeds { get; set; } = true;
+    public int? LastActivatedAnnouncementId { get; private set; }
+    public int? LastActivateOwnerUserId { get; private set; }
     public int? LastDeactivatedAnnouncementId { get; private set; }
     public int? LastDeactivateOwnerUserId { get; private set; }
 
     public Dictionary<int, AnnouncementDetailsDto> Details { get; } = [];
     public List<AnnouncementListItemDto> ActiveAnnouncements { get; } = [];
+    public List<AnnouncementListItemDto> UserAnnouncements { get; } = [];
 
     public Task<int> CreateAsync(
         Car car,
@@ -74,6 +81,28 @@ public class FakeAnnouncementRepository : IAnnouncementRepository
         LastUpdateWasAdministrator = isAdministrator;
         LastExpectedUpdatedAt = expectedUpdatedAt;
         return Task.FromResult(UpdateSucceeds);
+    }
+
+    public Task<IReadOnlyList<AnnouncementListItemDto>>
+        GetByUserIdAsync(
+            int userId)
+    {
+        GetByUserIdCallCount++;
+        LastRequestedUserId = userId;
+
+        return Task.FromResult<IReadOnlyList<AnnouncementListItemDto>>(
+            UserAnnouncements);
+    }
+
+    public Task<bool> ActivateForOwnerAsync(
+        int announcementId,
+        int ownerUserId)
+    {
+        ActivateCallCount++;
+        LastActivatedAnnouncementId = announcementId;
+        LastActivateOwnerUserId = ownerUserId;
+
+        return Task.FromResult(ActivateSucceeds);
     }
 
     public Task<bool> DeactivateForOwnerAsync(

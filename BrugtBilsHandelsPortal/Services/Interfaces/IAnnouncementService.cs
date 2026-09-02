@@ -20,6 +20,14 @@ public interface IAnnouncementService
     /// <summary>Validerer og opdaterer en annonce for ejer eller administrator.</summary>
     Task UpdateAsync(UpdateAnnouncementDto request);
 
+    /// <summary>Henter den aktuelle brugers egne annoncer.</summary>
+    Task<IReadOnlyList<AnnouncementListItemDto>> GetMineAsync();
+
+    /// <summary>
+    /// Aktiverer en inaktiv annonce, hvis den aktuelle bruger ejer den.
+    /// </summary>
+    Task ActivateAsync(int announcementId);
+
     /// <summary>
     /// Deaktiverer en aktiv annonce, hvis den aktuelle bruger ejer den.
     /// </summary>

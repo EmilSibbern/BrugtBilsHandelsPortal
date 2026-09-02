@@ -23,6 +23,17 @@ public interface IAnnouncementRepository
         bool isAdministrator,
         DateTime? expectedUpdatedAt);
 
+    /// <summary>Henter alle annoncer for den angivne bruger.</summary>
+    Task<IReadOnlyList<AnnouncementListItemDto>> GetByUserIdAsync(
+        int userId);
+
+    /// <summary>
+    /// Aktiverer en inaktiv annonce, hvis den tilhører den angivne bruger.
+    /// </summary>
+    Task<bool> ActivateForOwnerAsync(
+        int announcementId,
+        int ownerUserId);
+
     /// <summary>
     /// Deaktiverer en aktiv annonce, hvis den tilhører den angivne bruger.
     /// Returnerer false, hvis annoncen ikke findes, allerede er inaktiv

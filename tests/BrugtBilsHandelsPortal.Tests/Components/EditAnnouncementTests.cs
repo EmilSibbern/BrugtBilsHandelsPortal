@@ -209,6 +209,13 @@ public class EditAnnouncementTests
         public Task DeactivateAsync(int announcementId) =>
             throw new NotSupportedException();
 
+        public Task<IReadOnlyList<AnnouncementListItemDto>>
+            GetMineAsync() =>
+            throw new NotSupportedException();
+
+        public Task ActivateAsync(int announcementId) =>
+            throw new NotSupportedException();
+
         public Task<CreateAnnouncementResult> CreateAsync(
             CreateAnnouncementDto request) =>
             throw new NotSupportedException();
