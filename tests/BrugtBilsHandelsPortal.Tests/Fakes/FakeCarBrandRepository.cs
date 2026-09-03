@@ -18,7 +18,6 @@ public class FakeCarBrandRepository : ICarBrandRepository
     {
         ExistsCallCount++;
 
-        return Task.FromResult(
-            Brands.Any(brand => brand.BrandId == brandId));
+        return Task.FromResult(Brands.Any(brand => brand.BrandId == brandId));
     }
 }

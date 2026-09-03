@@ -24,8 +24,7 @@
                     Profilen kunne ikke indlæses.
                 </div>
 
-                <a href="/Profile"
-                   class="btn btn-outline-secondary">
+                <a href="/Profile" class="btn btn-outline-secondary">
                     Tilbage til profil
                 </a>
             }
@@ -45,9 +44,7 @@
                     </div>
                 }
 
-                <EditForm Model="_model"
-                          OnValidSubmit="HandleUpdateAsync"
-                          FormName="edit-profile-form">
+                <EditForm Model="_model" OnValidSubmit="HandleUpdateAsync" FormName="edit-profile-form">
 
                     <DataAnnotationsValidator />
 
@@ -58,13 +55,9 @@
                             Brugernavn
                         </label>
 
-                        <InputText id="username"
-                                   class="form-control"
-                                   autocomplete="username"
-                                   @bind-Value="_model.Username" />
+                        <InputText id="username" class="form-control" autocomplete="username" @bind-Value="_model.Username" />
 
-                        <ValidationMessage
-                            For="@(() => _model.Username)" />
+                        <ValidationMessage For="@(() => _model.Username)" />
                     </div>
 
                     <div class="mb-3">
@@ -72,14 +65,9 @@
                             E-mail
                         </label>
 
-                        <InputText id="email"
-                                   type="email"
-                                   class="form-control"
-                                   autocomplete="email"
-                                   @bind-Value="_model.Email" />
+                        <InputText id="email" type="email" class="form-control" autocomplete="email" @bind-Value="_model.Email" />
 
-                        <ValidationMessage
-                            For="@(() => _model.Email)" />
+                        <ValidationMessage For="@(() => _model.Email)" />
                     </div>
 
                     <div class="mb-3">
@@ -87,14 +75,9 @@
                             Telefonnummer
                         </label>
 
-                        <InputText id="phone"
-                                   type="tel"
-                                   class="form-control"
-                                   autocomplete="tel"
-                                   @bind-Value="_model.Phone" />
+                        <InputText id="phone" type="tel" class="form-control" autocomplete="tel" @bind-Value="_model.Phone" />
 
-                        <ValidationMessage
-                            For="@(() => _model.Phone)" />
+                        <ValidationMessage For="@(() => _model.Phone)" />
                     </div>
 
                     <div class="mb-3">
@@ -102,23 +85,16 @@
                             Adresse
                         </label>
 
-                        <InputText id="address"
-                                   class="form-control"
-                                   autocomplete="street-address"
-                                   @bind-Value="_model.Address" />
+                        <InputText id="address" class="form-control" autocomplete="street-address" @bind-Value="_model.Address" />
 
-                        <ValidationMessage
-                            For="@(() => _model.Address)" />
+                        <ValidationMessage For="@(() => _model.Address)" />
                     </div>
 
                     <div class="d-flex gap-2">
-                        <button type="submit"
-                                class="btn btn-primary"
-                                disabled="@_isSubmitting">
+                        <button type="submit" class="btn btn-primary" disabled="@_isSubmitting">
                             @if (_isSubmitting)
                             {
-                                <span class="spinner-border spinner-border-sm me-2"
-                                      aria-hidden="true"></span>
+                                <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
 
                                 <span>Gemmer...</span>
                             }
@@ -128,8 +104,7 @@
                             }
                         </button>
 
-                        <a href="/Profile"
-                           class="btn btn-outline-secondary">
+                        <a href="/Profile" class="btn btn-outline-secondary">
                             Tilbage
                         </a>
                     </div>
@@ -154,8 +129,7 @@
     {
         try
         {
-            var profile =
-                await UserService.GetCurrentProfileAsync();
+            var profile = await UserService.GetCurrentProfileAsync();
 
             if (profile is null)
             {
@@ -190,25 +164,20 @@
 
         try
         {
-            var result =
-                await UserService.UpdateCurrentProfileAsync(_model);
+            var result = await UserService.UpdateCurrentProfileAsync(_model);
 
             if (!result.Succeeded)
             {
-                _errorMessage =
-                    result.ErrorMessage
-                    ?? "Profilen kunne ikke opdateres.";
+                _errorMessage = result.ErrorMessage ?? "Profilen kunne ikke opdateres.";
 
                 return;
             }
 
-            _successMessage =
-                "Dine profiloplysninger er blevet gemt.";
+            _successMessage = "Dine profiloplysninger er blevet gemt.";
         }
         catch
         {
-            _errorMessage =
-                "Der opstod en fejl. Prøv igen.";
+            _errorMessage = "Der opstod en fejl. Prøv igen.";
         }
         finally
         {

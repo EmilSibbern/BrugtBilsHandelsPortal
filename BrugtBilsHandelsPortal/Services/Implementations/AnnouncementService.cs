@@ -10,27 +10,20 @@ namespace BrugtBilsHandelsPortal.Services.Implementations;
 /// <summary>Samler validering, autorisation og normalisering for annoncens use cases.</summary>
 public class AnnouncementService : IAnnouncementService
 {
-    private readonly IAnnouncementRepository
-        _announcementRepository;
+    private readonly IAnnouncementRepository _announcementRepository;
 
-    private readonly ICarBrandRepository
-        _carBrandRepository;
+    private readonly ICarBrandRepository _carBrandRepository;
 
-    private readonly ICurrentUserService
-        _currentUserService;
+    private readonly ICurrentUserService _currentUserService;
 
-    public AnnouncementService(
-        IAnnouncementRepository announcementRepository,
-        ICarBrandRepository carBrandRepository,
-        ICurrentUserService currentUserService)
+    public AnnouncementService(IAnnouncementRepository announcementRepository, ICarBrandRepository carBrandRepository, ICurrentUserService currentUserService)
     {
         _announcementRepository = announcementRepository;
         _carBrandRepository = carBrandRepository;
         _currentUserService = currentUserService;
     }
 
-    public Task<IReadOnlyList<CarBrand>>
-        GetCarBrandsAsync()
+    public Task<IReadOnlyList<CarBrand>> GetCarBrandsAsync()
     {
         return _carBrandRepository.GetAllAsync();
     }
@@ -39,26 +32,18 @@ public class AnnouncementService : IAnnouncementService
     {
         var validationResults = new List<ValidationResult>();
 
-        var isValid = Validator.TryValidateObject(
-            request,
-            new ValidationContext(request),
-            validationResults,
-            validateAllProperties: true);
+        var isValid = Validator.TryValidateObject(request, new ValidationContext(request), validationResults, validateAllProperties: true);
 
         if (!isValid)
         {
-            return CreateAnnouncementResult.Failed(
-                validationResults.First().ErrorMessage
-                ?? "Annonceoplysningerne er ugyldige.");
+            return CreateAnnouncementResult.Failed(validationResults.First().ErrorMessage ?? "Annonceoplysningerne er ugyldige.");
         }
 
-        var userId =
-            await _currentUserService.GetUserIdAsync();
+        var userId = await _currentUserService.GetUserIdAsync();
 
         if (userId is null)
         {
-            return CreateAnnouncementResult.Failed(
-                "Du skal være logget ind for at oprette en annonce.");
+            return CreateAnnouncementResult.Failed("Du skal være logget ind for at oprette en annonce.");
         }
 
         // UTC gør årstalskontrollen uafhængig af serverens lokale tidszone.
@@ -66,31 +51,24 @@ public class AnnouncementService : IAnnouncementService
 
         if (request.ProductionYear > currentYear + 1)
         {
-            return CreateAnnouncementResult.Failed(
-                "Produktionsåret kan ikke ligge i fremtiden.");
+            return CreateAnnouncementResult.Failed("Produktionsåret kan ikke ligge i fremtiden.");
         }
 
-        var brandExists =
-            await _carBrandRepository.ExistsAsync(
-                request.BrandId);
+        var brandExists = await _carBrandRepository.ExistsAsync(request.BrandId);
 
         if (!brandExists)
         {
-            return CreateAnnouncementResult.Failed(
-                "Det valgte bilmærke findes ikke.");
+            return CreateAnnouncementResult.Failed("Det valgte bilmærke findes ikke.");
         }
 
         var car = new Car
         {
             BrandId = request.BrandId,
             Model = request.Model.Trim(),
-            ProductionYear =
-                checked((short)request.ProductionYear),
+            ProductionYear = checked((short)request.ProductionYear),
             Mileage = request.Mileage,
 
-            Color = string.IsNullOrWhiteSpace(request.Color)
-                ? null
-                : request.Color.Trim()
+            Color = string.IsNullOrWhiteSpace(request.Color) ? null : request.Color.Trim()
         };
 
         var announcement = new Announcement
@@ -101,52 +79,39 @@ public class AnnouncementService : IAnnouncementService
             Price = request.Price
         };
 
-        var announcementId =
-            await _announcementRepository.CreateAsync(
-                car,
-                announcement);
+        var announcementId = await _announcementRepository.CreateAsync(car, announcement);
 
-        return CreateAnnouncementResult.Successful(
-            announcementId);
+        return CreateAnnouncementResult.Successful(announcementId);
     }
 
-    public async Task<UpdateAnnouncementDto?> GetForEditAsync(
-        int announcementId)
+    public async Task<UpdateAnnouncementDto?> GetForEditAsync(int announcementId)
     {
         if (announcementId <= 0)
         {
             return null;
         }
 
-        var currentUserId =
-            await _currentUserService.GetUserIdAsync();
+        var currentUserId = await _currentUserService.GetUserIdAsync();
 
         if (currentUserId is null)
         {
-            throw new UnauthorizedAccessException(
-                "Du skal være logget ind for at redigere en annonce.");
+            throw new UnauthorizedAccessException("Du skal være logget ind for at redigere en annonce.");
         }
 
-        var announcement =
-            await _announcementRepository.GetByIdAsync(
-                announcementId);
+        var announcement = await _announcementRepository.GetByIdAsync(announcementId);
 
         if (announcement is null)
         {
             return null;
         }
 
-        var isAdministrator =
-            await _currentUserService.IsInRoleAsync(
-                "Administrator");
+        var isAdministrator = await _currentUserService.IsInRoleAsync("Administrator");
 
-        var isOwner =
-            announcement.SellerUserId == currentUserId.Value;
+        var isOwner = announcement.SellerUserId == currentUserId.Value;
 
         if (!isOwner && !isAdministrator)
         {
-            throw new UnauthorizedAccessException(
-                "Du har ikke adgang til at redigere annoncen.");
+            throw new UnauthorizedAccessException("Du har ikke adgang til at redigere annoncen.");
         }
 
         return new UpdateAnnouncementDto
@@ -170,63 +135,45 @@ public class AnnouncementService : IAnnouncementService
         ArgumentNullException.ThrowIfNull(request);
 
         var validationResults = new List<ValidationResult>();
-        var isValid = Validator.TryValidateObject(
-            request,
-            new ValidationContext(request),
-            validationResults,
-            validateAllProperties: true);
+        var isValid = Validator.TryValidateObject(request, new ValidationContext(request), validationResults, validateAllProperties: true);
 
         if (!isValid)
         {
-            throw new ValidationException(
-                validationResults.First().ErrorMessage
-                ?? "Annonceoplysningerne er ugyldige.");
+            throw new ValidationException(validationResults.First().ErrorMessage ?? "Annonceoplysningerne er ugyldige.");
         }
 
-        var currentUserId =
-            await _currentUserService.GetUserIdAsync();
+        var currentUserId = await _currentUserService.GetUserIdAsync();
 
         if (currentUserId is null)
         {
-            throw new UnauthorizedAccessException(
-                "Du skal være logget ind for at redigere en annonce.");
+            throw new UnauthorizedAccessException("Du skal være logget ind for at redigere en annonce.");
         }
 
         if (request.ProductionYear > DateTime.UtcNow.Year + 1)
         {
-            throw new ValidationException(
-                "Produktionsåret kan ikke ligge i fremtiden.");
+            throw new ValidationException("Produktionsåret kan ikke ligge i fremtiden.");
         }
 
-        var brandExists =
-            await _carBrandRepository.ExistsAsync(request.BrandId);
+        var brandExists = await _carBrandRepository.ExistsAsync(request.BrandId);
 
         if (!brandExists)
         {
-            throw new ValidationException(
-                "Det valgte bilmærke findes ikke.");
+            throw new ValidationException("Det valgte bilmærke findes ikke.");
         }
 
-        var existingAnnouncement =
-            await _announcementRepository.GetByIdAsync(
-                request.AnnouncementId);
+        var existingAnnouncement = await _announcementRepository.GetByIdAsync(request.AnnouncementId);
 
         if (existingAnnouncement is null)
         {
-            throw new InvalidOperationException(
-                "Annoncen findes ikke.");
+            throw new InvalidOperationException("Annoncen findes ikke.");
         }
 
-        var isAdministrator =
-            await _currentUserService.IsInRoleAsync(
-                "Administrator");
-        var isOwner =
-            existingAnnouncement.SellerUserId == currentUserId.Value;
+        var isAdministrator = await _currentUserService.IsInRoleAsync("Administrator");
+        var isOwner = existingAnnouncement.SellerUserId == currentUserId.Value;
 
         if (!isOwner && !isAdministrator)
         {
-            throw new UnauthorizedAccessException(
-                "Du har ikke adgang til at redigere annoncen.");
+            throw new UnauthorizedAccessException("Du har ikke adgang til at redigere annoncen.");
         }
 
         var car = new Car
@@ -236,9 +183,7 @@ public class AnnouncementService : IAnnouncementService
             Model = request.Model.Trim(),
             ProductionYear = checked((short)request.ProductionYear),
             Mileage = request.Mileage,
-            Color = string.IsNullOrWhiteSpace(request.Color)
-                ? null
-                : request.Color.Trim()
+            Color = string.IsNullOrWhiteSpace(request.Color) ? null : request.Color.Trim()
         };
 
         var announcement = new Announcement
@@ -252,211 +197,169 @@ public class AnnouncementService : IAnnouncementService
             IsActive = existingAnnouncement.IsActive
         };
 
-        var wasUpdated =
-            await _announcementRepository.UpdateAsync(
-                car,
-                announcement,
-                currentUserId.Value,
-                isAdministrator,
-                request.ExpectedUpdatedAt);
+        bool wasUpdated;
+
+        if (isAdministrator)
+        {
+            // Administratorens ændring og auditloggen gemmes
+            // i samme transaktion. Repository-laget kontrollerer
+            // også, at administratoren stadig er aktiv.
+            wasUpdated = await _announcementRepository.UpdateForAdministrationWithAuditAsync(car, announcement, currentUserId.Value, Guid.NewGuid(), request.ExpectedUpdatedAt);
+        }
+        else
+        {
+            // Almindelige brugere kan fortsat kun redigere
+            // deres egne annoncer.
+            wasUpdated = await _announcementRepository.UpdateAsync(car, announcement, currentUserId.Value, false, request.ExpectedUpdatedAt);
+        }
 
         if (!wasUpdated)
         {
-            throw new InvalidOperationException(
-                "Annoncen er blevet ændret af en anden bruger. Genindlæs siden og prøv igen.");
+            throw new InvalidOperationException("Annoncen kunne ikke opdateres. " + "Den kan være blevet ændret, eller din adgang " + "kan være ændret. Genindlæs siden og prøv igen.");
         }
     }
 
-    public async Task<IReadOnlyList<AnnouncementListItemDto>>
-        GetMineAsync()
+    public async Task<IReadOnlyList<AnnouncementListItemDto>> GetMineAsync()
     {
-        var currentUserId =
-            await _currentUserService.GetUserIdAsync();
+        var currentUserId = await _currentUserService.GetUserIdAsync();
 
         if (currentUserId is null)
         {
             return Array.Empty<AnnouncementListItemDto>();
         }
 
-        return await _announcementRepository
-            .GetByUserIdAsync(currentUserId.Value);
+        return await _announcementRepository.GetByUserIdAsync(currentUserId.Value);
     }
 
-    public async Task ActivateAsync(
-        int announcementId)
+    public async Task ActivateAsync(int announcementId)
     {
         if (announcementId <= 0)
         {
-            throw new ValidationException(
-                "Annoncen er ugyldig.");
+            throw new ValidationException("Annoncen er ugyldig.");
         }
 
-        var currentUserId =
-            await _currentUserService.GetUserIdAsync();
+        var currentUserId = await _currentUserService.GetUserIdAsync();
 
         if (currentUserId is null)
         {
-            throw new UnauthorizedAccessException(
-                "Du skal være logget ind for at aktivere en annonce.");
+            throw new UnauthorizedAccessException("Du skal være logget ind for at aktivere en annonce.");
         }
 
-        var announcement =
-            await _announcementRepository.GetByIdAsync(
-                announcementId);
+        var announcement = await _announcementRepository.GetByIdAsync(announcementId);
 
         if (announcement is null)
         {
-            throw new InvalidOperationException(
-                "Annoncen findes ikke.");
+            throw new InvalidOperationException("Annoncen findes ikke.");
         }
 
         if (announcement.SellerUserId != currentUserId.Value)
         {
-            throw new UnauthorizedAccessException(
-                "Du har ikke adgang til at aktivere annoncen.");
+            throw new UnauthorizedAccessException("Du har ikke adgang til at aktivere annoncen.");
         }
 
         if (announcement.IsActive)
         {
-            throw new InvalidOperationException(
-                "Annoncen er allerede aktiv.");
+            throw new InvalidOperationException("Annoncen er allerede aktiv.");
         }
 
-        var wasActivated =
-            await _announcementRepository
-                .ActivateForOwnerAsync(
-                    announcementId,
-                    currentUserId.Value);
+        var wasActivated = await _announcementRepository.ActivateForOwnerAsync(announcementId, currentUserId.Value);
 
         if (!wasActivated)
         {
-            throw new InvalidOperationException(
-                "Annoncen kunne ikke aktiveres. Genindlæs siden og prøv igen.");
+            throw new InvalidOperationException("Annoncen kunne ikke aktiveres. Genindlæs siden og prøv igen.");
         }
     }
 
-    public async Task DeactivateAsync(
-        int announcementId)
+    public async Task DeactivateAsync(int announcementId)
     {
         if (announcementId <= 0)
         {
-            throw new ValidationException(
-                "Annoncen er ugyldig.");
+            throw new ValidationException("Annoncen er ugyldig.");
         }
 
-        var currentUserId =
-            await _currentUserService.GetUserIdAsync();
+        var currentUserId = await _currentUserService.GetUserIdAsync();
 
         if (currentUserId is null)
         {
-            throw new UnauthorizedAccessException(
-                "Du skal være logget ind for at deaktivere en annonce.");
+            throw new UnauthorizedAccessException("Du skal være logget ind for at deaktivere en annonce.");
         }
 
-        var announcement =
-            await _announcementRepository.GetByIdAsync(
-                announcementId);
+        var announcement = await _announcementRepository.GetByIdAsync(announcementId);
 
         if (announcement is null)
         {
-            throw new InvalidOperationException(
-                "Annoncen findes ikke.");
+            throw new InvalidOperationException("Annoncen findes ikke.");
         }
 
         if (announcement.SellerUserId != currentUserId.Value)
         {
-            throw new UnauthorizedAccessException(
-                "Du har ikke adgang til at deaktivere annoncen.");
+            throw new UnauthorizedAccessException("Du har ikke adgang til at deaktivere annoncen.");
         }
 
         if (!announcement.IsActive)
         {
-            throw new InvalidOperationException(
-                "Annoncen er allerede deaktiveret.");
+            throw new InvalidOperationException("Annoncen er allerede deaktiveret.");
         }
 
-        var wasDeactivated =
-            await _announcementRepository
-                .DeactivateForOwnerAsync(
-                    announcementId,
-                    currentUserId.Value);
+        var wasDeactivated = await _announcementRepository.DeactivateForOwnerAsync(announcementId, currentUserId.Value);
 
         if (!wasDeactivated)
         {
-            throw new InvalidOperationException(
-                "Annoncen kunne ikke deaktiveres. Genindlæs siden og prøv igen.");
+            throw new InvalidOperationException("Annoncen kunne ikke deaktiveres. Genindlæs siden og prøv igen.");
         }
     }
 
-    public async Task<AnnouncementDetailsDto?> GetDetailsAsync(
-        int announcementId)
+    public async Task<AnnouncementDetailsDto?> GetDetailsAsync(int announcementId)
     {
         if (announcementId <= 0)
         {
             return null;
         }
 
-        var announcement =
-            await _announcementRepository.GetByIdAsync(
-                announcementId);
+        var currentUserId = await _currentUserService.GetUserIdAsync();
+
+        var isAdministrator = currentUserId.HasValue && await _currentUserService.IsInRoleAsync("Administrator");
+
+        // Kun en verificeret administrator får adgang
+        // til annoncer fra deaktiverede ejere.
+        if (isAdministrator)
+        {
+            return await _announcementRepository.GetByIdForAdministrationAsync(announcementId);
+        }
+
+        // Det almindelige opslag kræver stadig,
+        // at annoncens ejer er aktiv.
+        var announcement = await _announcementRepository.GetByIdAsync(announcementId);
 
         if (announcement is null)
         {
             return null;
         }
 
-        // Aktive annoncer er offentlige; inaktive annoncer er kun synlige for ejer og administrator.
         if (announcement.IsActive)
         {
             return announcement;
         }
 
-        var currentUserId =
-            await _currentUserService.GetUserIdAsync();
+        var isOwner = currentUserId.HasValue && currentUserId.Value == announcement.SellerUserId;
 
-        var isOwner =
-            currentUserId.HasValue
-            && currentUserId.Value
-            == announcement.SellerUserId;
-
-        if (isOwner)
-        {
-            return announcement;
-        }
-
-        var isAdministrator =
-            await _currentUserService.IsInRoleAsync(
-                "Administrator");
-
-        return isAdministrator
-            ? announcement
-            : null;
+        return isOwner ? announcement : null;
     }
-    
-    public async Task<AnnouncementSearchResult> SearchActiveAsync(
-        AnnouncementSearchDto search)
+
+    public async Task<AnnouncementSearchResult> SearchActiveAsync(AnnouncementSearchDto search)
     {
         var validationResults = new List<ValidationResult>();
 
-        var isValid = Validator.TryValidateObject(
-            search,
-            new ValidationContext(search),
-            validationResults,
-            validateAllProperties: true);
+        var isValid = Validator.TryValidateObject(search, new ValidationContext(search), validationResults, validateAllProperties: true);
 
         if (!isValid)
         {
-            return AnnouncementSearchResult.Failed(
-                validationResults.First().ErrorMessage
-                ?? "Søgekriterierne er ugyldige.");
+            return AnnouncementSearchResult.Failed(validationResults.First().ErrorMessage ?? "Søgekriterierne er ugyldige.");
         }
 
-        if (search.MinPrice.HasValue
-            && search.MaxPrice.HasValue
-            && search.MinPrice > search.MaxPrice)
+        if (search.MinPrice.HasValue && search.MaxPrice.HasValue && search.MinPrice > search.MaxPrice)
         {
-            return AnnouncementSearchResult.Failed(
-                "Minimumsprisen må ikke være højere end maksimumsprisen.");
+            return AnnouncementSearchResult.Failed("Minimumsprisen må ikke være højere end maksimumsprisen.");
         }
 
         // Sortering begrænses til kendte værdier, så repository-laget aldrig bygger SQL fra fri tekst.
@@ -473,20 +376,12 @@ public class AnnouncementService : IAnnouncementService
             search.Sort = "newest";
         }
 
-        search.Query =
-            string.IsNullOrWhiteSpace(search.Query)
-                ? null
-                : search.Query.Trim();
+        search.Query = string.IsNullOrWhiteSpace(search.Query) ? null : search.Query.Trim();
 
         search.Page = Math.Max(1, search.Page);
-        search.PageSize = Math.Clamp(
-            search.PageSize,
-            1,
-            100);
+        search.PageSize = Math.Clamp(search.PageSize, 1, 100);
 
-        var page =
-            await _announcementRepository.SearchActiveAsync(
-                search);
+        var page = await _announcementRepository.SearchActiveAsync(search);
 
         return AnnouncementSearchResult.Successful(page);
     }

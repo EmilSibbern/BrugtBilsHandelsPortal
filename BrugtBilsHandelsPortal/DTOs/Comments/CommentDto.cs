@@ -18,6 +18,5 @@ public class CommentDto
 
     public bool IsDeleted { get; init; }
 
-    public IReadOnlyList<CommentDto> Replies { get; init; }
-        = Array.Empty<CommentDto>();
+    public IReadOnlyList<CommentDto> Replies { get; init; } = Array.Empty<CommentDto>();
 }

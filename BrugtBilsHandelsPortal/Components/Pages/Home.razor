@@ -11,10 +11,7 @@
 <PageTitle>Brugte biler</PageTitle>
 
 <div class="container py-4">
-    <div class="d-flex flex-column flex-md-row
-                justify-content-between
-                align-items-md-center
-                gap-3 mb-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
         <div>
             <h1 class="mb-1">Brugte biler</h1>
 
@@ -25,8 +22,7 @@
 
         <AuthorizeView>
             <Authorized>
-                <a href="/announcements/create"
-                   class="btn btn-primary">
+                <a href="/announcements/create" class="btn btn-primary">
                     Opret annonce
                 </a>
             </Authorized>
@@ -35,35 +31,26 @@
 
     <div class="card shadow-sm mb-4">
         <div class="card-body">
-            <EditForm Model="_search"
-                      OnValidSubmit="ApplySearchAsync"
-                      FormName="announcement-search-form">
+            <EditForm Model="_search" OnValidSubmit="ApplySearchAsync" FormName="announcement-search-form">
 
                 <DataAnnotationsValidator />
                 <ValidationSummary class="text-danger mb-3" />
 
                 <div class="row g-3">
                     <div class="col-12 col-lg-4">
-                        <label for="query"
-                               class="form-label">
+                        <label for="query" class="form-label">
                             Søg
                         </label>
 
-                        <InputText id="query"
-                                   class="form-control"
-                                   placeholder="Titel, mærke eller model"
-                                   @bind-Value="_search.Query" />
+                        <InputText id="query" class="form-control" placeholder="Titel, mærke eller model" @bind-Value="_search.Query" />
                     </div>
 
                     <div class="col-12 col-md-6 col-lg-3">
-                        <label for="brand"
-                               class="form-label">
+                        <label for="brand" class="form-label">
                             Mærke
                         </label>
 
-                        <InputSelect id="brand"
-                                     class="form-select"
-                                     @bind-Value="_search.BrandId">
+                        <InputSelect id="brand" class="form-select" @bind-Value="_search.BrandId">
                             <option value="">Alle mærker</option>
 
                             @foreach (var brand in _carBrands)
@@ -76,58 +63,43 @@
                     </div>
 
                     <div class="col-6 col-md-3 col-lg-2">
-                        <label for="min-price"
-                               class="form-label">
+                        <label for="min-price" class="form-label">
                             Min. pris
                         </label>
 
-                        <InputNumber id="min-price"
-                                     class="form-control"
-                                     @bind-Value="_search.MinPrice" />
+                        <InputNumber id="min-price" class="form-control" @bind-Value="_search.MinPrice" />
                     </div>
 
                     <div class="col-6 col-md-3 col-lg-2">
-                        <label for="max-price"
-                               class="form-label">
+                        <label for="max-price" class="form-label">
                             Maks. pris
                         </label>
 
-                        <InputNumber id="max-price"
-                                     class="form-control"
-                                     @bind-Value="_search.MaxPrice" />
+                        <InputNumber id="max-price" class="form-control" @bind-Value="_search.MaxPrice" />
                     </div>
 
                     <div class="col-6 col-md-3 col-lg-2">
-                        <label for="year"
-                               class="form-label">
+                        <label for="year" class="form-label">
                             Årgang fra
                         </label>
 
-                        <InputNumber id="year"
-                                     class="form-control"
-                                     @bind-Value="_search.MinProductionYear" />
+                        <InputNumber id="year" class="form-control" @bind-Value="_search.MinProductionYear" />
                     </div>
 
                     <div class="col-6 col-md-3 col-lg-2">
-                        <label for="mileage"
-                               class="form-label">
+                        <label for="mileage" class="form-label">
                             Maks. km
                         </label>
 
-                        <InputNumber id="mileage"
-                                     class="form-control"
-                                     @bind-Value="_search.MaxMileage" />
+                        <InputNumber id="mileage" class="form-control" @bind-Value="_search.MaxMileage" />
                     </div>
 
                     <div class="col-12 col-md-6 col-lg-3">
-                        <label for="sort"
-                               class="form-label">
+                        <label for="sort" class="form-label">
                             Sortering
                         </label>
 
-                        <InputSelect id="sort"
-                                     class="form-select"
-                                     @bind-Value="_search.Sort">
+                        <InputSelect id="sort" class="form-select" @bind-Value="_search.Sort">
                             <option value="newest">Nyeste først</option>
                             <option value="price-asc">Laveste pris</option>
                             <option value="price-desc">Højeste pris</option>
@@ -135,18 +107,12 @@
                         </InputSelect>
                     </div>
 
-                    <div class="col-12 col-lg-5 d-flex
-                                align-items-end gap-2">
-                        <button type="submit"
-                                class="btn btn-primary"
-                                disabled="@_isLoading">
+                    <div class="col-12 col-lg-5 d-flex align-items-end gap-2">
+                        <button type="submit" class="btn btn-primary" disabled="@_isLoading">
                             Søg
                         </button>
 
-                        <button type="button"
-                                class="btn btn-outline-secondary"
-                                disabled="@_isLoading"
-                                @onclick="ResetSearchAsync">
+                        <button type="button" class="btn btn-outline-secondary" disabled="@_isLoading" @onclick="ResetSearchAsync">
                             Nulstil
                         </button>
                     </div>
@@ -221,33 +187,22 @@
     }
     else
     {
-        <AnnouncementList
-            Announcements="_announcements"
-            EmptyTitle="@EmptyTitle"
-            EmptyText="@EmptyText" />
+        <AnnouncementList Announcements="_announcements" EmptyTitle="@EmptyTitle" EmptyText="@EmptyText" />
 
         @if (_page is not null && _page.TotalPages > 1)
         {
-            <div class="d-flex flex-column flex-sm-row
-                        justify-content-between
-                        align-items-sm-center gap-3 mt-4">
+            <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mt-4">
                 <p class="text-muted mb-0">
                     Side @_page.Page af @_page.TotalPages
                     - @_page.TotalItems resultater
                 </p>
 
                 <div class="btn-group">
-                    <button type="button"
-                            class="btn btn-outline-primary"
-                            disabled="@(!_page.HasPreviousPage || _isLoading)"
-                            @onclick="PreviousPageAsync">
+                    <button type="button" class="btn btn-outline-primary" disabled="@(!_page.HasPreviousPage || _isLoading)" @onclick="PreviousPageAsync">
                         Forrige
                     </button>
 
-                    <button type="button"
-                            class="btn btn-outline-primary"
-                            disabled="@(!_page.HasNextPage || _isLoading)"
-                            @onclick="NextPageAsync">
+                    <button type="button" class="btn btn-outline-primary" disabled="@(!_page.HasNextPage || _isLoading)" @onclick="NextPageAsync">
                         Næste
                     </button>
                 </div>
@@ -258,12 +213,9 @@
 
 @code {
     // Siden gemmer de valgte filtre og henter annoncer igen, når man søger
-    private IReadOnlyList<AnnouncementListItemDto>
-        _announcements =
-            Array.Empty<AnnouncementListItemDto>();
+    private IReadOnlyList<AnnouncementListItemDto> _announcements = Array.Empty<AnnouncementListItemDto>();
 
-    private IReadOnlyList<CarBrand> _carBrands =
-        Array.Empty<CarBrand>();
+    private IReadOnlyList<CarBrand> _carBrands = Array.Empty<CarBrand>();
 
     private AnnouncementSearchDto _search = new();
 
@@ -276,8 +228,7 @@
     {
         _isLoading = true;
 
-        _carBrands =
-            await AnnouncementService.GetCarBrandsAsync();
+        _carBrands = await AnnouncementService.GetCarBrandsAsync();
 
         await LoadAnnouncementsAsync();
     }
@@ -325,9 +276,7 @@
         _isLoading = true;
         _errorMessage = null;
 
-        var result =
-            await AnnouncementService.SearchActiveAsync(
-                _search);
+        var result = await AnnouncementService.SearchActiveAsync(_search);
 
         if (result.Succeeded && result.Page is not null)
         {
@@ -337,12 +286,9 @@
         else
         {
             _page = null;
-            _announcements =
-                Array.Empty<AnnouncementListItemDto>();
+            _announcements = Array.Empty<AnnouncementListItemDto>();
 
-            _errorMessage =
-                result.ErrorMessage
-                ?? "Annoncerne kunne ikke indlæses.";
+            _errorMessage = result.ErrorMessage ?? "Annoncerne kunne ikke indlæses.";
         }
 
         _isLoading = false;

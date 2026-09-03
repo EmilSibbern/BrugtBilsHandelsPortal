@@ -12,9 +12,7 @@ public class UserService : IUserService
     private readonly IUserRepository _userRepository;
     private readonly ICurrentUserService _currentUserService;
 
-    public UserService(
-        IUserRepository userRepository,
-        ICurrentUserService currentUserService)
+    public UserService(IUserRepository userRepository, ICurrentUserService currentUserService)
     {
         _userRepository = userRepository;
         _currentUserService = currentUserService;
@@ -48,22 +46,15 @@ public class UserService : IUserService
         };
     }
     
-    public async Task<ProfileUpdateResult> UpdateCurrentProfileAsync(
-        UpdateProfileDto request)
+    public async Task<ProfileUpdateResult> UpdateCurrentProfileAsync(UpdateProfileDto request)
     {
         var validationResults = new List<ValidationResult>();
 
-        var isValid = Validator.TryValidateObject(
-            request,
-            new ValidationContext(request),
-            validationResults,
-            validateAllProperties: true);
+        var isValid = Validator.TryValidateObject(request, new ValidationContext(request), validationResults, validateAllProperties: true);
 
         if (!isValid)
         {
-            var errorMessage =
-                validationResults.FirstOrDefault()?.ErrorMessage
-                ?? "Profiloplysningerne er ugyldige.";
+            var errorMessage = validationResults.FirstOrDefault()?.ErrorMessage ?? "Profiloplysningerne er ugyldige.";
 
             return ProfileUpdateResult.Failed(errorMessage);
         }
@@ -72,26 +63,18 @@ public class UserService : IUserService
 
         if (userId is null)
         {
-            return ProfileUpdateResult.Failed(
-                "Du skal være logget ind for at redigere profilen.");
+            return ProfileUpdateResult.Failed("Du skal være logget ind for at redigere profilen.");
         }
 
         var username = request.Username.Trim();
 
-        var email = request.Email
-            .Trim()
-            .ToLowerInvariant();
+        var email = request.Email.Trim().ToLowerInvariant();
 
-        var identityExists =
-            await _userRepository.IdentityExistsForOtherUserAsync(
-                userId.Value,
-                username,
-                email);
+        var identityExists = await _userRepository.IdentityExistsForOtherUserAsync(userId.Value, username, email);
 
         if (identityExists)
         {
-            return ProfileUpdateResult.Failed(
-                "Brugernavn eller e-mail er allerede i brug.");
+            return ProfileUpdateResult.Failed("Brugernavn eller e-mail er allerede i brug.");
         }
 
         var user = new User
@@ -100,22 +83,16 @@ public class UserService : IUserService
             Username = username,
             Email = email,
 
-            Phone = string.IsNullOrWhiteSpace(request.Phone)
-                ? null
-                : request.Phone.Trim(),
+            Phone = string.IsNullOrWhiteSpace(request.Phone) ? null : request.Phone.Trim(),
 
-            Address = string.IsNullOrWhiteSpace(request.Address)
-                ? null
-                : request.Address.Trim()
+            Address = string.IsNullOrWhiteSpace(request.Address) ? null : request.Address.Trim()
         };
 
-        var updated =
-            await _userRepository.UpdateProfileAsync(user);
+        var updated = await _userRepository.UpdateProfileAsync(user);
 
         if (!updated)
         {
-            return ProfileUpdateResult.Failed(
-                "Profilen blev ikke fundet eller kunne ikke opdateres.");
+            return ProfileUpdateResult.Failed("Profilen blev ikke fundet eller kunne ikke opdateres.");
         }
 
         return ProfileUpdateResult.Successful();

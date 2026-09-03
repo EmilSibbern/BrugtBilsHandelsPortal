@@ -21,69 +21,39 @@ public class FakeUserRepository : IUserRepository
     public int? LastReactivationAdministratorUserId { get; private set; }
     public Guid? LastReactivationCorrelationId { get; private set; }
 
-    public AdminUserDeactivationStatus DeactivationStatus { get; set; } =
-        AdminUserDeactivationStatus.Succeeded;
+    public AdminUserDeactivationStatus DeactivationStatus { get; set; } = AdminUserDeactivationStatus.Succeeded;
 
-    public AdminUserActivationStatus ActivationStatus { get; set; } =
-        AdminUserActivationStatus.Succeeded;
+    public AdminUserActivationStatus ActivationStatus { get; set; } = AdminUserActivationStatus.Succeeded;
 
     public Task<bool> TestConnectionAsync()
     {
         return Task.FromResult(true);
     }
 
-    public Task<User?> GetByEmailOrUsernameAsync(
-        string emailOrUsername)
+    public Task<User?> GetByEmailOrUsernameAsync(string emailOrUsername)
     {
-        var user = Users.FirstOrDefault(
-            candidate =>
-                string.Equals(
-                    candidate.Email,
-                    emailOrUsername,
-                    StringComparison.OrdinalIgnoreCase)
-                ||
-                string.Equals(
-                    candidate.Username,
-                    emailOrUsername,
-                    StringComparison.OrdinalIgnoreCase));
+        var user = Users.FirstOrDefault(candidate => string.Equals(candidate.Email, emailOrUsername, StringComparison.OrdinalIgnoreCase) || string.Equals(candidate.Username, emailOrUsername, StringComparison.OrdinalIgnoreCase));
 
         return Task.FromResult(user);
     }
 
     public Task<User?> GetByIdAsync(int userId)
     {
-        var user = Users.FirstOrDefault(
-            candidate =>
-                candidate.Id == userId
-                && candidate.IsActive);
+        var user = Users.FirstOrDefault(candidate => candidate.Id == userId && candidate.IsActive);
 
         return Task.FromResult(user);
     }
 
-    public Task<bool> RegistrationIdentityExistsAsync(
-        string username,
-        string email)
+    public Task<bool> RegistrationIdentityExistsAsync(string username, string email)
     {
-        var exists = Users.Any(
-            candidate =>
-                string.Equals(
-                    candidate.Username,
-                    username,
-                    StringComparison.OrdinalIgnoreCase)
-                ||
-                string.Equals(
-                    candidate.Email,
-                    email,
-                    StringComparison.OrdinalIgnoreCase));
+        var exists = Users.Any(candidate => string.Equals(candidate.Username, username, StringComparison.OrdinalIgnoreCase) || string.Equals(candidate.Email, email, StringComparison.OrdinalIgnoreCase));
 
         return Task.FromResult(exists);
     }
 
     public Task<int> CreateAsync(User user)
     {
-        user.Id = Users.Count == 0
-            ? 1
-            : Users.Max(candidate => candidate.Id) + 1;
+        user.Id = Users.Count == 0 ? 1 : Users.Max(candidate => candidate.Id) + 1;
 
         user.UserGroupId = 1;
         user.UserGroupName = "User";
@@ -94,34 +64,16 @@ public class FakeUserRepository : IUserRepository
         return Task.FromResult(user.Id);
     }
 
-    public Task<bool> IdentityExistsForOtherUserAsync(
-        int userId,
-        string username,
-        string email)
+    public Task<bool> IdentityExistsForOtherUserAsync(int userId, string username, string email)
     {
-        var exists = Users.Any(
-            candidate =>
-                candidate.Id != userId
-                &&
-                (string.Equals(
-                     candidate.Username,
-                     username,
-                     StringComparison.OrdinalIgnoreCase)
-                 ||
-                 string.Equals(
-                     candidate.Email,
-                     email,
-                     StringComparison.OrdinalIgnoreCase)));
+        var exists = Users.Any(candidate => candidate.Id != userId && (string.Equals(candidate.Username, username, StringComparison.OrdinalIgnoreCase) || string.Equals(candidate.Email, email, StringComparison.OrdinalIgnoreCase)));
 
         return Task.FromResult(exists);
     }
 
     public Task<bool> UpdateProfileAsync(User user)
     {
-        var existingUser = Users.FirstOrDefault(
-            candidate =>
-                candidate.Id == user.Id
-                && candidate.IsActive);
+        var existingUser = Users.FirstOrDefault(candidate => candidate.Id == user.Id && candidate.IsActive);
 
         if (existingUser is null)
         {
@@ -136,9 +88,7 @@ public class FakeUserRepository : IUserRepository
         return Task.FromResult(true);
     }
 
-    public Task<PagedResult<AdminUserDto>>
-        SearchForAdministrationAsync(
-            AdminUserSearchDto search)
+    public Task<PagedResult<AdminUserDto>> SearchForAdministrationAsync(AdminUserSearchDto search)
     {
         SearchForAdministrationCallCount++;
         LastAdminSearch = search;
@@ -147,60 +97,26 @@ public class FakeUserRepository : IUserRepository
 
         if (!string.IsNullOrWhiteSpace(search.Query))
         {
-            query = query.Where(user =>
-                user.Username.Contains(
-                    search.Query,
-                    StringComparison.OrdinalIgnoreCase)
-                || user.Email.Contains(
-                    search.Query,
-                    StringComparison.OrdinalIgnoreCase));
+            query = query.Where(user => user.Username.Contains(search.Query, StringComparison.OrdinalIgnoreCase) || user.Email.Contains(search.Query, StringComparison.OrdinalIgnoreCase));
         }
 
         if (search.IsActive.HasValue)
         {
-            query = query.Where(user =>
-                user.IsActive == search.IsActive.Value);
+            query = query.Where(user => user.IsActive == search.IsActive.Value);
         }
 
         if (!string.IsNullOrWhiteSpace(search.Role))
         {
-            query = query.Where(user =>
-                string.Equals(
-                    user.UserGroupName,
-                    search.Role,
-                    StringComparison.Ordinal));
+            query = query.Where(user => string.Equals(user.UserGroupName, search.Role, StringComparison.Ordinal));
         }
 
         var matchingUsers = query.ToList();
-        var users = matchingUsers
-            .Skip((search.Page - 1) * search.PageSize)
-            .Take(search.PageSize)
-            .Select(user => new AdminUserDto
-            {
-                Id = user.Id,
-                Username = user.Username,
-                Email = user.Email,
-                Role = user.UserGroupName,
-                IsActive = user.IsActive,
-                CreatedAt = user.CreatedAt
-            })
-            .ToArray();
+        var users = matchingUsers.Skip((search.Page - 1) * search.PageSize).Take(search.PageSize).Select(user => new AdminUserDto { Id = user.Id, Username = user.Username, Email = user.Email, Role = user.UserGroupName, IsActive = user.IsActive, CreatedAt = user.CreatedAt }).ToArray();
 
-        return Task.FromResult(
-            new PagedResult<AdminUserDto>
-            {
-                Items = users,
-                Page = search.Page,
-                PageSize = search.PageSize,
-                TotalItems = matchingUsers.Count
-            });
+        return Task.FromResult(new PagedResult<AdminUserDto> { Items = users, Page = search.Page, PageSize = search.PageSize, TotalItems = matchingUsers.Count });
     }
 
-    public Task<AdminUserDeactivationStatus>
-        DeactivateWithAuditAsync(
-            int targetUserId,
-            int administratorUserId,
-            Guid correlationId)
+    public Task<AdminUserDeactivationStatus> DeactivateWithAuditAsync(int targetUserId, int administratorUserId, Guid correlationId)
     {
         DeactivateWithAuditCallCount++;
         LastTargetUserId = targetUserId;
@@ -210,11 +126,7 @@ public class FakeUserRepository : IUserRepository
         return Task.FromResult(DeactivationStatus);
     }
 
-    public Task<AdminUserActivationStatus>
-        ReactivateWithAuditAsync(
-            int targetUserId,
-            int administratorUserId,
-            Guid correlationId)
+    public Task<AdminUserActivationStatus> ReactivateWithAuditAsync(int targetUserId, int administratorUserId, Guid correlationId)
     {
         ReactivateWithAuditCallCount++;
         LastReactivatedUserId = targetUserId;

@@ -3,8 +3,7 @@ using BrugtBilsHandelsPortal.Services.Interfaces;
 using Bunit;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
-using ConversationPage =
-    BrugtBilsHandelsPortal.Components.Pages.Messages.Conversation;
+using ConversationPage = BrugtBilsHandelsPortal.Components.Pages.Messages.Conversation;
 
 namespace BrugtBilsHandelsPortal.Tests.Components;
 
@@ -20,15 +19,11 @@ public class ConversationTests
 
         cut.WaitForAssertion(() =>
         {
-            var messages =
-                cut.Find("[data-testid='conversation-messages']");
+            var messages = cut.Find("[data-testid='conversation-messages']");
             Assert.Contains("Spørgsmål fra køber", messages.TextContent);
             Assert.Contains("Svar fra sælger", messages.TextContent);
             Assert.Contains("interesseret-køber", cut.Markup);
-            Assert.Equal(
-                "/announcements/42",
-                cut.Find("a[href='/announcements/42']")
-                    .GetAttribute("href"));
+            Assert.Equal("/announcements/42", cut.Find("a[href='/announcements/42']").GetAttribute("href"));
         });
     }
 
@@ -40,8 +35,7 @@ public class ConversationTests
         using var context = CreateContext(service);
         var cut = RenderConversation(context);
 
-        cut.WaitForElement("#reply-text")
-            .Change("  Tak for svaret  ");
+        cut.WaitForElement("#reply-text").Change("  Tak for svaret  ");
         cut.Find("button[type='submit']").Click();
 
         cut.WaitForAssertion(() =>
@@ -57,19 +51,13 @@ public class ConversationTests
     [Trait("UserStory", "US13")]
     public void MissingOrForbiddenConversation_ShowsSafeState()
     {
-        using var context = CreateContext(
-            new StubMessageService
-            {
-                Conversation = null
-            });
+        using var context = CreateContext(new StubMessageService { Conversation = null });
 
         var cut = RenderConversation(context);
 
         cut.WaitForAssertion(() =>
         {
-            Assert.Contains(
-                "Samtalen findes ikke, eller du har ikke adgang til den.",
-                cut.Markup);
+            Assert.Contains("Samtalen findes ikke, eller du har ikke adgang til den.", cut.Markup);
             Assert.Empty(cut.FindAll("#reply-text"));
         });
     }
@@ -80,8 +68,7 @@ public class ConversationTests
     {
         var service = new StubMessageService
         {
-            Conversation = CreateConversation(
-                "<script>alert('xss')</script>")
+            Conversation = CreateConversation("<script>alert('xss')</script>")
         };
         using var context = CreateContext(service);
 
@@ -90,30 +77,23 @@ public class ConversationTests
         cut.WaitForAssertion(() =>
         {
             Assert.Empty(cut.FindAll("script"));
-            Assert.Contains(
-                "<script>alert('xss')</script>",
-                cut.Find("[data-testid='conversation-messages']")
-                    .TextContent);
+            Assert.Contains("<script>alert('xss')</script>", cut.Find("[data-testid='conversation-messages']").TextContent);
         });
     }
 
-    private static BunitContext CreateContext(
-        IMessageService service)
+    private static BunitContext CreateContext(IMessageService service)
     {
         var context = new BunitContext();
         context.Services.AddSingleton(service);
         return context;
     }
 
-    private static IRenderedComponent<ConversationPage>
-        RenderConversation(BunitContext context)
+    private static IRenderedComponent<ConversationPage> RenderConversation(BunitContext context)
     {
-        return context.Render<ConversationPage>(parameters =>
-            parameters.Add(component => component.MessageId, 12));
+        return context.Render<ConversationPage>(parameters => parameters.Add(component => component.MessageId, 12));
     }
 
-    private static ConversationDto CreateConversation(
-        string firstText = "Spørgsmål fra køber")
+    private static ConversationDto CreateConversation(string firstText = "Spørgsmål fra køber")
     {
         return new ConversationDto
         {
@@ -121,27 +101,11 @@ public class ConversationTests
             AnnouncementTitle = "Skoda Octavia",
             OtherUserId = 9,
             OtherUsername = "interesseret-køber",
-            Messages =
-            [
-                CreateMessage(
-                    12,
-                    senderUserId: 9,
-                    receiverUserId: 7,
-                    firstText),
-                CreateMessage(
-                    13,
-                    senderUserId: 7,
-                    receiverUserId: 9,
-                    "Svar fra sælger")
-            ]
+            Messages = [CreateMessage(12, senderUserId: 9, receiverUserId: 7, firstText), CreateMessage(13, senderUserId: 7, receiverUserId: 9, "Svar fra sælger")]
         };
     }
 
-    private static MessageDto CreateMessage(
-        long id,
-        int senderUserId,
-        int receiverUserId,
-        string text)
+    private static MessageDto CreateMessage(long id, int senderUserId, int receiverUserId, string text)
     {
         return new MessageDto
         {
@@ -149,13 +113,9 @@ public class ConversationTests
             AnnouncementId = 42,
             AnnouncementTitle = "Skoda Octavia",
             SenderUserId = senderUserId,
-            SenderUsername = senderUserId == 9
-                ? "interesseret-køber"
-                : "sælger",
+            SenderUsername = senderUserId == 9 ? "interesseret-køber" : "sælger",
             ReceiverUserId = receiverUserId,
-            ReceiverUsername = receiverUserId == 9
-                ? "interesseret-køber"
-                : "sælger",
+            ReceiverUsername = receiverUserId == 9 ? "interesseret-køber" : "sælger",
             Text = text,
             CreatedAt = new DateTime(2026, 8, 24, 10, 30, 0),
             IsRead = true,
@@ -165,40 +125,27 @@ public class ConversationTests
 
     private sealed class StubMessageService : IMessageService
     {
-        public ConversationDto? Conversation { get; init; }
-            = CreateConversation();
+        public ConversationDto? Conversation { get; init; } = CreateConversation();
 
         public int ReplyCallCount { get; private set; }
         public long? LastReplyMessageId { get; private set; }
         public string? LastReplyText { get; private set; }
 
-        public Task<ConversationDto?> GetConversationAsync(
-            long messageId) =>
-            Task.FromResult(Conversation);
+        public Task<ConversationDto?> GetConversationAsync(long messageId) => Task.FromResult(Conversation);
 
-        public Task<MessageDto> ReplyAsync(
-            long messageId,
-            string text)
+        public Task<MessageDto> ReplyAsync(long messageId, string text)
         {
             ReplyCallCount++;
             LastReplyMessageId = messageId;
             LastReplyText = text;
 
-            return Task.FromResult(
-                CreateMessage(
-                    14,
-                    senderUserId: 7,
-                    receiverUserId: 9,
-                    text));
+            return Task.FromResult(CreateMessage(14, senderUserId: 7, receiverUserId: 9, text));
         }
 
-        public Task<MessageDto> SendAsync(SendMessageDto request) =>
-            throw new NotSupportedException();
+        public Task<MessageDto> SendAsync(SendMessageDto request) => throw new NotSupportedException();
 
-        public Task<IReadOnlyList<MessageDto>> GetInboxAsync() =>
-            throw new NotSupportedException();
+        public Task<IReadOnlyList<MessageDto>> GetInboxAsync() => throw new NotSupportedException();
 
-        public Task<MessageDto?> GetByIdAsync(long messageId) =>
-            throw new NotSupportedException();
+        public Task<MessageDto?> GetByIdAsync(long messageId) => throw new NotSupportedException();
     }
 }

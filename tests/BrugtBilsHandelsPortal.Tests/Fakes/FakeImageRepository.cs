@@ -6,8 +6,7 @@ namespace BrugtBilsHandelsPortal.Tests.Fakes;
 
 public class FakeImageRepository : IImageRepository
 {
-    public ImageMetadataCreateStatus AddStatus { get; set; }
-        = ImageMetadataCreateStatus.Success;
+    public ImageMetadataCreateStatus AddStatus { get; set; } = ImageMetadataCreateStatus.Success;
 
     public int AddCallCount { get; private set; }
     public int GetCallCount { get; private set; }
@@ -18,6 +17,11 @@ public class FakeImageRepository : IImageRepository
     public int DeleteCallCount { get; private set; }
     public int? LastDeletedImageId { get; private set; }
     public string? DeleteFileNameToReturn { get; set; }
+    public int AdminGetCallCount { get; private set; }
+    public int AdminDeleteCallCount { get; private set; }
+    public int? LastAdministratorUserId { get; private set; }
+    public Guid? LastAdminCorrelationId { get; private set; }
+    public string? AdminDeleteFileNameToReturn { get; set; }
 
     public int? LastAnnouncementId { get; private set; }
     public int? LastUserId { get; private set; }
@@ -26,11 +30,7 @@ public class FakeImageRepository : IImageRepository
 
     public List<AnnouncementImage> Images { get; } = [];
 
-    public Task<ImageMetadataCreateResult> AddForOwnerAsync(
-        int announcementId,
-        int userId,
-        string fileName,
-        int maxImages)
+    public Task<ImageMetadataCreateResult> AddForOwnerAsync(int announcementId, int userId, string fileName, int maxImages)
     {
         AddCallCount++;
         LastAnnouncementId = announcementId;
@@ -40,8 +40,7 @@ public class FakeImageRepository : IImageRepository
 
         if (AddStatus != ImageMetadataCreateStatus.Success)
         {
-            return Task.FromResult(
-                ImageMetadataCreateResult.Failed(AddStatus));
+            return Task.FromResult(ImageMetadataCreateResult.Failed(AddStatus));
         }
 
         var image = new AnnouncementImage
@@ -56,28 +55,20 @@ public class FakeImageRepository : IImageRepository
 
         Images.Add(image);
 
-        return Task.FromResult(
-            ImageMetadataCreateResult.Successful(image));
+        return Task.FromResult(ImageMetadataCreateResult.Successful(image));
     }
 
-    public Task<IReadOnlyList<AnnouncementImage>>
-        GetForActiveAnnouncementAsync(
-            int announcementId)
+    public Task<IReadOnlyList<AnnouncementImage>> GetForActiveAnnouncementAsync(int announcementId)
     {
         GetCallCount++;
         LastAnnouncementId = announcementId;
 
-        IReadOnlyList<AnnouncementImage> result = Images
-            .Where(image => image.AnnouncementId == announcementId)
-            .ToArray();
+        IReadOnlyList<AnnouncementImage> result = Images.Where(image => image.AnnouncementId == announcementId).ToArray();
 
         return Task.FromResult(result);
     }
 
-    public Task<bool> SetPrimaryForOwnerAsync(
-        int announcementId,
-        int imageId,
-        int userId)
+    public Task<bool> SetPrimaryForOwnerAsync(int announcementId, int imageId, int userId)
     {
         SetPrimaryCallCount++;
         LastAnnouncementId = announcementId;
@@ -86,9 +77,7 @@ public class FakeImageRepository : IImageRepository
 
         if (SetPrimaryResult)
         {
-            foreach (var image in Images.Where(
-                         image =>
-                             image.AnnouncementId == announcementId))
+            foreach (var image in Images.Where(image => image.AnnouncementId == announcementId))
             {
                 image.IsPrimary = image.Id == imageId;
             }
@@ -97,15 +86,33 @@ public class FakeImageRepository : IImageRepository
         return Task.FromResult(SetPrimaryResult);
     }
 
-    public Task<string?> DeleteForOwnerAsync(
-        int announcementId,
-        int imageId,
-        int userId)
+    public Task<string?> DeleteForOwnerAsync(int announcementId, int imageId, int userId)
     {
         DeleteCallCount++;
         LastAnnouncementId = announcementId;
         LastDeletedImageId = imageId;
         LastUserId = userId;
         return Task.FromResult(DeleteFileNameToReturn);
+    }
+
+    public Task<IReadOnlyList<AnnouncementImage>> GetForAdministrationAsync(int announcementId)
+    {
+        AdminGetCallCount++;
+        LastAnnouncementId = announcementId;
+
+        IReadOnlyList<AnnouncementImage> result = Images.Where(image => image.AnnouncementId == announcementId).ToArray();
+
+        return Task.FromResult(result);
+    }
+
+    public Task<string?> DeleteForAdministrationWithAuditAsync(int announcementId, int imageId, int administratorUserId, Guid correlationId)
+    {
+        AdminDeleteCallCount++;
+        LastAnnouncementId = announcementId;
+        LastDeletedImageId = imageId;
+        LastAdministratorUserId = administratorUserId;
+        LastAdminCorrelationId = correlationId;
+
+        return Task.FromResult(AdminDeleteFileNameToReturn);
     }
 }

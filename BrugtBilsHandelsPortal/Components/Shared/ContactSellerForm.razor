@@ -4,63 +4,43 @@
 @inject IMessageService MessageService
 @inject ILogger<ContactSellerForm> Logger
 
-<div class="card mt-4"
-     data-testid="contact-seller-form">
+<div class="card mt-4" data-testid="contact-seller-form">
     <div class="card-body">
         <h2 class="h5">
             Kontakt sælger
         </h2>
 
-        <label for="seller-message"
-               class="form-label">
+        <label for="seller-message" class="form-label">
             Besked
         </label>
 
-        <textarea id="seller-message"
-                  class="form-control"
-                  rows="5"
-                  maxlength="2000"
-                  disabled="@_isSubmitting"
-                  @bind="_messageText"
-                  @bind:event="oninput">
+        <textarea id="seller-message" class="form-control" rows="5" maxlength="2000" disabled="@_isSubmitting" @bind="_messageText" @bind:event="oninput">
         </textarea>
 
-        <div class="form-text"
-             aria-live="polite">
+        <div class="form-text" aria-live="polite">
             @_messageText.Length / 2000 tegn
         </div>
 
         @if (!string.IsNullOrWhiteSpace(_errorMessage))
         {
-            <div class="alert alert-danger mt-3"
-                 role="alert">
+            <div class="alert alert-danger mt-3" role="alert">
                 @_errorMessage
             </div>
         }
 
         @if (_isSent)
         {
-            <div class="alert alert-success mt-3"
-                 role="status">
+            <div class="alert alert-success mt-3" role="status">
                 Beskeden er sendt til sælgeren.
             </div>
         }
 
         <div class="d-flex gap-2 mt-3">
-            <button type="button"
-                    class="btn btn-primary"
-                    data-testid="send-message"
-                    disabled="@CannotSubmit"
-                    @onclick="SubmitAsync">
-                @(_isSubmitting
-                    ? "Sender..."
-                    : "Send besked")
+            <button type="button" class="btn btn-primary" data-testid="send-message" disabled="@CannotSubmit" @onclick="SubmitAsync">
+                @(_isSubmitting ? "Sender..." : "Send besked")
             </button>
 
-            <button type="button"
-                    class="btn btn-outline-secondary"
-                    disabled="@_isSubmitting"
-                    @onclick="CancelAsync">
+            <button type="button" class="btn btn-outline-secondary" disabled="@_isSubmitting" @onclick="CancelAsync">
                 Annuller
             </button>
         </div>
@@ -80,10 +60,7 @@
     private bool _isSubmitting;
     private bool _isSent;
 
-    private bool CannotSubmit =>
-        _isSubmitting
-        || _isSent
-        || string.IsNullOrWhiteSpace(_messageText);
+    private bool CannotSubmit => _isSubmitting || _isSent || string.IsNullOrWhiteSpace(_messageText);
 
     private async Task SubmitAsync()
     {
@@ -97,12 +74,7 @@
 
         try
         {
-            var message = await MessageService.SendAsync(
-                new SendMessageDto
-                {
-                    AnnouncementId = AnnouncementId,
-                    Text = _messageText.Trim()
-                });
+            var message = await MessageService.SendAsync(new SendMessageDto { AnnouncementId = AnnouncementId, Text = _messageText.Trim() });
 
             _messageText = string.Empty;
             _isSent = true;
@@ -111,13 +83,9 @@
         }
         catch (Exception exception)
         {
-            Logger.LogError(
-                exception,
-                "Kunne ikke sende besked vedrørende annonce {AnnouncementId}",
-                AnnouncementId);
+            Logger.LogError(exception, "Kunne ikke sende besked vedrørende annonce {AnnouncementId}", AnnouncementId);
 
-            _errorMessage =
-                "Beskeden kunne ikke sendes. Prøv igen.";
+            _errorMessage = "Beskeden kunne ikke sendes. Prøv igen.";
         }
         finally
         {

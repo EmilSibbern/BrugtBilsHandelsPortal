@@ -6,14 +6,11 @@ namespace BrugtBilsHandelsPortal.Services.Interfaces;
 public interface ICommentService
 {
     /// <summary>Henter synlige kommentarer til en aktiv annonce.</summary>
-    Task<IReadOnlyList<CommentDto>> GetForAnnouncementAsync(
-        int announcementId);
+    Task<IReadOnlyList<CommentDto>> GetForAnnouncementAsync(int announcementId);
 
     /// <summary>Opretter en kommentar eller et svar som den aktuelle bruger.</summary>
-    Task<CommentDto> CreateAsync(
-        CreateCommentDto request);
+    Task<CommentDto> CreateAsync(CreateCommentDto request);
 
     /// <summary>Soft-sletter en kommentar, når brugeren er forfatter eller administrator.</summary>
-    Task DeleteAsync(
-        long commentId);
+    Task DeleteAsync(long commentId);
 }

@@ -1,1 +1,473 @@
-@* TODO: Moderér alle annoncer og billeder. *@
+@page "/admin/announcements"
+@attribute [Authorize(Roles = "Administrator")]
+@rendermode InteractiveServer
+
+@using System.ComponentModel.DataAnnotations
+@using BrugtBilsHandelsPortal.DTOs.Announcements
+@using BrugtBilsHandelsPortal.DTOs.Common
+@using BrugtBilsHandelsPortal.Services.Implementations
+@using BrugtBilsHandelsPortal.Services.Interfaces
+
+@inject IAdminAnnouncementService AdminAnnouncementService
+
+<PageTitle>Administrér annoncer</PageTitle>
+
+<div class="container py-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-3 mb-4">
+
+        <div>
+            <p class="text-primary text-uppercase small fw-semibold mb-2">
+                Administration
+            </p>
+
+            <h1 class="mb-1">
+                Administrér annoncer
+            </h1>
+
+            <p class="text-muted mb-0">
+                Find, gennemse og moderér annoncer
+                fra alle brugere.
+            </p>
+        </div>
+
+        <a href="/admin" class="btn btn-outline-secondary">
+            Tilbage til administration
+        </a>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body p-4">
+            <EditForm Model="_search" OnValidSubmit="ApplySearchAsync" FormName="admin-announcement-search">
+
+                <DataAnnotationsValidator />
+
+                <ValidationSummary class="text-danger mb-3" />
+
+                <div class="row g-3">
+                    <div class="col-12 col-lg-4">
+                        <label for="announcement-query" class="form-label">
+                            Søg i annoncer
+                        </label>
+
+                        <InputText id="announcement-query" class="form-control" placeholder="Titel, mærke eller model" @bind-Value="_search.Query" />
+                    </div>
+
+                    <div class="col-12 col-md-6 col-lg-3">
+                        <label for="owner-query" class="form-label">
+                            Ejer
+                        </label>
+
+                        <InputText id="owner-query" class="form-control" placeholder="Brugernavn eller e-mail" @bind-Value="_search.OwnerQuery" />
+                    </div>
+
+                    <div class="col-12 col-md-6 col-lg-2">
+                        <label for="status-filter" class="form-label">
+                            Status
+                        </label>
+
+                        <InputSelect id="status-filter" class="form-select" @bind-Value="_search.IsActive">
+                            <option value="">
+                                Alle
+                            </option>
+                            <option value="true">
+                                Aktive
+                            </option>
+                            <option value="false">
+                                Inaktive
+                            </option>
+                        </InputSelect>
+                    </div>
+
+                    <div class="col-12 col-lg-3 d-flex align-items-end gap-2">
+                        <button type="submit" class="btn btn-primary" disabled="@_isLoading">
+                            Søg
+                        </button>
+
+                        <button type="button" class="btn btn-outline-secondary" disabled="@_isLoading" @onclick="ResetSearchAsync">
+                            Nulstil
+                        </button>
+                    </div>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(_successMessage))
+    {
+        <div class="alert alert-success" role="alert">
+            @_successMessage
+        </div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(_errorMessage))
+    {
+        <div class="alert alert-danger" role="alert">
+            @_errorMessage
+        </div>
+    }
+
+    @if (_isLoading)
+    {
+        <div class="d-flex align-items-center justify-content-center gap-2 py-5" role="status">
+
+            <span class="spinner-border" aria-hidden="true"></span>
+
+            <span>Indlæser annoncer...</span>
+        </div>
+    }
+    else if (_announcements.Count == 0)
+    {
+        <div class="card shadow-sm">
+            <div class="card-body text-center py-5">
+                <h2 class="h4">
+                    Ingen annoncer fundet
+                </h2>
+
+                <p class="text-muted mb-0">
+                    Prøv at ændre eller nulstille
+                    filtrene.
+                </p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            @foreach (var announcement in _announcements)
+            {
+                <div class="col-12 col-md-6 col-xl-4">
+                    <article class="card h-100 shadow-sm">
+                        <div class="ratio ratio-16x9 bg-light">
+                            @if (string.IsNullOrWhiteSpace(announcement.PrimaryImageFileName))
+                            {
+                                <div class="d-flex align-items-center justify-content-center text-secondary">
+                                    Intet billede
+                                </div>
+                            }
+                            else
+                            {
+                                <img src="@GetImageUrl( announcement)" class="card-img-top object-fit-cover" alt="@announcement.Title" />
+                            }
+                        </div>
+
+                        <div class="card-body d-flex flex-column p-4">
+
+                            <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+
+                                <h2 class="h5 card-title mb-0">
+                                    @announcement.Title
+                                </h2>
+
+                                @if (announcement.IsActive)
+                                {
+                                    <span class="badge text-bg-success">
+                                        Aktiv
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge text-bg-secondary">
+                                        Inaktiv
+                                    </span>
+                                }
+                            </div>
+
+                            <p class="text-muted mb-2">
+                                @announcement.BrandName
+                                @announcement.Model ·
+                                @announcement.ProductionYear
+                            </p>
+
+                            <dl class="row small mb-3">
+                                <dt class="col-5">
+                                    Ejer
+                                </dt>
+                                <dd class="col-7">
+                                    @announcement.OwnerUsername
+                                </dd>
+
+                                <dt class="col-5">
+                                    Billeder
+                                </dt>
+                                <dd class="col-7">
+                                    @announcement.ImageCount
+                                </dd>
+
+                                <dt class="col-5">
+                                    Oprettet
+                                </dt>
+                                <dd class="col-7">
+                                    @announcement.CreatedAt.ToLocalTime().ToString("dd-MM-yyyy")
+                                </dd>
+                            </dl>
+
+                            <p class="fs-4 fw-semibold text-primary mt-auto mb-3">
+                                @($"{announcement.Price:N0} kr.")
+                            </p>
+
+                            <div class="d-grid gap-2">
+                                <a href="/announcements/@announcement.Id" class="btn btn-outline-secondary">
+                                    Se annonce
+                                </a>
+
+                                <a href="/admin/announcements/@announcement.Id/edit" class="btn btn-outline-primary">
+                                    Rediger annonce
+                                </a>
+
+                                <a href="/admin/announcements/@announcement.Id/images" class="btn btn-outline-primary">
+                                    Moderér billeder
+                                </a>
+
+                                @if (announcement.IsActive)
+                                {
+                                    <button type="button" class="btn btn-outline-danger" disabled="@_isChangingStatus" @onclick="() => OpenDeactivateConfirmation( announcement)">
+                                        Deaktiver annonce
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                    </article>
+                </div>
+            }
+        </div>
+
+        @if (_page is not null && _page.TotalPages > 1)
+        {
+            <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mt-4">
+
+                <p class="text-muted mb-0">
+                    Side @_page.Page af
+                    @_page.TotalPages –
+                    @_page.TotalItems annoncer
+                </p>
+
+                <div class="btn-group">
+                    <button type="button" class="btn btn-outline-primary" disabled="@(!_page.HasPreviousPage || _isLoading)" @onclick="PreviousPageAsync">
+                        Forrige
+                    </button>
+
+                    <button type="button" class="btn btn-outline-primary" disabled="@(!_page.HasNextPage || _isLoading)" @onclick="NextPageAsync">
+                        Næste
+                    </button>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@if (_announcementToDeactivate is not null)
+{
+    <div class="modal d-block" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="deactivate-title">
+
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="deactivate-title" class="modal-title h5">
+                        Deaktiver annonce
+                    </h2>
+
+                    <button type="button" class="btn-close" aria-label="Luk" disabled="@_isChangingStatus" @onclick="CloseConfirmation">
+                    </button>
+                </div>
+
+                <div class="modal-body">
+                    <p>
+                        Er du sikker på, at du vil
+                        deaktivere annoncen
+                        <strong>
+                            @_announcementToDeactivate.Title
+                        </strong>?
+                    </p>
+
+                    <p class="text-muted mb-0">
+                        Annoncen bliver skjult for
+                        almindelige brugere. Handlingen
+                        registreres i auditloggen.
+                    </p>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" disabled="@_isChangingStatus" @onclick="CloseConfirmation">
+                        Annuller
+                    </button>
+
+                    <button type="button" class="btn btn-danger" disabled="@_isChangingStatus" @onclick="ConfirmDeactivateAsync">
+
+                        @if (_isChangingStatus)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2" aria-hidden="true">
+                            </span>
+                        }
+
+                        @(_isChangingStatus ? "Deaktiverer..." : "Deaktiver annonce")
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-backdrop show"></div>
+}
+
+@code {
+    private AdminAnnouncementSearchDto _search = new();
+
+    private IReadOnlyList<AdminAnnouncementDto> _announcements = Array.Empty<AdminAnnouncementDto>();
+
+    private PagedResult<AdminAnnouncementDto>? _page;
+
+    private AdminAnnouncementDto? _announcementToDeactivate;
+
+    private bool _isLoading = true;
+    private bool _isChangingStatus;
+
+    private string? _successMessage;
+    private string? _errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAnnouncementsAsync();
+    }
+
+    private async Task ApplySearchAsync()
+    {
+        _search.Page = 1;
+
+        await LoadAnnouncementsAsync();
+    }
+
+    private async Task ResetSearchAsync()
+    {
+        _search = new AdminAnnouncementSearchDto();
+
+        await LoadAnnouncementsAsync();
+    }
+
+    private async Task PreviousPageAsync()
+    {
+        if (_page is null || !_page.HasPreviousPage)
+        {
+            return;
+        }
+
+        _search.Page--;
+
+        await LoadAnnouncementsAsync();
+    }
+
+    private async Task NextPageAsync()
+    {
+        if (_page is null || !_page.HasNextPage)
+        {
+            return;
+        }
+
+        _search.Page++;
+
+        await LoadAnnouncementsAsync();
+    }
+
+    private async Task LoadAnnouncementsAsync()
+    {
+        _isLoading = true;
+        _errorMessage = null;
+
+        try
+        {
+            var result = await AdminAnnouncementService.SearchAsync(_search);
+
+            if (result.Succeeded && result.Page is not null)
+            {
+                _page = result.Page;
+                _announcements = result.Page.Items;
+            }
+            else
+            {
+                _page = null;
+                _announcements = Array.Empty<AdminAnnouncementDto>();
+
+                _errorMessage = result.ErrorMessage ?? "Annoncerne kunne ikke indlæses.";
+            }
+        }
+        catch (UnauthorizedAccessException)
+        {
+            _page = null;
+            _announcements = Array.Empty<AdminAnnouncementDto>();
+
+            _errorMessage = "Du har ikke adgang til annoncemoderation.";
+        }
+        catch
+        {
+            _page = null;
+            _announcements = Array.Empty<AdminAnnouncementDto>();
+
+            _errorMessage = "Annoncerne kunne ikke indlæses.";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void OpenDeactivateConfirmation(AdminAnnouncementDto announcement)
+    {
+        _successMessage = null;
+        _errorMessage = null;
+
+        _announcementToDeactivate = announcement;
+    }
+
+    private void CloseConfirmation()
+    {
+        if (_isChangingStatus)
+        {
+            return;
+        }
+
+        _announcementToDeactivate = null;
+    }
+
+    private async Task ConfirmDeactivateAsync()
+    {
+        if (_announcementToDeactivate is null || _isChangingStatus)
+        {
+            return;
+        }
+
+        _isChangingStatus = true;
+        _successMessage = null;
+        _errorMessage = null;
+
+        try
+        {
+            await AdminAnnouncementService.DeactivateAsync(_announcementToDeactivate.Id);
+
+            _announcementToDeactivate = null;
+
+            _successMessage = "Annoncen er deaktiveret.";
+
+            await LoadAnnouncementsAsync();
+        }
+        catch (Exception exception)when (exception is ValidationException or InvalidOperationException)
+        {
+            _errorMessage = exception.Message;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            _errorMessage = "Du har ikke adgang til at " + "deaktivere annoncen.";
+        }
+        catch
+        {
+            _errorMessage = "Annoncen kunne ikke deaktiveres.";
+        }
+        finally
+        {
+            _isChangingStatus = false;
+        }
+    }
+
+    private static string GetImageUrl(AdminAnnouncementDto announcement)
+    {
+        return $"/uploads/{Uri.EscapeDataString(announcement.PrimaryImageFileName!)}";
+    }
+}

@@ -17,75 +17,55 @@ public class CommentService : ICommentService
     private readonly IAnnouncementRepository _announcementRepository;
     private readonly ICurrentUserService _currentUserService;
 
-    public CommentService(
-        ICommentRepository commentRepository,
-        IAnnouncementRepository announcementRepository,
-        ICurrentUserService currentUserService)
+    public CommentService(ICommentRepository commentRepository, IAnnouncementRepository announcementRepository, ICurrentUserService currentUserService)
     {
         _commentRepository = commentRepository;
         _announcementRepository = announcementRepository;
         _currentUserService = currentUserService;
     }
 
-    public async Task<IReadOnlyList<CommentDto>>
-        GetForAnnouncementAsync(
-            int announcementId)
+    public async Task<IReadOnlyList<CommentDto>> GetForAnnouncementAsync(int announcementId)
     {
         if (announcementId <= 0)
         {
             return Array.Empty<CommentDto>();
         }
 
-        return await _commentRepository
-            .GetForActiveAnnouncementAsync(
-                announcementId);
+        return await _commentRepository.GetForActiveAnnouncementAsync(announcementId);
     }
 
-    public async Task<CommentDto> CreateAsync(
-        CreateCommentDto request)
+    public async Task<CommentDto> CreateAsync(CreateCommentDto request)
     {
         ArgumentNullException.ThrowIfNull(request);
 
         ValidateRequest(request);
 
-        var userId =
-            await _currentUserService.GetUserIdAsync();
+        var userId = await _currentUserService.GetUserIdAsync();
 
         if (userId is null)
         {
-            throw new UnauthorizedAccessException(
-                "Du skal være logget ind for at kommentere.");
+            throw new UnauthorizedAccessException("Du skal være logget ind for at kommentere.");
         }
 
-        var announcement =
-            await _announcementRepository.GetActiveByIdAsync(
-                request.AnnouncementId);
+        var announcement = await _announcementRepository.GetActiveByIdAsync(request.AnnouncementId);
 
         if (announcement is null)
         {
-            throw new InvalidOperationException(
-                "Annoncen findes ikke eller er ikke længere aktiv.");
+            throw new InvalidOperationException("Annoncen findes ikke eller er ikke længere aktiv.");
         }
 
         if (request.ParentCommentId.HasValue)
         {
-            await ValidateParentCommentAsync(
-                request.ParentCommentId.Value,
-                request.AnnouncementId);
+            await ValidateParentCommentAsync(request.ParentCommentId.Value, request.AnnouncementId);
         }
 
-        var rateLimitStart =
-            DateTime.UtcNow.AddMinutes(-1);
+        var rateLimitStart = DateTime.UtcNow.AddMinutes(-1);
 
-        var recentlyCreatedCount =
-            await _commentRepository.CountCreatedSinceAsync(
-                userId.Value,
-                rateLimitStart);
+        var recentlyCreatedCount = await _commentRepository.CountCreatedSinceAsync(userId.Value, rateLimitStart);
 
         if (recentlyCreatedCount >= MaxCommentsPerMinute)
         {
-            throw new InvalidOperationException(
-                "Du har skrevet for mange kommentarer. Vent et øjeblik og prøv igen.");
+            throw new InvalidOperationException("Du har skrevet for mange kommentarer. Vent et øjeblik og prøv igen.");
         }
 
         var comment = new Comment
@@ -96,46 +76,37 @@ public class CommentService : ICommentService
             ParentCommentId = request.ParentCommentId
         };
 
-        var commentId =
-            await _commentRepository.CreateAsync(comment);
+        var commentId = await _commentRepository.CreateAsync(comment);
 
-        var createdComment =
-            await _commentRepository.GetByIdAsync(commentId);
+        var createdComment = await _commentRepository.GetByIdAsync(commentId);
 
         if (createdComment is null)
         {
-            throw new InvalidOperationException(
-                "Kommentaren blev oprettet, men kunne ikke genindlæses.");
+            throw new InvalidOperationException("Kommentaren blev oprettet, men kunne ikke genindlæses.");
         }
 
         return createdComment;
     }
 
-    public async Task DeleteAsync(
-        long commentId)
+    public async Task DeleteAsync(long commentId)
     {
         if (commentId <= 0)
         {
-            throw new ValidationException(
-                "Kommentaren er ugyldig.");
+            throw new ValidationException("Kommentaren er ugyldig.");
         }
 
-        var userId =
-            await _currentUserService.GetUserIdAsync();
+        var userId = await _currentUserService.GetUserIdAsync();
 
         if (userId is null)
         {
-            throw new UnauthorizedAccessException(
-                "Du skal være logget ind for at fjerne kommentarer.");
+            throw new UnauthorizedAccessException("Du skal være logget ind for at fjerne kommentarer.");
         }
 
-        var comment =
-            await _commentRepository.GetByIdAsync(commentId);
+        var comment = await _commentRepository.GetByIdAsync(commentId);
 
         if (comment is null)
         {
-            throw new InvalidOperationException(
-                "Kommentaren findes ikke.");
+            throw new InvalidOperationException("Kommentaren findes ikke.");
         }
 
         if (comment.IsDeleted)
@@ -143,89 +114,62 @@ public class CommentService : ICommentService
             return;
         }
 
-        var isAdministrator =
-            await _currentUserService.IsInRoleAsync(
-                "Administrator");
+        var isAdministrator = await _currentUserService.IsInRoleAsync("Administrator");
 
         var isOwner = comment.UserId == userId.Value;
 
         if (!isOwner && !isAdministrator)
         {
-            throw new UnauthorizedAccessException(
-                "Du har ikke adgang til at fjerne kommentaren.");
+            throw new UnauthorizedAccessException("Du har ikke adgang til at fjerne kommentaren.");
         }
 
-        var deleted =
-            await _commentRepository.SoftDeleteAsync(
-                commentId,
-                userId.Value,
-                DateTime.UtcNow);
+        var deleted = await _commentRepository.SoftDeleteAsync(commentId, userId.Value, DateTime.UtcNow);
 
         if (!deleted)
         {
-            throw new InvalidOperationException(
-                "Kommentaren kunne ikke fjernes.");
+            throw new InvalidOperationException("Kommentaren kunne ikke fjernes.");
         }
     }
 
-    private static void ValidateRequest(
-        CreateCommentDto request)
+    private static void ValidateRequest(CreateCommentDto request)
     {
-        var validationResults =
-            new List<ValidationResult>();
+        var validationResults = new List<ValidationResult>();
 
-        var isValid = Validator.TryValidateObject(
-            request,
-            new ValidationContext(request),
-            validationResults,
-            validateAllProperties: true);
+        var isValid = Validator.TryValidateObject(request, new ValidationContext(request), validationResults, validateAllProperties: true);
 
         if (!isValid)
         {
-            throw new ValidationException(
-                validationResults.First().ErrorMessage
-                ?? "Kommentaren er ugyldig.");
+            throw new ValidationException(validationResults.First().ErrorMessage ?? "Kommentaren er ugyldig.");
         }
 
         if (string.IsNullOrWhiteSpace(request.Text))
         {
-            throw new ValidationException(
-                "Kommentaren må ikke være tom.");
+            throw new ValidationException("Kommentaren må ikke være tom.");
         }
     }
 
-    private async Task ValidateParentCommentAsync(
-        long parentCommentId,
-        int announcementId)
+    private async Task ValidateParentCommentAsync(long parentCommentId, int announcementId)
     {
         if (parentCommentId <= 0)
         {
-            throw new ValidationException(
-                "Den valgte hovedkommentar er ugyldig.");
+            throw new ValidationException("Den valgte hovedkommentar er ugyldig.");
         }
 
-        var parentComment =
-            await _commentRepository.GetByIdAsync(
-                parentCommentId);
+        var parentComment = await _commentRepository.GetByIdAsync(parentCommentId);
 
-        if (parentComment is null
-            || parentComment.IsDeleted)
+        if (parentComment is null || parentComment.IsDeleted)
         {
-            throw new InvalidOperationException(
-                "Hovedkommentaren findes ikke.");
+            throw new InvalidOperationException("Hovedkommentaren findes ikke.");
         }
 
-        if (parentComment.AnnouncementId
-            != announcementId)
+        if (parentComment.AnnouncementId != announcementId)
         {
-            throw new ValidationException(
-                "Der kan kun svares på kommentarer fra samme annonce.");
+            throw new ValidationException("Der kan kun svares på kommentarer fra samme annonce.");
         }
 
         if (parentComment.ParentCommentId.HasValue)
         {
-            throw new ValidationException(
-                "Der kan kun svares direkte på en hovedkommentar.");
+            throw new ValidationException("Der kan kun svares direkte på en hovedkommentar.");
         }
     }
 }

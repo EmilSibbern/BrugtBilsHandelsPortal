@@ -18,8 +18,7 @@ public class MessageServiceTests
         var repository = new FakeMessageRepository();
         var service = CreateService(repository, currentUserId: null);
 
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(
-            () => service.SendAsync(CreateRequest()));
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => service.SendAsync(CreateRequest()));
 
         Assert.Equal(0, repository.CreateCallCount);
         Assert.Equal(0, repository.CountSentCallCount);
@@ -34,8 +33,7 @@ public class MessageServiceTests
         var repository = new FakeMessageRepository();
         var service = CreateService(repository, currentUserId: 9);
 
-        await Assert.ThrowsAsync<ValidationException>(
-            () => service.SendAsync(CreateRequest(text)));
+        await Assert.ThrowsAsync<ValidationException>(() => service.SendAsync(CreateRequest(text)));
 
         Assert.Equal(0, repository.CreateCallCount);
     }
@@ -47,9 +45,7 @@ public class MessageServiceTests
         var repository = new FakeMessageRepository();
         var service = CreateService(repository, currentUserId: 9);
 
-        await Assert.ThrowsAsync<ValidationException>(
-            () => service.SendAsync(
-                CreateRequest(new string('a', 2001))));
+        await Assert.ThrowsAsync<ValidationException>(() => service.SendAsync(CreateRequest(new string('a', 2001))));
 
         Assert.Equal(0, repository.CreateCallCount);
     }
@@ -59,21 +55,15 @@ public class MessageServiceTests
     public async Task SendAsync_UsesCurrentUserAndAnnouncementOwner()
     {
         var repository = new FakeMessageRepository();
-        var service = CreateService(
-            repository,
-            currentUserId: 9,
-            sellerUserId: 7);
+        var service = CreateService(repository, currentUserId: 9, sellerUserId: 7);
 
-        var result = await service.SendAsync(
-            CreateRequest("  Er bilen stadig til salg?  "));
+        var result = await service.SendAsync(CreateRequest("  Er bilen stadig til salg?  "));
 
         Assert.NotNull(repository.CreatedMessage);
         Assert.Equal(9, repository.CreatedMessage.SenderUserId);
         Assert.Equal(7, repository.CreatedMessage.ReceiverUserId);
         Assert.Equal(42, repository.CreatedMessage.AnnouncementId);
-        Assert.Equal(
-            "Er bilen stadig til salg?",
-            repository.CreatedMessage.Text);
+        Assert.Equal("Er bilen stadig til salg?", repository.CreatedMessage.Text);
         Assert.False(repository.CreatedMessage.IsRead);
         Assert.Null(repository.CreatedMessage.ReadAt);
 
@@ -88,13 +78,9 @@ public class MessageServiceTests
     public async Task SendAsync_ToOwnAnnouncement_IsRejected()
     {
         var repository = new FakeMessageRepository();
-        var service = CreateService(
-            repository,
-            currentUserId: 7,
-            sellerUserId: 7);
+        var service = CreateService(repository, currentUserId: 7, sellerUserId: 7);
 
-        await Assert.ThrowsAsync<ValidationException>(
-            () => service.SendAsync(CreateRequest()));
+        await Assert.ThrowsAsync<ValidationException>(() => service.SendAsync(CreateRequest()));
 
         Assert.Equal(0, repository.CreateCallCount);
     }
@@ -104,13 +90,9 @@ public class MessageServiceTests
     public async Task SendAsync_ForInactiveAnnouncement_IsRejected()
     {
         var repository = new FakeMessageRepository();
-        var service = CreateService(
-            repository,
-            currentUserId: 9,
-            announcementIsActive: false);
+        var service = CreateService(repository, currentUserId: 9, announcementIsActive: false);
 
-        await Assert.ThrowsAsync<InvalidOperationException>(
-            () => service.SendAsync(CreateRequest()));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.SendAsync(CreateRequest()));
 
         Assert.Equal(0, repository.CreateCallCount);
     }
@@ -125,8 +107,7 @@ public class MessageServiceTests
         };
         var service = CreateService(repository, currentUserId: 9);
 
-        await Assert.ThrowsAsync<InvalidOperationException>(
-            () => service.SendAsync(CreateRequest()));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.SendAsync(CreateRequest()));
 
         Assert.Equal(1, repository.CountSentCallCount);
         Assert.Equal(0, repository.CreateCallCount);
@@ -139,8 +120,7 @@ public class MessageServiceTests
         var repository = new FakeMessageRepository();
         var service = CreateService(repository, currentUserId: null);
 
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(
-            () => service.GetInboxAsync());
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => service.GetInboxAsync());
 
         Assert.Equal(0, repository.GetInboxCallCount);
     }
@@ -150,14 +130,8 @@ public class MessageServiceTests
     public async Task GetInboxAsync_UsesCurrentUserAsReceiver()
     {
         var repository = new FakeMessageRepository();
-        repository.Messages[2] = CreateMessage(
-            id: 2,
-            senderUserId: 9,
-            receiverUserId: 7);
-        repository.Messages[3] = CreateMessage(
-            id: 3,
-            senderUserId: 9,
-            receiverUserId: 99);
+        repository.Messages[2] = CreateMessage(id: 2, senderUserId: 9, receiverUserId: 7);
+        repository.Messages[3] = CreateMessage(id: 3, senderUserId: 9, receiverUserId: 99);
 
         var service = CreateService(repository, currentUserId: 7);
 
@@ -174,15 +148,9 @@ public class MessageServiceTests
     public async Task GetByIdAsync_AdministratorWhoIsNotParticipant_GetsNoMessage()
     {
         var repository = new FakeMessageRepository();
-        repository.Messages[2] = CreateMessage(
-            id: 2,
-            senderUserId: 9,
-            receiverUserId: 7);
+        repository.Messages[2] = CreateMessage(id: 2, senderUserId: 9, receiverUserId: 7);
 
-        var service = CreateService(
-            repository,
-            currentUserId: 1,
-            isAdministrator: true);
+        var service = CreateService(repository, currentUserId: 1, isAdministrator: true);
 
         var result = await service.GetByIdAsync(2);
 
@@ -195,16 +163,8 @@ public class MessageServiceTests
     public async Task GetConversationAsync_AsReceiver_LoadsBothDirectionsAndMarksIncomingRead()
     {
         var repository = new FakeMessageRepository();
-        repository.Messages[2] = CreateMessage(
-            id: 2,
-            senderUserId: 9,
-            receiverUserId: 7,
-            text: "Er bilen stadig til salg?");
-        repository.Messages[3] = CreateMessage(
-            id: 3,
-            senderUserId: 7,
-            receiverUserId: 9,
-            text: "Ja, den er stadig til salg.");
+        repository.Messages[2] = CreateMessage(id: 2, senderUserId: 9, receiverUserId: 7, text: "Er bilen stadig til salg?");
+        repository.Messages[3] = CreateMessage(id: 3, senderUserId: 7, receiverUserId: 9, text: "Ja, den er stadig til salg.");
 
         var service = CreateService(repository, currentUserId: 7);
 
@@ -224,10 +184,7 @@ public class MessageServiceTests
     public async Task GetConversationAsync_ForNonParticipant_ReturnsNullWithoutReadingConversation()
     {
         var repository = new FakeMessageRepository();
-        repository.Messages[2] = CreateMessage(
-            id: 2,
-            senderUserId: 9,
-            receiverUserId: 7);
+        repository.Messages[2] = CreateMessage(id: 2, senderUserId: 9, receiverUserId: 7);
 
         var service = CreateService(repository, currentUserId: 99);
 
@@ -243,24 +200,17 @@ public class MessageServiceTests
     public async Task ReplyAsync_AsSeller_SendsTrimmedReplyToBuyer()
     {
         var repository = new FakeMessageRepository();
-        repository.Messages[12] = CreateMessage(
-            id: 12,
-            senderUserId: 9,
-            receiverUserId: 7);
+        repository.Messages[12] = CreateMessage(id: 12, senderUserId: 9, receiverUserId: 7);
 
         var service = CreateService(repository, currentUserId: 7);
 
-        var reply = await service.ReplyAsync(
-            12,
-            "  Ja, den er stadig til salg.  ");
+        var reply = await service.ReplyAsync(12, "  Ja, den er stadig til salg.  ");
 
         Assert.NotNull(repository.CreatedMessage);
         Assert.Equal(7, repository.CreatedMessage.SenderUserId);
         Assert.Equal(9, repository.CreatedMessage.ReceiverUserId);
         Assert.Equal(42, repository.CreatedMessage.AnnouncementId);
-        Assert.Equal(
-            "Ja, den er stadig til salg.",
-            repository.CreatedMessage.Text);
+        Assert.Equal("Ja, den er stadig til salg.", repository.CreatedMessage.Text);
         Assert.Equal(7, reply.SenderUserId);
         Assert.Equal(9, reply.ReceiverUserId);
     }
@@ -270,30 +220,20 @@ public class MessageServiceTests
     public async Task ReplyAsync_ForNonParticipant_IsRejectedWithoutCreatingMessage()
     {
         var repository = new FakeMessageRepository();
-        repository.Messages[12] = CreateMessage(
-            id: 12,
-            senderUserId: 9,
-            receiverUserId: 7);
+        repository.Messages[12] = CreateMessage(id: 12, senderUserId: 9, receiverUserId: 7);
 
         var service = CreateService(repository, currentUserId: 99);
 
-        await Assert.ThrowsAsync<InvalidOperationException>(
-            () => service.ReplyAsync(12, "Uautoriseret svar"));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.ReplyAsync(12, "Uautoriseret svar"));
 
         Assert.Equal(0, repository.CreateCallCount);
         Assert.Equal(0, repository.CountSentCallCount);
     }
 
-    private static MessageService CreateService(
-        FakeMessageRepository messageRepository,
-        int? currentUserId,
-        int sellerUserId = 7,
-        bool announcementIsActive = true,
-        bool isAdministrator = false)
+    private static MessageService CreateService(FakeMessageRepository messageRepository, int? currentUserId, int sellerUserId = 7, bool announcementIsActive = true, bool isAdministrator = false)
     {
         var announcementRepository = new FakeAnnouncementRepository();
-        announcementRepository.Details[42] =
-            new AnnouncementDetailsDto
+        announcementRepository.Details[42] = new AnnouncementDetailsDto
             {
                 Id = 42,
                 IsActive = announcementIsActive,
@@ -302,18 +242,10 @@ public class MessageServiceTests
                 Title = "Skoda Octavia"
             };
 
-        return new MessageService(
-            messageRepository,
-            announcementRepository,
-            new FakeCurrentUserService
-            {
-                UserId = currentUserId,
-                IsAdministrator = isAdministrator
-            });
+        return new MessageService(messageRepository, announcementRepository, new FakeCurrentUserService { UserId = currentUserId, IsAdministrator = isAdministrator });
     }
 
-    private static SendMessageDto CreateRequest(
-        string text = "Er bilen stadig til salg?")
+    private static SendMessageDto CreateRequest(string text = "Er bilen stadig til salg?")
     {
         return new SendMessageDto
         {
@@ -322,11 +254,7 @@ public class MessageServiceTests
         };
     }
 
-    private static MessageDto CreateMessage(
-        long id,
-        int senderUserId,
-        int receiverUserId,
-        string text = "Er bilen stadig til salg?")
+    private static MessageDto CreateMessage(long id, int senderUserId, int receiverUserId, string text = "Er bilen stadig til salg?")
     {
         return new MessageDto
         {
@@ -364,62 +292,34 @@ public class MessageServiceTests
             CreateCallCount++;
             CreatedMessage = message;
             const long messageId = 1;
-            Messages[messageId] = CreateMessage(
-                messageId,
-                message.SenderUserId,
-                message.ReceiverUserId,
-                message.Text);
+            Messages[messageId] = CreateMessage(messageId, message.SenderUserId, message.ReceiverUserId, message.Text);
             return Task.FromResult(messageId);
         }
 
-        public Task<MessageDto?> GetByIdForParticipantAsync(
-            long messageId,
-            int currentUserId)
+        public Task<MessageDto?> GetByIdForParticipantAsync(long messageId, int currentUserId)
         {
             LastParticipantUserId = currentUserId;
             Messages.TryGetValue(messageId, out var message);
-            var canRead = message is not null
-                && (message.SenderUserId == currentUserId
-                    || message.ReceiverUserId == currentUserId);
+            var canRead = message is not null && (message.SenderUserId == currentUserId || message.ReceiverUserId == currentUserId);
             return Task.FromResult(canRead ? message : null);
         }
 
-        public Task<IReadOnlyList<MessageDto>> GetInboxAsync(
-            int receiverUserId)
+        public Task<IReadOnlyList<MessageDto>> GetInboxAsync(int receiverUserId)
         {
             GetInboxCallCount++;
             LastInboxUserId = receiverUserId;
-            IReadOnlyList<MessageDto> inbox = Messages.Values
-                .Where(message =>
-                    message.ReceiverUserId == receiverUserId)
-                .ToList();
+            IReadOnlyList<MessageDto> inbox = Messages.Values.Where(message => message.ReceiverUserId == receiverUserId).ToList();
             return Task.FromResult(inbox);
         }
 
-        public Task<IReadOnlyList<MessageDto>> GetConversationAsync(
-            int announcementId,
-            int firstUserId,
-            int secondUserId)
+        public Task<IReadOnlyList<MessageDto>> GetConversationAsync(int announcementId, int firstUserId, int secondUserId)
         {
             GetConversationCallCount++;
-            IReadOnlyList<MessageDto> conversation = Messages.Values
-                .Where(message =>
-                    message.AnnouncementId == announcementId
-                    && ((message.SenderUserId == firstUserId
-                         && message.ReceiverUserId == secondUserId)
-                        || (message.SenderUserId == secondUserId
-                            && message.ReceiverUserId == firstUserId)))
-                .OrderBy(message => message.CreatedAt)
-                .ThenBy(message => message.Id)
-                .ToList();
+            IReadOnlyList<MessageDto> conversation = Messages.Values.Where(message => message.AnnouncementId == announcementId && ((message.SenderUserId == firstUserId && message.ReceiverUserId == secondUserId) || (message.SenderUserId == secondUserId && message.ReceiverUserId == firstUserId))).OrderBy(message => message.CreatedAt).ThenBy(message => message.Id).ToList();
             return Task.FromResult(conversation);
         }
 
-        public Task<int> MarkConversationAsReadAsync(
-            int announcementId,
-            int receiverUserId,
-            int senderUserId,
-            DateTime readAt)
+        public Task<int> MarkConversationAsReadAsync(int announcementId, int receiverUserId, int senderUserId, DateTime readAt)
         {
             MarkConversationCallCount++;
             LastMarkedAnnouncementId = announcementId;
@@ -428,9 +328,7 @@ public class MessageServiceTests
             return Task.FromResult(1);
         }
 
-        public Task<int> CountSentSinceAsync(
-            int senderUserId,
-            DateTime since)
+        public Task<int> CountSentSinceAsync(int senderUserId, DateTime since)
         {
             CountSentCallCount++;
             return Task.FromResult(SentSinceCount);

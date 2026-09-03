@@ -16,12 +16,9 @@ public class CommentServiceAuthorizationTests
     public async Task GetForAnnouncementAsync_AsGuest_ReturnsPublicComments()
     {
         var commentRepository = new FakeCommentRepository();
-        commentRepository.PublicComments.Add(
-            CreateCommentDto(id: 4, userId: 8));
+        commentRepository.PublicComments.Add(CreateCommentDto(id: 4, userId: 8));
 
-        var service = CreateService(
-            commentRepository,
-            currentUserId: null);
+        var service = CreateService(commentRepository, currentUserId: null);
 
         var comments = await service.GetForAnnouncementAsync(42);
 
@@ -35,16 +32,12 @@ public class CommentServiceAuthorizationTests
     [InlineData(0)]
     [InlineData(-1)]
     [Trait("UserStory", "US14")]
-    public async Task GetForAnnouncementAsync_WithInvalidId_DoesNotQueryRepository(
-        int announcementId)
+    public async Task GetForAnnouncementAsync_WithInvalidId_DoesNotQueryRepository(int announcementId)
     {
         var commentRepository = new FakeCommentRepository();
-        var service = CreateService(
-            commentRepository,
-            currentUserId: null);
+        var service = CreateService(commentRepository, currentUserId: null);
 
-        var comments =
-            await service.GetForAnnouncementAsync(announcementId);
+        var comments = await service.GetForAnnouncementAsync(announcementId);
 
         Assert.Empty(comments);
         Assert.Equal(0, commentRepository.GetForAnnouncementCallCount);
@@ -55,12 +48,9 @@ public class CommentServiceAuthorizationTests
     public async Task CreateAsync_AsGuest_IsRejectedBeforeDatabaseWrite()
     {
         var commentRepository = new FakeCommentRepository();
-        var service = CreateService(
-            commentRepository,
-            currentUserId: null);
+        var service = CreateService(commentRepository, currentUserId: null);
 
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(
-            () => service.CreateAsync(CreateRequest()));
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => service.CreateAsync(CreateRequest()));
 
         Assert.Equal(0, commentRepository.CreateCallCount);
     }
@@ -69,18 +59,14 @@ public class CommentServiceAuthorizationTests
     [InlineData("")]
     [InlineData("   ")]
     [Trait("UserStory", "US14")]
-    public async Task CreateAsync_WithBlankText_IsRejected(
-        string text)
+    public async Task CreateAsync_WithBlankText_IsRejected(string text)
     {
         var commentRepository = new FakeCommentRepository();
-        var service = CreateService(
-            commentRepository,
-            currentUserId: 9);
+        var service = CreateService(commentRepository, currentUserId: 9);
 
         var request = CreateRequest(text: text);
 
-        await Assert.ThrowsAsync<ValidationException>(
-            () => service.CreateAsync(request));
+        await Assert.ThrowsAsync<ValidationException>(() => service.CreateAsync(request));
 
         Assert.Equal(0, commentRepository.CreateCallCount);
     }
@@ -94,15 +80,11 @@ public class CommentServiceAuthorizationTests
             CreatedCommentId = 17
         };
 
-        commentRepository.CommentsById[17] =
-            CreateCommentDto(id: 17, userId: 9);
+        commentRepository.CommentsById[17] = CreateCommentDto(id: 17, userId: 9);
 
-        var service = CreateService(
-            commentRepository,
-            currentUserId: 9);
+        var service = CreateService(commentRepository, currentUserId: 9);
 
-        var request = CreateRequest(
-            text: "  Er bilen stadig til salg?  ");
+        var request = CreateRequest(text: "  Er bilen stadig til salg?  ");
 
         var result = await service.CreateAsync(request);
 
@@ -110,9 +92,7 @@ public class CommentServiceAuthorizationTests
         Assert.NotNull(commentRepository.CreatedComment);
         Assert.Equal(9, commentRepository.CreatedComment.UserId);
         Assert.Equal(42, commentRepository.CreatedComment.AnnouncementId);
-        Assert.Equal(
-            "Er bilen stadig til salg?",
-            commentRepository.CreatedComment.Text);
+        Assert.Equal("Er bilen stadig til salg?", commentRepository.CreatedComment.Text);
         Assert.Equal(1, commentRepository.CreateCallCount);
     }
 
@@ -121,13 +101,9 @@ public class CommentServiceAuthorizationTests
     public async Task CreateAsync_WithMoreThanFifteenHundredCharacters_IsRejected()
     {
         var commentRepository = new FakeCommentRepository();
-        var service = CreateService(
-            commentRepository,
-            currentUserId: 9);
+        var service = CreateService(commentRepository, currentUserId: 9);
 
-        await Assert.ThrowsAsync<ValidationException>(
-            () => service.CreateAsync(
-                CreateRequest(text: new string('a', 1501))));
+        await Assert.ThrowsAsync<ValidationException>(() => service.CreateAsync(CreateRequest(text: new string('a', 1501))));
 
         Assert.Equal(0, commentRepository.CreateCallCount);
     }
@@ -137,13 +113,9 @@ public class CommentServiceAuthorizationTests
     public async Task CreateAsync_ForInactiveAnnouncement_IsRejected()
     {
         var commentRepository = new FakeCommentRepository();
-        var service = CreateService(
-            commentRepository,
-            currentUserId: 9,
-            announcementIsActive: false);
+        var service = CreateService(commentRepository, currentUserId: 9, announcementIsActive: false);
 
-        await Assert.ThrowsAsync<InvalidOperationException>(
-            () => service.CreateAsync(CreateRequest()));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.CreateAsync(CreateRequest()));
 
         Assert.Equal(0, commentRepository.CountCreatedSinceCallCount);
         Assert.Equal(0, commentRepository.CreateCallCount);
@@ -158,12 +130,9 @@ public class CommentServiceAuthorizationTests
             CreatedSinceCount = 5
         };
 
-        var service = CreateService(
-            commentRepository,
-            currentUserId: 9);
+        var service = CreateService(commentRepository, currentUserId: 9);
 
-        await Assert.ThrowsAsync<InvalidOperationException>(
-            () => service.CreateAsync(CreateRequest()));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.CreateAsync(CreateRequest()));
 
         Assert.Equal(1, commentRepository.CountCreatedSinceCallCount);
         Assert.Equal(9, commentRepository.LastCountedUserId);
@@ -184,14 +153,11 @@ public class CommentServiceAuthorizationTests
             Text = "Hovedkommentar"
         };
 
-        var service = CreateService(
-            commentRepository,
-            currentUserId: 9);
+        var service = CreateService(commentRepository, currentUserId: 9);
 
         var request = CreateRequest(parentCommentId: 5);
 
-        await Assert.ThrowsAsync<ValidationException>(
-            () => service.CreateAsync(request));
+        await Assert.ThrowsAsync<ValidationException>(() => service.CreateAsync(request));
 
         Assert.Equal(0, commentRepository.CreateCallCount);
     }
@@ -204,8 +170,7 @@ public class CommentServiceAuthorizationTests
         {
             CreatedCommentId = 17
         };
-        commentRepository.CommentsById[5] =
-            CreateCommentDto(id: 5, userId: 8);
+        commentRepository.CommentsById[5] = CreateCommentDto(id: 5, userId: 8);
         commentRepository.CommentsById[17] = new CommentDto
         {
             Id = 17,
@@ -216,14 +181,9 @@ public class CommentServiceAuthorizationTests
             ParentCommentId = 5
         };
 
-        var service = CreateService(
-            commentRepository,
-            currentUserId: 9);
+        var service = CreateService(commentRepository, currentUserId: 9);
 
-        var result = await service.CreateAsync(
-            CreateRequest(
-                text: "Ja, den er stadig til salg.",
-                parentCommentId: 5));
+        var result = await service.CreateAsync(CreateRequest(text: "Ja, den er stadig til salg.", parentCommentId: 5));
 
         Assert.NotNull(commentRepository.CreatedComment);
         Assert.Equal(5, commentRepository.CreatedComment.ParentCommentId);
@@ -245,13 +205,9 @@ public class CommentServiceAuthorizationTests
             ParentCommentId = 5
         };
 
-        var service = CreateService(
-            commentRepository,
-            currentUserId: 9);
+        var service = CreateService(commentRepository, currentUserId: 9);
 
-        await Assert.ThrowsAsync<ValidationException>(
-            () => service.CreateAsync(
-                CreateRequest(parentCommentId: 6)));
+        await Assert.ThrowsAsync<ValidationException>(() => service.CreateAsync(CreateRequest(parentCommentId: 6)));
 
         Assert.Equal(0, commentRepository.CountCreatedSinceCallCount);
         Assert.Equal(0, commentRepository.CreateCallCount);
@@ -261,15 +217,11 @@ public class CommentServiceAuthorizationTests
     public async Task DeleteAsync_AsDifferentUser_IsRejected()
     {
         var commentRepository = new FakeCommentRepository();
-        commentRepository.CommentsById[5] =
-            CreateCommentDto(id: 5, userId: 8);
+        commentRepository.CommentsById[5] = CreateCommentDto(id: 5, userId: 8);
 
-        var service = CreateService(
-            commentRepository,
-            currentUserId: 9);
+        var service = CreateService(commentRepository, currentUserId: 9);
 
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(
-            () => service.DeleteAsync(5));
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => service.DeleteAsync(5));
 
         Assert.Equal(0, commentRepository.SoftDeleteCallCount);
     }
@@ -278,12 +230,9 @@ public class CommentServiceAuthorizationTests
     public async Task DeleteAsync_AsOwner_SoftDeletesComment()
     {
         var commentRepository = new FakeCommentRepository();
-        commentRepository.CommentsById[5] =
-            CreateCommentDto(id: 5, userId: 9);
+        commentRepository.CommentsById[5] = CreateCommentDto(id: 5, userId: 9);
 
-        var service = CreateService(
-            commentRepository,
-            currentUserId: 9);
+        var service = CreateService(commentRepository, currentUserId: 9);
 
         await service.DeleteAsync(5);
 
@@ -296,13 +245,9 @@ public class CommentServiceAuthorizationTests
     public async Task DeleteAsync_AsAdministrator_CanDeleteOtherUsersComment()
     {
         var commentRepository = new FakeCommentRepository();
-        commentRepository.CommentsById[5] =
-            CreateCommentDto(id: 5, userId: 8);
+        commentRepository.CommentsById[5] = CreateCommentDto(id: 5, userId: 8);
 
-        var service = CreateService(
-            commentRepository,
-            currentUserId: 1,
-            isAdministrator: true);
+        var service = CreateService(commentRepository, currentUserId: 1, isAdministrator: true);
 
         await service.DeleteAsync(5);
 
@@ -310,17 +255,11 @@ public class CommentServiceAuthorizationTests
         Assert.Equal(1, commentRepository.LastDeletedByUserId);
     }
 
-    private static CommentService CreateService(
-        FakeCommentRepository commentRepository,
-        int? currentUserId,
-        bool isAdministrator = false,
-        bool announcementIsActive = true)
+    private static CommentService CreateService(FakeCommentRepository commentRepository, int? currentUserId, bool isAdministrator = false, bool announcementIsActive = true)
     {
-        var announcementRepository =
-            new FakeAnnouncementRepository();
+        var announcementRepository = new FakeAnnouncementRepository();
 
-        announcementRepository.Details[42] =
-            new AnnouncementDetailsDto
+        announcementRepository.Details[42] = new AnnouncementDetailsDto
             {
                 Id = 42,
                 IsActive = announcementIsActive,
@@ -328,19 +267,10 @@ public class CommentServiceAuthorizationTests
                 SellerUsername = "sælger"
             };
 
-        return new CommentService(
-            commentRepository,
-            announcementRepository,
-            new FakeCurrentUserService
-            {
-                UserId = currentUserId,
-                IsAdministrator = isAdministrator
-            });
+        return new CommentService(commentRepository, announcementRepository, new FakeCurrentUserService { UserId = currentUserId, IsAdministrator = isAdministrator });
     }
 
-    private static CreateCommentDto CreateRequest(
-        string text = "Er bilen stadig til salg?",
-        long? parentCommentId = null)
+    private static CreateCommentDto CreateRequest(string text = "Er bilen stadig til salg?", long? parentCommentId = null)
     {
         return new CreateCommentDto
         {
@@ -350,9 +280,7 @@ public class CommentServiceAuthorizationTests
         };
     }
 
-    private static CommentDto CreateCommentDto(
-        long id,
-        int userId)
+    private static CommentDto CreateCommentDto(long id, int userId)
     {
         return new CommentDto
         {
@@ -382,13 +310,11 @@ public class CommentServiceAuthorizationTests
         public int? LastDeletedByUserId { get; private set; }
         public int? LastCountedUserId { get; private set; }
 
-        public Task<IReadOnlyList<CommentDto>>
-            GetForActiveAnnouncementAsync(int announcementId)
+        public Task<IReadOnlyList<CommentDto>> GetForActiveAnnouncementAsync(int announcementId)
         {
             GetForAnnouncementCallCount++;
             LastAnnouncementId = announcementId;
-            return Task.FromResult<IReadOnlyList<CommentDto>>(
-                PublicComments);
+            return Task.FromResult<IReadOnlyList<CommentDto>>(PublicComments);
         }
 
         public Task<CommentDto?> GetByIdAsync(long commentId)
@@ -404,19 +330,14 @@ public class CommentServiceAuthorizationTests
             return Task.FromResult(CreatedCommentId);
         }
 
-        public Task<int> CountCreatedSinceAsync(
-            int userId,
-            DateTime since)
+        public Task<int> CountCreatedSinceAsync(int userId, DateTime since)
         {
             CountCreatedSinceCallCount++;
             LastCountedUserId = userId;
             return Task.FromResult(CreatedSinceCount);
         }
 
-        public Task<bool> SoftDeleteAsync(
-            long commentId,
-            int deletedByUserId,
-            DateTime deletedAt)
+        public Task<bool> SoftDeleteAsync(long commentId, int deletedByUserId, DateTime deletedAt)
         {
             SoftDeleteCallCount++;
             LastDeletedCommentId = commentId;

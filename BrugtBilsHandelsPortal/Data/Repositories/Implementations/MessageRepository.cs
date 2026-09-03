@@ -12,14 +12,12 @@ public class MessageRepository : IMessageRepository
 {
     private readonly IDbConnectionFactory _connectionFactory;
 
-    public MessageRepository(
-        IDbConnectionFactory connectionFactory)
+    public MessageRepository(IDbConnectionFactory connectionFactory)
     {
         _connectionFactory = connectionFactory;
     }
 
-    public async Task<long> CreateAsync(
-        Message message)
+    public async Task<long> CreateAsync(Message message)
     {
         const string sql = """
                            SET NOCOUNT ON;
@@ -50,49 +48,32 @@ public class MessageRepository : IMessageRepository
                            FROM @InsertedMessages;
                            """;
 
-        await using var connection =
-            _connectionFactory.CreateConnection();
+        await using var connection = _connectionFactory.CreateConnection();
 
         await connection.OpenAsync();
 
         await using var command = connection.CreateCommand();
         command.CommandText = sql;
 
-        AddParameter(
-            command,
-            "@AnnouncementId",
-            message.AnnouncementId);
+        AddParameter(command, "@AnnouncementId", message.AnnouncementId);
 
-        AddParameter(
-            command,
-            "@SenderUserId",
-            message.SenderUserId);
+        AddParameter(command, "@SenderUserId", message.SenderUserId);
 
-        AddParameter(
-            command,
-            "@ReceiverUserId",
-            message.ReceiverUserId);
+        AddParameter(command, "@ReceiverUserId", message.ReceiverUserId);
 
-        AddParameter(
-            command,
-            "@Message",
-            message.Text);
+        AddParameter(command, "@Message", message.Text);
 
         var result = await command.ExecuteScalarAsync();
 
         if (result is null || result is DBNull)
         {
-            throw new InvalidOperationException(
-                "Beskeden kunne ikke oprettes.");
+            throw new InvalidOperationException("Beskeden kunne ikke oprettes.");
         }
 
         return Convert.ToInt64(result);
     }
 
-    public async Task<MessageDto?>
-        GetByIdForParticipantAsync(
-            long messageId,
-            int currentUserId)
+    public async Task<MessageDto?> GetByIdForParticipantAsync(long messageId, int currentUserId)
     {
         const string sql = """
                            SELECT TOP (1)
@@ -122,26 +103,18 @@ public class MessageRepository : IMessageRepository
                              );
                            """;
 
-        await using var connection =
-            _connectionFactory.CreateConnection();
+        await using var connection = _connectionFactory.CreateConnection();
 
         await connection.OpenAsync();
 
         await using var command = connection.CreateCommand();
         command.CommandText = sql;
 
-        AddParameter(
-            command,
-            "@MessageId",
-            messageId);
+        AddParameter(command, "@MessageId", messageId);
 
-        AddParameter(
-            command,
-            "@CurrentUserId",
-            currentUserId);
+        AddParameter(command, "@CurrentUserId", currentUserId);
 
-        await using var reader =
-            await command.ExecuteReaderAsync();
+        await using var reader = await command.ExecuteReaderAsync();
 
         if (!await reader.ReadAsync())
         {
@@ -151,9 +124,7 @@ public class MessageRepository : IMessageRepository
         return MessageMapper.MapToDto(reader);
     }
 
-    public async Task<IReadOnlyList<MessageDto>>
-        GetInboxAsync(
-            int receiverUserId)
+    public async Task<IReadOnlyList<MessageDto>> GetInboxAsync(int receiverUserId)
     {
         const string sql = """
                            SELECT
@@ -181,21 +152,16 @@ public class MessageRepository : IMessageRepository
                                m.Id DESC;
                            """;
 
-        await using var connection =
-            _connectionFactory.CreateConnection();
+        await using var connection = _connectionFactory.CreateConnection();
 
         await connection.OpenAsync();
 
         await using var command = connection.CreateCommand();
         command.CommandText = sql;
 
-        AddParameter(
-            command,
-            "@ReceiverUserId",
-            receiverUserId);
+        AddParameter(command, "@ReceiverUserId", receiverUserId);
 
-        await using var reader =
-            await command.ExecuteReaderAsync();
+        await using var reader = await command.ExecuteReaderAsync();
 
         var messages = new List<MessageDto>();
 
@@ -207,11 +173,7 @@ public class MessageRepository : IMessageRepository
         return messages;
     }
 
-    public async Task<IReadOnlyList<MessageDto>>
-    GetConversationAsync(
-        int announcementId,
-        int firstUserId,
-        int secondUserId)
+    public async Task<IReadOnlyList<MessageDto>> GetConversationAsync(int announcementId, int firstUserId, int secondUserId)
 {
     const string sql = """
                        SELECT
@@ -251,49 +213,32 @@ public class MessageRepository : IMessageRepository
                            m.Id;
                        """;
 
-    await using var connection =
-        _connectionFactory.CreateConnection();
+    await using var connection = _connectionFactory.CreateConnection();
 
     await connection.OpenAsync();
 
     await using var command = connection.CreateCommand();
     command.CommandText = sql;
 
-    AddParameter(
-        command,
-        "@AnnouncementId",
-        announcementId);
+    AddParameter(command, "@AnnouncementId", announcementId);
 
-    AddParameter(
-        command,
-        "@FirstUserId",
-        firstUserId);
+    AddParameter(command, "@FirstUserId", firstUserId);
 
-    AddParameter(
-        command,
-        "@SecondUserId",
-        secondUserId);
+    AddParameter(command, "@SecondUserId", secondUserId);
 
-    await using var reader =
-        await command.ExecuteReaderAsync();
+    await using var reader = await command.ExecuteReaderAsync();
 
     var messages = new List<MessageDto>();
 
     while (await reader.ReadAsync())
     {
-        messages.Add(
-            MessageMapper.MapToDto(reader));
+        messages.Add(MessageMapper.MapToDto(reader));
     }
 
     return messages;
 }
 
-public async Task<int>
-    MarkConversationAsReadAsync(
-        int announcementId,
-        int receiverUserId,
-        int senderUserId,
-        DateTime readAt)
+public async Task<int> MarkConversationAsReadAsync(int announcementId, int receiverUserId, int senderUserId, DateTime readAt)
 {
     const string sql = """
                        UPDATE dbo.Messages
@@ -306,40 +251,25 @@ public async Task<int>
                          AND IsRead = 0;
                        """;
 
-    await using var connection =
-        _connectionFactory.CreateConnection();
+    await using var connection = _connectionFactory.CreateConnection();
 
     await connection.OpenAsync();
 
     await using var command = connection.CreateCommand();
     command.CommandText = sql;
 
-    AddParameter(
-        command,
-        "@AnnouncementId",
-        announcementId);
+    AddParameter(command, "@AnnouncementId", announcementId);
 
-    AddParameter(
-        command,
-        "@ReceiverUserId",
-        receiverUserId);
+    AddParameter(command, "@ReceiverUserId", receiverUserId);
 
-    AddParameter(
-        command,
-        "@SenderUserId",
-        senderUserId);
+    AddParameter(command, "@SenderUserId", senderUserId);
 
-    AddParameter(
-        command,
-        "@ReadAt",
-        readAt);
+    AddParameter(command, "@ReadAt", readAt);
 
     return await command.ExecuteNonQueryAsync();
 }
 
-    public async Task<int> CountSentSinceAsync(
-        int senderUserId,
-        DateTime since)
+    public async Task<int> CountSentSinceAsync(int senderUserId, DateTime since)
     {
         const string sql = """
                            SELECT COUNT(*)
@@ -348,33 +278,23 @@ public async Task<int>
                              AND CreatedAt >= @Since;
                            """;
 
-        await using var connection =
-            _connectionFactory.CreateConnection();
+        await using var connection = _connectionFactory.CreateConnection();
 
         await connection.OpenAsync();
 
         await using var command = connection.CreateCommand();
         command.CommandText = sql;
 
-        AddParameter(
-            command,
-            "@SenderUserId",
-            senderUserId);
+        AddParameter(command, "@SenderUserId", senderUserId);
 
-        AddParameter(
-            command,
-            "@Since",
-            since);
+        AddParameter(command, "@Since", since);
 
         var result = await command.ExecuteScalarAsync();
 
         return Convert.ToInt32(result);
     }
 
-    private static void AddParameter(
-        DbCommand command,
-        string name,
-        object? value)
+    private static void AddParameter(DbCommand command, string name, object? value)
     {
         var parameter = command.CreateParameter();
 

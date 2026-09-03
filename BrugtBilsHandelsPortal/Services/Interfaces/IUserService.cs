@@ -9,6 +9,5 @@ public interface IUserService
     Task<UserProfileDto?> GetCurrentProfileAsync();
     
     /// <summary>Validerer og opdaterer den aktuelle brugers profil.</summary>
-    Task<ProfileUpdateResult> UpdateCurrentProfileAsync(
-        UpdateProfileDto request);
+    Task<ProfileUpdateResult> UpdateCurrentProfileAsync(UpdateProfileDto request);
 }

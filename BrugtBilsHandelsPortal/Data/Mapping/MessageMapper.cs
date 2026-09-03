@@ -5,47 +5,33 @@ namespace BrugtBilsHandelsPortal.Data.Mapping;
 
 public static class MessageMapper
 {
-    public static MessageDto MapToDto(
-        DbDataReader reader)
+    public static MessageDto MapToDto(DbDataReader reader)
     {
-        var readAtOrdinal =
-            reader.GetOrdinal("ReadAt");
+        var readAtOrdinal = reader.GetOrdinal("ReadAt");
 
         return new MessageDto
         {
-            Id = reader.GetInt64(
-                reader.GetOrdinal("Id")),
+            Id = reader.GetInt64(reader.GetOrdinal("Id")),
 
-            AnnouncementId = reader.GetInt32(
-                reader.GetOrdinal("AnnouncementId")),
+            AnnouncementId = reader.GetInt32(reader.GetOrdinal("AnnouncementId")),
 
-            AnnouncementTitle = reader.GetString(
-                reader.GetOrdinal("AnnouncementTitle")),
+            AnnouncementTitle = reader.GetString(reader.GetOrdinal("AnnouncementTitle")),
 
-            SenderUserId = reader.GetInt32(
-                reader.GetOrdinal("SenderUserId")),
+            SenderUserId = reader.GetInt32(reader.GetOrdinal("SenderUserId")),
 
-            SenderUsername = reader.GetString(
-                reader.GetOrdinal("SenderUsername")),
+            SenderUsername = reader.GetString(reader.GetOrdinal("SenderUsername")),
 
-            ReceiverUserId = reader.GetInt32(
-                reader.GetOrdinal("ReceiverUserId")),
+            ReceiverUserId = reader.GetInt32(reader.GetOrdinal("ReceiverUserId")),
 
-            ReceiverUsername = reader.GetString(
-                reader.GetOrdinal("ReceiverUsername")),
+            ReceiverUsername = reader.GetString(reader.GetOrdinal("ReceiverUsername")),
 
-            Text = reader.GetString(
-                reader.GetOrdinal("Message")),
+            Text = reader.GetString(reader.GetOrdinal("Message")),
 
-            CreatedAt = reader.GetDateTime(
-                reader.GetOrdinal("CreatedAt")),
+            CreatedAt = reader.GetDateTime(reader.GetOrdinal("CreatedAt")),
 
-            IsRead = reader.GetBoolean(
-                reader.GetOrdinal("IsRead")),
+            IsRead = reader.GetBoolean(reader.GetOrdinal("IsRead")),
 
-            ReadAt = reader.IsDBNull(readAtOrdinal)
-                ? null
-                : reader.GetDateTime(readAtOrdinal)
+            ReadAt = reader.IsDBNull(readAtOrdinal) ? null : reader.GetDateTime(readAtOrdinal)
         };
     }
 }

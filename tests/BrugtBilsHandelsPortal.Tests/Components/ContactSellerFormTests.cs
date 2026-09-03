@@ -13,31 +13,24 @@ public class ContactSellerFormTests
     [Trait("UserStory", "US12")]
     public void EmptyMessage_DisablesSubmitButton()
     {
-        using var context = CreateContext(
-            new StubMessageService());
+        using var context = CreateContext(new StubMessageService());
 
         var cut = RenderForm(context);
 
-        Assert.True(
-            cut.Find("[data-testid='send-message']")
-                .HasAttribute("disabled"));
+        Assert.True(cut.Find("[data-testid='send-message']").HasAttribute("disabled"));
     }
 
     [Fact]
     [Trait("UserStory", "US12")]
     public void Textarea_ShowsCurrentCharacterCountAndMaximum()
     {
-        using var context = CreateContext(
-            new StubMessageService());
+        using var context = CreateContext(new StubMessageService());
 
         var cut = RenderForm(context);
         cut.Find("#seller-message").Input("Hej!");
 
         Assert.Contains("4 / 2000 tegn", cut.Markup);
-        Assert.Equal(
-            "2000",
-            cut.Find("#seller-message")
-                .GetAttribute("maxlength"));
+        Assert.Equal("2000", cut.Find("#seller-message").GetAttribute("maxlength"));
     }
 
     [Fact]
@@ -49,27 +42,19 @@ public class ContactSellerFormTests
         context.Services.AddSingleton<IMessageService>(service);
 
         MessageDto? sentMessage = null;
-        var cut = context.Render<ContactSellerForm>(parameters => parameters
-            .Add(component => component.AnnouncementId, 42)
-            .Add(component => component.OnSent,
-                message => sentMessage = message));
+        var cut = context.Render<ContactSellerForm>(parameters => parameters.Add(component => component.AnnouncementId, 42).Add(component => component.OnSent, message => sentMessage = message));
 
-        cut.Find("#seller-message")
-            .Input("  Er bilen stadig til salg?  ");
+        cut.Find("#seller-message").Input("  Er bilen stadig til salg?  ");
         cut.Find("[data-testid='send-message']").Click();
 
         cut.WaitForAssertion(() =>
         {
             Assert.NotNull(service.LastRequest);
             Assert.Equal(42, service.LastRequest.AnnouncementId);
-            Assert.Equal(
-                "Er bilen stadig til salg?",
-                service.LastRequest.Text);
+            Assert.Equal("Er bilen stadig til salg?", service.LastRequest.Text);
             Assert.Equal(1, service.SendCallCount);
             Assert.NotNull(sentMessage);
-            Assert.Contains(
-                "Beskeden er sendt til sælgeren.",
-                cut.Markup);
+            Assert.Contains("Beskeden er sendt til sælgeren.", cut.Markup);
         });
     }
 
@@ -77,12 +62,7 @@ public class ContactSellerFormTests
     [Trait("UserStory", "US12")]
     public void ServiceFailure_ShowsSafeErrorFeedback()
     {
-        using var context = CreateContext(
-            new StubMessageService
-            {
-                ExceptionToThrow = new InvalidOperationException(
-                    "SELECT * FROM Messages")
-            });
+        using var context = CreateContext(new StubMessageService { ExceptionToThrow = new InvalidOperationException("SELECT * FROM Messages") });
 
         var cut = RenderForm(context);
         cut.Find("#seller-message").Input("Hej sælger");
@@ -91,9 +71,7 @@ public class ContactSellerFormTests
         cut.WaitForAssertion(() =>
         {
             var alert = cut.Find("[role='alert']");
-            Assert.Contains(
-                "Beskeden kunne ikke sendes. Prøv igen.",
-                alert.TextContent);
+            Assert.Contains("Beskeden kunne ikke sendes. Prøv igen.", alert.TextContent);
             Assert.DoesNotContain("SELECT", cut.Markup);
         });
     }
@@ -103,35 +81,26 @@ public class ContactSellerFormTests
     public void Cancel_InvokesCancelCallback()
     {
         using var context = new BunitContext();
-        context.Services.AddSingleton<IMessageService>(
-            new StubMessageService());
+        context.Services.AddSingleton<IMessageService>(new StubMessageService());
 
         var wasCancelled = false;
-        var cut = context.Render<ContactSellerForm>(parameters => parameters
-            .Add(component => component.AnnouncementId, 42)
-            .Add(component => component.OnCancel,
-                () => wasCancelled = true));
+        var cut = context.Render<ContactSellerForm>(parameters => parameters.Add(component => component.AnnouncementId, 42).Add(component => component.OnCancel, () => wasCancelled = true));
 
         cut.Find("button.btn-outline-secondary").Click();
 
         Assert.True(wasCancelled);
     }
 
-    private static BunitContext CreateContext(
-        IMessageService service)
+    private static BunitContext CreateContext(IMessageService service)
     {
         var context = new BunitContext();
         context.Services.AddSingleton(service);
         return context;
     }
 
-    private static IRenderedComponent<ContactSellerForm> RenderForm(
-        BunitContext context)
+    private static IRenderedComponent<ContactSellerForm> RenderForm(BunitContext context)
     {
-        return context.Render<ContactSellerForm>(parameters =>
-            parameters.Add(
-                component => component.AnnouncementId,
-                42));
+        return context.Render<ContactSellerForm>(parameters => parameters.Add(component => component.AnnouncementId, 42));
     }
 
     private sealed class StubMessageService : IMessageService
@@ -147,32 +116,18 @@ public class ContactSellerFormTests
 
             if (ExceptionToThrow is not null)
             {
-                return Task.FromException<MessageDto>(
-                    ExceptionToThrow);
+                return Task.FromException<MessageDto>(ExceptionToThrow);
             }
 
-            return Task.FromResult(
-                new MessageDto
-                {
-                    Id = 1,
-                    AnnouncementId = request.AnnouncementId,
-                    SenderUserId = 9,
-                    ReceiverUserId = 7,
-                    Text = request.Text,
-                    CreatedAt = new DateTime(2026, 8, 24)
-                });
+            return Task.FromResult(new MessageDto { Id = 1, AnnouncementId = request.AnnouncementId, SenderUserId = 9, ReceiverUserId = 7, Text = request.Text, CreatedAt = new DateTime(2026, 8, 24) });
         }
 
-        public Task<IReadOnlyList<MessageDto>> GetInboxAsync() =>
-            throw new NotSupportedException();
+        public Task<IReadOnlyList<MessageDto>> GetInboxAsync() => throw new NotSupportedException();
 
-        public Task<MessageDto?> GetByIdAsync(long messageId) =>
-            throw new NotSupportedException();
+        public Task<MessageDto?> GetByIdAsync(long messageId) => throw new NotSupportedException();
 
-        public Task<ConversationDto?> GetConversationAsync(long messageId) =>
-            throw new NotSupportedException();
+        public Task<ConversationDto?> GetConversationAsync(long messageId) => throw new NotSupportedException();
 
-        public Task<MessageDto> ReplyAsync(long messageId, string text) =>
-            throw new NotSupportedException();
+        public Task<MessageDto> ReplyAsync(long messageId, string text) => throw new NotSupportedException();
     }
 }

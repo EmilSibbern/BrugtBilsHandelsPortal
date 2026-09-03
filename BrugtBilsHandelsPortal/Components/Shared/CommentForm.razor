@@ -5,34 +5,22 @@
 @inject ILogger<CommentForm> Logger
 
 <div>
-    <label for="@FieldId"
-           class="form-label">
-        @(IsReply
-            ? "Skriv svar"
-            : "Skriv kommentar")
+    <label for="@FieldId" class="form-label">
+        @(IsReply ? "Skriv svar" : "Skriv kommentar")
     </label>
 
-    <textarea id="@FieldId"
-              class="form-control"
-              maxlength="1500"
-              disabled="@_isSubmitting"
-              @bind="_text">
+    <textarea id="@FieldId" class="form-control" maxlength="1500" disabled="@_isSubmitting" @bind="_text">
     </textarea>
 
     @if (!string.IsNullOrWhiteSpace(_errorMessage))
     {
-        <div class="text-danger mt-2"
-             role="alert">
+        <div class="text-danger mt-2" role="alert">
             @_errorMessage
         </div>
     }
 
     <div class="d-flex gap-2 mt-2">
-        <button type="button"
-                class="btn btn-primary"
-                disabled="@(_isSubmitting ||
-                          string.IsNullOrWhiteSpace(_text))"
-                @onclick="SubmitAsync">
+        <button type="button" class="btn btn-primary" disabled="@(_isSubmitting || string.IsNullOrWhiteSpace(_text))" @onclick="SubmitAsync">
             @if (_isSubmitting)
             {
                 <span>Sender...</span>
@@ -49,10 +37,7 @@
 
         @if (IsReply)
         {
-            <button type="button"
-                    class="btn btn-outline-secondary"
-                    disabled="@_isSubmitting"
-                    @onclick="CancelAsync">
+            <button type="button" class="btn btn-outline-secondary" disabled="@_isSubmitting" @onclick="CancelAsync">
                 Annuller
             </button>
         }
@@ -76,18 +61,13 @@
     private string? _errorMessage;
     private bool _isSubmitting;
 
-    private bool IsReply =>
-        ParentCommentId.HasValue;
+    private bool IsReply => ParentCommentId.HasValue;
 
-    private string FieldId =>
-        ParentCommentId.HasValue
-            ? $"reply-content-{ParentCommentId.Value}"
-            : "comment-content";
+    private string FieldId => ParentCommentId.HasValue ? $"reply-content-{ParentCommentId.Value}" : "comment-content";
 
     private async Task SubmitAsync()
     {
-        if (_isSubmitting ||
-            string.IsNullOrWhiteSpace(_text))
+        if (_isSubmitting || string.IsNullOrWhiteSpace(_text))
         {
             return;
         }
@@ -97,46 +77,23 @@
 
         try
         {
-            var comment =
-                await CommentService.CreateAsync(
-                    new CreateCommentDto
-                    {
-                        AnnouncementId =
-                            AnnouncementId,
-
-                        ParentCommentId =
-                            ParentCommentId,
-
-                        Text =
-                            _text
-                    });
+            var comment = await CommentService.CreateAsync(new CreateCommentDto { AnnouncementId = AnnouncementId, ParentCommentId = ParentCommentId, Text = _text });
 
             _text = string.Empty;
 
             await OnCreated.InvokeAsync(comment);
         }
-        catch (InvalidOperationException exception)
-            when (exception.Message ==
-                  "Du har skrevet for mange kommentarer. Vent et øjeblik og prøv igen.")
+        catch (InvalidOperationException exception)when (exception.Message == "Du har skrevet for mange kommentarer. Vent et øjeblik og prøv igen.")
         {
-            Logger.LogWarning(
-                "Kommentar-rate-limit nået for annonce {AnnouncementId}",
-                AnnouncementId);
+            Logger.LogWarning("Kommentar-rate-limit nået for annonce {AnnouncementId}", AnnouncementId);
 
-            _errorMessage =
-                "Du har skrevet for mange kommentarer. Prøv igen om lidt.";
+            _errorMessage = "Du har skrevet for mange kommentarer. Prøv igen om lidt.";
         }
         catch (Exception exception)
         {
-            Logger.LogError(
-                exception,
-                "Kunne ikke oprette kommentar til annonce {AnnouncementId}",
-                AnnouncementId);
+            Logger.LogError(exception, "Kunne ikke oprette kommentar til annonce {AnnouncementId}", AnnouncementId);
 
-            _errorMessage =
-                IsReply
-                    ? "Svaret kunne ikke oprettes. Prøv igen."
-                    : "Kommentaren kunne ikke oprettes. Prøv igen.";
+            _errorMessage = IsReply ? "Svaret kunne ikke oprettes. Prøv igen." : "Kommentaren kunne ikke oprettes. Prøv igen.";
         }
         finally
         {

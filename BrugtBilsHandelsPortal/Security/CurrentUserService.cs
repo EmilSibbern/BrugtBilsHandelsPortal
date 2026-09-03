@@ -11,49 +11,39 @@ namespace BrugtBilsHandelsPortal.Security;
 /// </summary>
 public class CurrentUserService : ICurrentUserService
 {
-    private readonly AuthenticationStateProvider
-        _authenticationStateProvider;
+    private readonly AuthenticationStateProvider _authenticationStateProvider;
 
-    private readonly IUserRepository
-        _userRepository;
+    private readonly IUserRepository _userRepository;
 
-    public CurrentUserService(
-        AuthenticationStateProvider authenticationStateProvider,
-        IUserRepository userRepository)
+    public CurrentUserService(AuthenticationStateProvider authenticationStateProvider, IUserRepository userRepository)
     {
-        _authenticationStateProvider =
-            authenticationStateProvider;
+        _authenticationStateProvider = authenticationStateProvider;
 
-        _userRepository =
-            userRepository;
+        _userRepository = userRepository;
     }
 
     public async Task<int?> GetUserIdAsync()
     {
-        var activeUser =
-            await GetActiveUserAsync();
+        var activeUser = await GetActiveUserAsync();
 
         return activeUser?.Id;
     }
 
     public async Task<bool> IsAuthenticatedAsync()
     {
-        var activeUser =
-            await GetActiveUserAsync();
+        var activeUser = await GetActiveUserAsync();
 
         return activeUser is not null;
     }
 
-    public async Task<bool> IsInRoleAsync(
-        string role)
+    public async Task<bool> IsInRoleAsync(string role)
     {
         if (string.IsNullOrWhiteSpace(role))
         {
             return false;
         }
 
-        var activeUser =
-            await GetActiveUserAsync();
+        var activeUser = await GetActiveUserAsync();
 
         if (activeUser is null)
         {
@@ -62,45 +52,32 @@ public class CurrentUserService : ICurrentUserService
 
         // Rollen sammenlignes med databasen i stedet for
         // kun at stole på cookie-claimet.
-        return string.Equals(
-            activeUser.UserGroupName,
-            role,
-            StringComparison.Ordinal);
+        return string.Equals(activeUser.UserGroupName, role, StringComparison.Ordinal);
     }
 
     /// <summary>
     /// Returnerer kun brugeren, hvis authentication-state
     /// indeholder et gyldigt ID, og kontoen stadig er aktiv.
     /// </summary>
-    private async Task<User?>
-        GetActiveUserAsync()
+    private async Task<User?> GetActiveUserAsync()
     {
-        var authenticationState =
-            await _authenticationStateProvider
-                .GetAuthenticationStateAsync();
+        var authenticationState = await _authenticationStateProvider.GetAuthenticationStateAsync();
 
-        var principal =
-            authenticationState.User;
+        var principal = authenticationState.User;
 
         if (principal.Identity?.IsAuthenticated != true)
         {
             return null;
         }
 
-        var userIdValue =
-            principal.FindFirst(
-                    ClaimTypes.NameIdentifier)?
-                .Value;
+        var userIdValue = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-        if (!int.TryParse(
-            userIdValue,
-            out var userId))
+        if (!int.TryParse(userIdValue, out var userId))
         {
             return null;
         }
 
         // GetByIdAsync returnerer kun aktive brugere.
-        return await _userRepository
-            .GetByIdAsync(userId);
+        return await _userRepository.GetByIdAsync(userId);
     }
 }

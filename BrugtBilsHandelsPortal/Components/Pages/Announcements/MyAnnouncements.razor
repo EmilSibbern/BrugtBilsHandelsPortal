@@ -11,9 +11,7 @@
 <PageTitle>Mine annoncer</PageTitle>
 
 <div class="container py-4 my-announcements-page">
-    <div class="page-header d-flex flex-column flex-sm-row
-                justify-content-between align-items-sm-end
-                gap-3 mb-4">
+    <div class="page-header d-flex flex-column flex-sm-row justify-content-between align-items-sm-end gap-3 mb-4">
         <div>
             <p class="page-kicker mb-2">Dit bilmarked</p>
 
@@ -24,8 +22,7 @@
             </p>
         </div>
 
-        <a href="/announcements/create"
-           class="btn btn-primary flex-shrink-0">
+        <a href="/announcements/create" class="btn btn-primary flex-shrink-0">
             Opret annonce
         </a>
     </div>
@@ -33,8 +30,7 @@
     @if (_isLoading)
     {
         <div class="loading-state" role="status">
-            <span class="spinner-border spinner-border-sm"
-                  aria-hidden="true"></span>
+            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
             <span>Indlæser dine annoncer...</span>
         </div>
     }
@@ -42,16 +38,14 @@
     {
         @if (!string.IsNullOrWhiteSpace(_successMessage))
         {
-            <div class="alert alert-success"
-                 role="alert">
+            <div class="alert alert-success" role="alert">
                 @_successMessage
             </div>
         }
 
         @if (!string.IsNullOrWhiteSpace(_errorMessage))
         {
-            <div class="alert alert-danger"
-                 role="alert">
+            <div class="alert alert-danger" role="alert">
                 @_errorMessage
             </div>
         }
@@ -64,8 +58,7 @@
                 <p class="text-muted mb-4">
                     Du har ikke oprettet nogen annoncer endnu.
                 </p>
-                <a href="/announcements/create"
-                   class="btn btn-primary">
+                <a href="/announcements/create" class="btn btn-primary">
                     Opret din første annonce
                 </a>
             </div>
@@ -78,26 +71,20 @@
                     <div class="col-12 col-md-6 col-xl-4">
                         <article class="card announcement-card h-100 shadow-sm">
                             <div class="ratio ratio-16x9 bg-light announcement-image">
-                                @if (string.IsNullOrWhiteSpace(
-                                         announcement.PrimaryImageFileName))
+                                @if (string.IsNullOrWhiteSpace(announcement.PrimaryImageFileName))
                                 {
-                                    <div class="image-placeholder d-flex align-items-center
-                                                justify-content-center
-                                                text-secondary">
+                                    <div class="image-placeholder d-flex align-items-center justify-content-center text-secondary">
                                         Intet billede
                                     </div>
                                 }
                                 else
                                 {
-                                    <img src="@GetImageUrl(announcement)"
-                                         class="card-img-top object-fit-cover"
-                                         alt="@announcement.Title" />
+                                    <img src="@GetImageUrl(announcement)" class="card-img-top object-fit-cover" alt="@announcement.Title" />
                                 }
                             </div>
 
                             <div class="card-body d-flex flex-column p-4">
-                                <div class="d-flex justify-content-between
-                                            gap-2 mb-2">
+                                <div class="d-flex justify-content-between gap-2 mb-2">
                                     <h2 class="h5 card-title mb-0">
                                         @announcement.Title
                                     </h2>
@@ -126,24 +113,17 @@
                                     @($"{announcement.Mileage:N0} km")
                                 </p>
 
-                                <p class="announcement-price fs-4 fw-semibold
-                                          text-primary mt-auto mb-3">
+                                <p class="announcement-price fs-4 fw-semibold text-primary mt-auto mb-3">
                                     @($"{announcement.Price:N0} kr.")
                                 </p>
 
                                 <div class="d-grid gap-2">
-                                    <a href="/announcements/@announcement.Id/edit"
-                                       class="btn btn-outline-primary">
+                                    <a href="/announcements/@announcement.Id/edit" class="btn btn-outline-primary">
                                         Rediger annonce
                                     </a>
 
-                                    <button type="button"
-                                            class="@GetStatusButtonClass(announcement)"
-                                            disabled="@_isChangingStatus"
-                                            @onclick="() => ChangeStatusAsync(announcement)">
-                                        @(announcement.IsActive
-                                            ? "Deaktiver annonce"
-                                            : "Aktiver annonce")
+                                    <button type="button" class="@GetStatusButtonClass(announcement)" disabled="@_isChangingStatus" @onclick="() => ChangeStatusAsync(announcement)">
+                                        @(announcement.IsActive ? "Deaktiver annonce" : "Aktiver annonce")
                                     </button>
                                 </div>
                             </div>
@@ -156,8 +136,7 @@
 </div>
 
 @code {
-    private IReadOnlyList<AnnouncementListItemDto> _announcements =
-        Array.Empty<AnnouncementListItemDto>();
+    private IReadOnlyList<AnnouncementListItemDto> _announcements = Array.Empty<AnnouncementListItemDto>();
 
     private bool _isLoading = true;
     private bool _isChangingStatus;
@@ -178,13 +157,11 @@
         try
         {
             // Finder selv brugeren fra login-sessionen.
-            _announcements =
-                await AnnouncementService.GetMineAsync();
+            _announcements = await AnnouncementService.GetMineAsync();
         }
         catch
         {
-            _errorMessage =
-                "Dine annoncer kunne ikke indlæses.";
+            _errorMessage = "Dine annoncer kunne ikke indlæses.";
         }
         finally
         {
@@ -192,8 +169,7 @@
         }
     }
 
-    private async Task ChangeStatusAsync(
-        AnnouncementListItemDto announcement)
+    private async Task ChangeStatusAsync(AnnouncementListItemDto announcement)
     {
         if (_isChangingStatus)
         {
@@ -208,19 +184,15 @@
         {
             if (announcement.IsActive)
             {
-                await AnnouncementService.DeactivateAsync(
-                    announcement.Id);
+                await AnnouncementService.DeactivateAsync(announcement.Id);
 
-                _successMessage =
-                    "Annoncen er deaktiveret.";
+                _successMessage = "Annoncen er deaktiveret.";
             }
             else
             {
-                await AnnouncementService.ActivateAsync(
-                    announcement.Id);
+                await AnnouncementService.ActivateAsync(announcement.Id);
 
-                _successMessage =
-                    "Annoncen er aktiveret.";
+                _successMessage = "Annoncen er aktiveret.";
             }
 
             await LoadAnnouncementsAsync();
@@ -231,8 +203,7 @@
         }
         catch (UnauthorizedAccessException)
         {
-            _errorMessage =
-                "Du har ikke adgang til at ændre annoncen.";
+            _errorMessage = "Du har ikke adgang til at ændre annoncen.";
         }
         catch (InvalidOperationException exception)
         {
@@ -240,8 +211,7 @@
         }
         catch
         {
-            _errorMessage =
-                "Annoncens status kunne ikke ændres.";
+            _errorMessage = "Annoncens status kunne ikke ændres.";
         }
         finally
         {
@@ -249,18 +219,13 @@
         }
     }
 
-    private static string GetImageUrl(
-        AnnouncementListItemDto announcement)
+    private static string GetImageUrl(AnnouncementListItemDto announcement)
     {
-        return $"/uploads/{Uri.EscapeDataString(
-            announcement.PrimaryImageFileName!)}";
+        return $"/uploads/{Uri.EscapeDataString(announcement.PrimaryImageFileName!)}";
     }
 
-    private static string GetStatusButtonClass(
-        AnnouncementListItemDto announcement)
+    private static string GetStatusButtonClass(AnnouncementListItemDto announcement)
     {
-        return announcement.IsActive
-            ? "btn btn-outline-danger"
-            : "btn btn-outline-success";
+        return announcement.IsActive ? "btn btn-outline-danger" : "btn btn-outline-success";
     }
 }

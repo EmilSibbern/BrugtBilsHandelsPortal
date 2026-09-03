@@ -9,23 +9,15 @@ public enum ImageMetadataCreateStatus
     ImageLimitReached
 }
 
-public record ImageMetadataCreateResult(
-    ImageMetadataCreateStatus Status,
-    AnnouncementImage? Image)
+public record ImageMetadataCreateResult(ImageMetadataCreateStatus Status, AnnouncementImage? Image)
 {
-    public static ImageMetadataCreateResult Successful(
-        AnnouncementImage image)
+    public static ImageMetadataCreateResult Successful(AnnouncementImage image)
     {
-        return new ImageMetadataCreateResult(
-            ImageMetadataCreateStatus.Success,
-            image);
+        return new ImageMetadataCreateResult(ImageMetadataCreateStatus.Success, image);
     }
 
-    public static ImageMetadataCreateResult Failed(
-        ImageMetadataCreateStatus status)
+    public static ImageMetadataCreateResult Failed(ImageMetadataCreateStatus status)
     {
-        return new ImageMetadataCreateResult(
-            status,
-            null);
+        return new ImageMetadataCreateResult(status, null);
     }
 }

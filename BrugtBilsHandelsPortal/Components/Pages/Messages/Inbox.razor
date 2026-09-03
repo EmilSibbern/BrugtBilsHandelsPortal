@@ -17,8 +17,7 @@
     }
     else if (!string.IsNullOrWhiteSpace(_errorMessage))
     {
-        <div class="alert alert-danger"
-             role="alert">
+        <div class="alert alert-danger" role="alert">
             @_errorMessage
         </div>
     }
@@ -30,16 +29,11 @@
     }
     else
     {
-        <div class="list-group"
-             data-testid="message-inbox">
+        <div class="list-group" data-testid="message-inbox">
             @foreach (var message in _messages)
             {
-                <article class="list-group-item"
-                         @key="message.Id">
-                    <a href="@($"/messages/{message.Id}")"
-                       class="list-group-item list-group-item-action text-decoration-none text-body"
-                       aria-label="@($"Åbn samtale om {message.AnnouncementTitle} med {message.SenderUsername}")"
-                       @key="message.Id">
+                <article class="list-group-item" @key="message.Id">
+                    <a href="@($"/messages/{message.Id}")" class="list-group-item list-group-item-action text-decoration-none text-body" aria-label="@($"Åbn samtale om {message.AnnouncementTitle} med {message.SenderUsername}")" @key="message.Id">
                         <div class="d-flex justify-content-between gap-3">
                             <div>
                                 <h2 class="h5 mb-1">
@@ -78,8 +72,7 @@
 
 @code {
     // Beskeder hentes gennem service-laget, som afgrænser resultatet til den aktuelle bruger.
-    private IReadOnlyList<MessageDto> _messages =
-        Array.Empty<MessageDto>();
+    private IReadOnlyList<MessageDto> _messages = Array.Empty<MessageDto>();
 
     private bool _isLoading = true;
     private string? _errorMessage;
@@ -88,13 +81,11 @@
     {
         try
         {
-            _messages =
-                await MessageService.GetInboxAsync();
+            _messages = await MessageService.GetInboxAsync();
         }
         catch (Exception)
         {
-            _errorMessage =
-                "Beskederne kunne ikke indlæses. Prøv igen.";
+            _errorMessage = "Beskederne kunne ikke indlæses. Prøv igen.";
         }
         finally
         {

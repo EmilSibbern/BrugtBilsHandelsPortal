@@ -1,0 +1,336 @@
+﻿@page "/admin/announcements/{Id:int}/images"
+@attribute [Authorize(Roles = "Administrator")]
+@rendermode InteractiveServer
+
+@using BrugtBilsHandelsPortal.DTOs.Announcements
+@using BrugtBilsHandelsPortal.DTOs.Images
+@using BrugtBilsHandelsPortal.Services.Interfaces
+
+@inject IAdminAnnouncementService AdminAnnouncementService
+
+<PageTitle>Moderér billeder</PageTitle>
+
+<div class="container py-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-3 mb-4">
+
+        <div>
+            <p class="text-primary text-uppercase small fw-semibold mb-2">
+                Annoncemoderation
+            </p>
+
+            <h1 class="mb-1">
+                Moderér billeder
+            </h1>
+
+            @if (_announcement is not null)
+            {
+                <p class="text-muted mb-0">
+                    @_announcement.Title
+                </p>
+            }
+        </div>
+
+        <div class="d-flex flex-column flex-sm-row gap-2">
+
+            <a href="/admin/announcements/@Id/edit" class="btn btn-outline-primary">
+                Rediger annonce
+            </a>
+
+            <a href="/admin/announcements" class="btn btn-outline-secondary">
+                Tilbage til annoncer
+            </a>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(_successMessage))
+    {
+        <div class="alert alert-success" role="alert">
+            @_successMessage
+        </div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(_errorMessage))
+    {
+        <div class="alert alert-danger" role="alert">
+            @_errorMessage
+        </div>
+    }
+
+    @if (_isLoading)
+    {
+        <div class="d-flex align-items-center justify-content-center gap-2 py-5" role="status">
+
+            <span class="spinner-border" aria-hidden="true">
+            </span>
+
+            <span>
+                Indlæser billeder...
+            </span>
+        </div>
+    }
+    else if (_notFound)
+    {
+        <div class="alert alert-warning" role="alert">
+            Annoncen findes ikke.
+        </div>
+    }
+    else if (_images.Count == 0)
+    {
+        <div class="card shadow-sm">
+            <div class="card-body text-center py-5">
+
+                <h2 class="h4">
+                    Ingen billeder
+                </h2>
+
+                <p class="text-muted mb-0">
+                    Annoncen har ingen billeder,
+                    der kan modereres.
+                </p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="d-flex justify-content-between align-items-center gap-3 mb-3">
+
+            <p class="text-muted mb-0">
+                @_images.Count
+                @(_images.Count == 1 ? "billede" : "billeder")
+            </p>
+
+            <p class="text-muted small mb-0">
+                Sletning registreres i auditloggen
+            </p>
+        </div>
+
+        <div class="row g-4">
+            @foreach (var image in _images)
+            {
+                <div class="col-12 col-md-6 col-xl-4">
+
+                    <article class="card h-100 shadow-sm">
+                        <div class="ratio ratio-16x9 bg-light">
+
+                            <img src="@image.Url" class="card-img-top object-fit-cover" alt="Billede fra annoncen @_announcement?.Title" />
+                        </div>
+
+                        <div class="card-body d-flex flex-column p-4">
+
+                            <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
+
+                                <div>
+                                    <p class="fw-semibold mb-1">
+                                        Billede #@image.Id
+                                    </p>
+
+                                    <p class="text-muted small mb-0">
+                                        Placering:
+                                        @image.SortOrder
+                                    </p>
+                                </div>
+
+                                @if (image.IsPrimary)
+                                {
+                                    <span class="badge text-bg-primary">
+                                        Primært
+                                    </span>
+                                }
+                            </div>
+
+                            <button type="button" class="btn btn-outline-danger mt-auto" disabled="@_isDeleting" @onclick="() => OpenDeleteConfirmation( image)">
+                                Fjern billede
+                            </button>
+                        </div>
+                    </article>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@if (_imageToDelete is not null)
+{
+    <div class="modal d-block" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="delete-image-title">
+
+        <div class="modal-dialog modal-dialog-centered">
+
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="delete-image-title" class="modal-title h5">
+                        Fjern billede
+                    </h2>
+
+                    <button type="button" class="btn-close" aria-label="Luk" disabled="@_isDeleting" @onclick="CloseDeleteConfirmation">
+                    </button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="ratio ratio-16x9 bg-light rounded overflow-hidden mb-3">
+
+                        <img src="@_imageToDelete.Url" class="object-fit-cover" alt="Billedet der skal fjernes" />
+                    </div>
+
+                    <p>
+                        Er du sikker på, at billedet
+                        skal fjernes?
+                    </p>
+
+                    <p class="text-muted mb-0">
+                        Handlingen kan ikke fortrydes
+                        og registreres i auditloggen.
+
+                        @if (_imageToDelete.IsPrimary)
+                        {
+                            <span>
+                                Et andet billede bliver
+                                automatisk valgt som
+                                primærbillede.
+                            </span>
+                        }
+                    </p>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" disabled="@_isDeleting" @onclick="CloseDeleteConfirmation">
+                        Annuller
+                    </button>
+
+                    <button type="button" class="btn btn-danger" disabled="@_isDeleting" @onclick="ConfirmDeleteAsync">
+
+                        @if (_isDeleting)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2" aria-hidden="true">
+                            </span>
+                        }
+
+                        @(_isDeleting ? "Fjerner..." : "Fjern billede")
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-backdrop show"></div>
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private UpdateAnnouncementDto? _announcement;
+
+    private IReadOnlyList<AnnouncementImageDto> _images = Array.Empty<AnnouncementImageDto>();
+
+    private AnnouncementImageDto? _imageToDelete;
+
+    private bool _isLoading = true;
+    private bool _isDeleting;
+    private bool _notFound;
+
+    private string? _successMessage;
+    private string? _errorMessage;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        _notFound = false;
+        _errorMessage = null;
+
+        try
+        {
+            _announcement = await AdminAnnouncementService.GetForEditAsync(Id);
+
+            if (_announcement is null)
+            {
+                _notFound = true;
+                _images = Array.Empty<AnnouncementImageDto>();
+
+                return;
+            }
+
+            _images = await AdminAnnouncementService.GetImagesAsync(Id);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            _images = Array.Empty<AnnouncementImageDto>();
+
+            _errorMessage = "Du har ikke adgang til " + "annoncemoderation.";
+        }
+        catch
+        {
+            _images = Array.Empty<AnnouncementImageDto>();
+
+            _errorMessage = "Billederne kunne ikke indlæses.";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void OpenDeleteConfirmation(AnnouncementImageDto image)
+    {
+        _successMessage = null;
+        _errorMessage = null;
+
+        _imageToDelete = image;
+    }
+
+    private void CloseDeleteConfirmation()
+    {
+        if (_isDeleting)
+        {
+            return;
+        }
+
+        _imageToDelete = null;
+    }
+
+    private async Task ConfirmDeleteAsync()
+    {
+        if (_imageToDelete is null || _isDeleting)
+        {
+            return;
+        }
+
+        _isDeleting = true;
+        _successMessage = null;
+        _errorMessage = null;
+
+        try
+        {
+            var wasDeleted = await AdminAnnouncementService.DeleteImageAsync(Id, _imageToDelete.Id);
+
+            if (!wasDeleted)
+            {
+                _errorMessage = "Billedet kunne ikke fjernes.";
+
+                return;
+            }
+
+            _imageToDelete = null;
+
+            _successMessage = "Billedet er fjernet.";
+
+            _images = await AdminAnnouncementService.GetImagesAsync(Id);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            _errorMessage = "Du har ikke adgang til at " + "fjerne billedet.";
+        }
+        catch
+        {
+            _errorMessage = "Billedet kunne ikke fjernes.";
+        }
+        finally
+        {
+            _isDeleting = false;
+        }
+    }
+}

@@ -31,13 +31,11 @@ public interface IUserRepository
     /// Deaktiverer en bruger og skriver auditloggen
     /// i samme databasetransaktion.
     /// </summary>
-    Task<AdminUserDeactivationStatus> DeactivateWithAuditAsync(int targetUserId, int administratorUserId,
-        Guid correlationId);
+    Task<AdminUserDeactivationStatus> DeactivateWithAuditAsync(int targetUserId, int administratorUserId, Guid correlationId);
 
     /// <summary>
     /// Genaktiverer en bruger og skriver auditloggen
     /// i samme databasetransaktion.
     /// </summary>
-    Task<AdminUserActivationStatus> ReactivateWithAuditAsync(int targetUserId, int administratorUserId,
-        Guid correlationId);
+    Task<AdminUserActivationStatus> ReactivateWithAuditAsync(int targetUserId, int administratorUserId, Guid correlationId);
 }

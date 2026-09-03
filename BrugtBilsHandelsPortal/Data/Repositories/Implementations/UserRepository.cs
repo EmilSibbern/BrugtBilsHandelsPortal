@@ -79,9 +79,7 @@ public class UserRepository : IUserRepository
             Email = reader.GetString(reader.GetOrdinal("Email")),
             UserGroupId = reader.GetInt32(reader.GetOrdinal("UserGroupId")),
             Phone = reader.IsDBNull(reader.GetOrdinal("Phone")) ? null : reader.GetString(reader.GetOrdinal("Phone")),
-            Address = reader.IsDBNull(reader.GetOrdinal("Address"))
-                ? null
-                : reader.GetString(reader.GetOrdinal("Address")),
+            Address = reader.IsDBNull(reader.GetOrdinal("Address")) ? null : reader.GetString(reader.GetOrdinal("Address")),
             IsActive = reader.GetBoolean(reader.GetOrdinal("IsActive")),
             CreatedAt = reader.GetDateTime(reader.GetOrdinal("CreatedAt")),
             UserGroupName = reader.GetString(reader.GetOrdinal("UserGroupName"))
@@ -155,17 +153,13 @@ public class UserRepository : IUserRepository
         var result = await command.ExecuteScalarAsync();
         if (result is null || result is DBNull)
         {
-            throw new InvalidOperationException(
-                "User-rollen findes ikke i UserGroups");
+            throw new InvalidOperationException("User-rollen findes ikke i UserGroups");
         }
 
         return Convert.ToInt32(result);
     }
 
-    private static void AddParameter(
-        System.Data.Common.DbCommand command,
-        string parameterName,
-        object? value)
+    private static void AddParameter(System.Data.Common.DbCommand command, string parameterName, object? value)
     {
         var parameter = command.CreateParameter();
 
@@ -195,8 +189,7 @@ public class UserRepository : IUserRepository
                              AND u.IsActive = 1;
                            """;
 
-        await using var connection =
-            _dbConnectionFactory.CreateConnection();
+        await using var connection = _dbConnectionFactory.CreateConnection();
 
         await connection.OpenAsync();
 
@@ -221,32 +214,21 @@ public class UserRepository : IUserRepository
             Username = reader.GetString(reader.GetOrdinal("Username")),
             Email = reader.GetString(reader.GetOrdinal("Email")),
 
-            UserGroupId = reader.GetInt32(
-                reader.GetOrdinal("UserGroupId")),
+            UserGroupId = reader.GetInt32(reader.GetOrdinal("UserGroupId")),
 
-            Phone = reader.IsDBNull(phoneOrdinal)
-                ? null
-                : reader.GetString(phoneOrdinal),
+            Phone = reader.IsDBNull(phoneOrdinal) ? null : reader.GetString(phoneOrdinal),
 
-            Address = reader.IsDBNull(addressOrdinal)
-                ? null
-                : reader.GetString(addressOrdinal),
+            Address = reader.IsDBNull(addressOrdinal) ? null : reader.GetString(addressOrdinal),
 
-            IsActive = reader.GetBoolean(
-                reader.GetOrdinal("IsActive")),
+            IsActive = reader.GetBoolean(reader.GetOrdinal("IsActive")),
 
-            CreatedAt = reader.GetDateTime(
-                reader.GetOrdinal("CreatedAt")),
+            CreatedAt = reader.GetDateTime(reader.GetOrdinal("CreatedAt")),
 
-            UserGroupName = reader.GetString(
-                reader.GetOrdinal("UserGroupName"))
+            UserGroupName = reader.GetString(reader.GetOrdinal("UserGroupName"))
         };
     }
 
-    public async Task<bool> IdentityExistsForOtherUserAsync(
-        int userId,
-        string username,
-        string email)
+    public async Task<bool> IdentityExistsForOtherUserAsync(int userId, string username, string email)
     {
         const string sql = """
                            SELECT CASE WHEN EXISTS
@@ -265,8 +247,7 @@ public class UserRepository : IUserRepository
                            END;
                            """;
 
-        await using var connection =
-            _dbConnectionFactory.CreateConnection();
+        await using var connection = _dbConnectionFactory.CreateConnection();
 
         await connection.OpenAsync();
 
@@ -295,8 +276,7 @@ public class UserRepository : IUserRepository
                              AND IsActive = 1;
                            """;
 
-        await using var connection =
-            _dbConnectionFactory.CreateConnection();
+        await using var connection = _dbConnectionFactory.CreateConnection();
 
         await connection.OpenAsync();
 
@@ -314,9 +294,7 @@ public class UserRepository : IUserRepository
         return affectedRows == 1;
     }
 
-    public async Task<PagedResult<AdminUserDto>>
-        SearchForAdministrationAsync(
-            AdminUserSearchDto search)
+    public async Task<PagedResult<AdminUserDto>> SearchForAdministrationAsync(AdminUserSearchDto search)
     {
         ArgumentNullException.ThrowIfNull(search);
 
@@ -396,8 +374,7 @@ public class UserRepository : IUserRepository
         // --------------------------------------------------
         // 4. Åbn databaseforbindelsen
         // --------------------------------------------------
-        await using var connection =
-            _dbConnectionFactory.CreateConnection();
+        await using var connection = _dbConnectionFactory.CreateConnection();
 
         await connection.OpenAsync();
 
@@ -414,109 +391,52 @@ public class UserRepository : IUserRepository
         //
         // Procenttegnene betyder, at "bil" må stå hvor som
         // helst i brugernavnet eller e-mailen.
-        var queryPattern =
-            CreateAdminUserQueryPattern(
-                search.Query);
+        var queryPattern = CreateAdminUserQueryPattern(search.Query);
 
         // --------------------------------------------------
         // 6. Tæl alle matchende brugere
         // --------------------------------------------------
         int totalItems;
 
-        await using (var countCommand =
-                     connection.CreateCommand())
+        await using (var countCommand = connection.CreateCommand())
         {
-            countCommand.CommandText =
-                countSql;
+            countCommand.CommandText = countSql;
 
-            AddAdminSearchParameters(
-                countCommand,
-                search,
-                queryPattern);
+            AddAdminSearchParameters(countCommand, search, queryPattern);
 
-            var countResult =
-                await countCommand.ExecuteScalarAsync();
+            var countResult = await countCommand.ExecuteScalarAsync();
 
-            totalItems =
-                Convert.ToInt32(countResult);
+            totalItems = Convert.ToInt32(countResult);
         }
 
         // --------------------------------------------------
         // 7. Hent den ønskede side
         // --------------------------------------------------
-        var users =
-            new List<AdminUserDto>();
+        var users = new List<AdminUserDto>();
 
-        await using (var command =
-                     connection.CreateCommand())
+        await using (var command = connection.CreateCommand())
         {
-            command.CommandText =
-                resultSql;
+            command.CommandText = resultSql;
 
-            AddAdminSearchParameters(
-                command,
-                search,
-                queryPattern);
+            AddAdminSearchParameters(command, search, queryPattern);
 
             // Eksempel:
             // Side 1 med 20 brugere giver offset 0.
             // Side 2 med 20 brugere giver offset 20.
-            AddParameter(
-                command,
-                "@Offset",
-                (search.Page - 1)
-                * search.PageSize);
+            AddParameter(command, "@Offset", (search.Page - 1) * search.PageSize);
 
-            AddParameter(
-                command,
-                "@PageSize",
-                search.PageSize);
+            AddParameter(command, "@PageSize", search.PageSize);
 
-            await using var reader =
-                await command.ExecuteReaderAsync();
+            await using var reader = await command.ExecuteReaderAsync();
 
-            var updatedAtOrdinal =
-                reader.GetOrdinal("UpdatedAt");
+            var updatedAtOrdinal = reader.GetOrdinal("UpdatedAt");
 
             // --------------------------------------------------
             // 8. Map databaserækker til sikre DTO'er
             // --------------------------------------------------
             while (await reader.ReadAsync())
             {
-                users.Add(
-                    new AdminUserDto
-                    {
-                        Id = reader.GetInt32(
-                            reader.GetOrdinal("Id")),
-
-                        Username = reader.GetString(
-                            reader.GetOrdinal(
-                                "Username")),
-
-                        Email = reader.GetString(
-                            reader.GetOrdinal(
-                                "Email")),
-
-                        Role = reader.GetString(
-                            reader.GetOrdinal(
-                                "Role")),
-
-                        IsActive = reader.GetBoolean(
-                            reader.GetOrdinal(
-                                "IsActive")),
-
-                        CreatedAt =
-                            reader.GetDateTime(
-                                reader.GetOrdinal(
-                                    "CreatedAt")),
-
-                        UpdatedAt =
-                            reader.IsDBNull(
-                                updatedAtOrdinal)
-                                ? null
-                                : reader.GetDateTime(
-                                    updatedAtOrdinal)
-                    });
+                users.Add(new AdminUserDto { Id = reader.GetInt32(reader.GetOrdinal("Id")), Username = reader.GetString(reader.GetOrdinal("Username")), Email = reader.GetString(reader.GetOrdinal("Email")), Role = reader.GetString(reader.GetOrdinal("Role")), IsActive = reader.GetBoolean(reader.GetOrdinal("IsActive")), CreatedAt = reader.GetDateTime(reader.GetOrdinal("CreatedAt")), UpdatedAt = reader.IsDBNull(updatedAtOrdinal) ? null : reader.GetDateTime(updatedAtOrdinal) });
             }
         }
 
@@ -532,19 +452,15 @@ public class UserRepository : IUserRepository
         };
     }
 
-    public async Task<AdminUserDeactivationStatus> DeactivateWithAuditAsync(int targetUserId, int administratorUserId,
-        Guid correlationId)
+    public async Task<AdminUserDeactivationStatus> DeactivateWithAuditAsync(int targetUserId, int administratorUserId, Guid correlationId)
     {
-        await using var connection =
-            _dbConnectionFactory.CreateConnection();
+        await using var connection = _dbConnectionFactory.CreateConnection();
 
         await connection.OpenAsync();
 
         // Isolationen beskytter kontrollen af den sidste aktive administrator
         // mod konkurrerende deaktiveringer.
-        await using var transaction =
-            await connection.BeginTransactionAsync(
-                IsolationLevel.Serializable);
+        await using var transaction = await connection.BeginTransactionAsync(IsolationLevel.Serializable);
 
         try
         {
@@ -567,26 +483,20 @@ public class UserRepository : IUserRepository
                                             END;
                                             """;
 
-            await using (var administratorCommand =
-                         connection.CreateCommand())
+            await using (var administratorCommand = connection.CreateCommand())
             {
                 administratorCommand.Transaction = transaction;
                 administratorCommand.CommandText = administratorSql;
 
-                AddParameter(
-                    administratorCommand,
-                    "@AdministratorUserId",
-                    administratorUserId);
+                AddParameter(administratorCommand, "@AdministratorUserId", administratorUserId);
 
-                var result =
-                    await administratorCommand.ExecuteScalarAsync();
+                var result = await administratorCommand.ExecuteScalarAsync();
 
                 if (!Convert.ToBoolean(result))
                 {
                     await transaction.RollbackAsync();
 
-                    return AdminUserDeactivationStatus
-                        .AdministratorNotAuthorized;
+                    return AdminUserDeactivationStatus.AdministratorNotAuthorized;
                 }
             }
 
@@ -594,8 +504,7 @@ public class UserRepository : IUserRepository
             {
                 await transaction.RollbackAsync();
 
-                return AdminUserDeactivationStatus
-                    .CannotDeactivateSelf;
+                return AdminUserDeactivationStatus.CannotDeactivateSelf;
             }
 
             // Lås målbrugeren, indtil transaktionen er afsluttet.
@@ -614,29 +523,22 @@ public class UserRepository : IUserRepository
             bool targetUserIsActive = false;
             string? targetUserRole = null;
 
-            await using (var targetCommand =
-                         connection.CreateCommand())
+            await using (var targetCommand = connection.CreateCommand())
             {
                 targetCommand.Transaction = transaction;
                 targetCommand.CommandText = targetUserSql;
 
-                AddParameter(
-                    targetCommand,
-                    "@TargetUserId",
-                    targetUserId);
+                AddParameter(targetCommand, "@TargetUserId", targetUserId);
 
-                await using var reader =
-                    await targetCommand.ExecuteReaderAsync();
+                await using var reader = await targetCommand.ExecuteReaderAsync();
 
                 targetUserExists = await reader.ReadAsync();
 
                 if (targetUserExists)
                 {
-                    targetUserIsActive = reader.GetBoolean(
-                        reader.GetOrdinal("IsActive"));
+                    targetUserIsActive = reader.GetBoolean(reader.GetOrdinal("IsActive"));
 
-                    targetUserRole = reader.GetString(
-                        reader.GetOrdinal("Role"));
+                    targetUserRole = reader.GetString(reader.GetOrdinal("Role"));
                 }
             }
 
@@ -668,21 +570,18 @@ public class UserRepository : IUserRepository
                                                         AND ug.Name = N'Administrator';
                                                       """;
 
-                await using var countCommand =
-                    connection.CreateCommand();
+                await using var countCommand = connection.CreateCommand();
 
                 countCommand.Transaction = transaction;
                 countCommand.CommandText = countAdministratorsSql;
 
-                var countResult =
-                    await countCommand.ExecuteScalarAsync();
+                var countResult = await countCommand.ExecuteScalarAsync();
 
                 if (Convert.ToInt32(countResult) <= 1)
                 {
                     await transaction.RollbackAsync();
 
-                    return AdminUserDeactivationStatus
-                        .LastActiveAdministrator;
+                    return AdminUserDeactivationStatus.LastActiveAdministrator;
                 }
             }
 
@@ -695,26 +594,20 @@ public class UserRepository : IUserRepository
                                            AND IsActive = 1;
                                          """;
 
-            await using (var deactivateCommand =
-                         connection.CreateCommand())
+            await using (var deactivateCommand = connection.CreateCommand())
             {
                 deactivateCommand.Transaction = transaction;
                 deactivateCommand.CommandText = deactivateSql;
 
-                AddParameter(
-                    deactivateCommand,
-                    "@TargetUserId",
-                    targetUserId);
+                AddParameter(deactivateCommand, "@TargetUserId", targetUserId);
 
-                var affectedRows =
-                    await deactivateCommand.ExecuteNonQueryAsync();
+                var affectedRows = await deactivateCommand.ExecuteNonQueryAsync();
 
                 if (affectedRows != 1)
                 {
                     await transaction.RollbackAsync();
 
-                    return AdminUserDeactivationStatus
-                        .AlreadyInactive;
+                    return AdminUserDeactivationStatus.AlreadyInactive;
                 }
             }
 
@@ -740,49 +633,28 @@ public class UserRepository : IUserRepository
                                     );
                                     """;
 
-            await using (var auditCommand =
-                         connection.CreateCommand())
+            await using (var auditCommand = connection.CreateCommand())
             {
                 auditCommand.Transaction = transaction;
                 auditCommand.CommandText = auditSql;
 
-                AddParameter(
-                    auditCommand,
-                    "@AdministratorUserId",
-                    administratorUserId);
+                AddParameter(auditCommand, "@AdministratorUserId", administratorUserId);
 
-                AddParameter(
-                    auditCommand,
-                    "@Action",
-                    "UserDeactivated");
+                AddParameter(auditCommand, "@Action", "UserDeactivated");
 
-                AddParameter(
-                    auditCommand,
-                    "@EntityType",
-                    "User");
+                AddParameter(auditCommand, "@EntityType", "User");
 
-                AddParameter(
-                    auditCommand,
-                    "@EntityId",
-                    targetUserId.ToString());
+                AddParameter(auditCommand, "@EntityId", targetUserId.ToString());
 
-                AddParameter(
-                    auditCommand,
-                    "@Details",
-                    "Brugerkonto deaktiveret af administrator.");
+                AddParameter(auditCommand, "@Details", "Brugerkonto deaktiveret af administrator.");
 
-                AddParameter(
-                    auditCommand,
-                    "@CorrelationId",
-                    correlationId);
+                AddParameter(auditCommand, "@CorrelationId", correlationId);
 
-                var auditRows =
-                    await auditCommand.ExecuteNonQueryAsync();
+                var auditRows = await auditCommand.ExecuteNonQueryAsync();
 
                 if (auditRows != 1)
                 {
-                    throw new InvalidOperationException(
-                        "Auditloggen kunne ikke gemmes.");
+                    throw new InvalidOperationException("Auditloggen kunne ikke gemmes.");
                 }
             }
 
@@ -797,16 +669,13 @@ public class UserRepository : IUserRepository
         }
     }
 
-    public async Task<AdminUserActivationStatus> ReactivateWithAuditAsync(int targetUserId, int administratorUserId,
-        Guid correlationId)
+    public async Task<AdminUserActivationStatus> ReactivateWithAuditAsync(int targetUserId, int administratorUserId, Guid correlationId)
     {
-        await using var connection =
-            _dbConnectionFactory.CreateConnection();
+        await using var connection = _dbConnectionFactory.CreateConnection();
 
         await connection.OpenAsync();
 
-        await using var transaction =
-            await connection.BeginTransactionAsync();
+        await using var transaction = await connection.BeginTransactionAsync();
 
         try
         {
@@ -830,30 +699,21 @@ public class UserRepository : IUserRepository
                                             END;
                                             """;
 
-            await using (var administratorCommand =
-                         connection.CreateCommand())
+            await using (var administratorCommand = connection.CreateCommand())
             {
-                administratorCommand.Transaction =
-                    transaction;
+                administratorCommand.Transaction = transaction;
 
-                administratorCommand.CommandText =
-                    administratorSql;
+                administratorCommand.CommandText = administratorSql;
 
-                AddParameter(
-                    administratorCommand,
-                    "@AdministratorUserId",
-                    administratorUserId);
+                AddParameter(administratorCommand, "@AdministratorUserId", administratorUserId);
 
-                var result =
-                    await administratorCommand
-                        .ExecuteScalarAsync();
+                var result = await administratorCommand.ExecuteScalarAsync();
 
                 if (!Convert.ToBoolean(result))
                 {
                     await transaction.RollbackAsync();
 
-                    return AdminUserActivationStatus
-                        .AdministratorNotAuthorized;
+                    return AdminUserActivationStatus.AdministratorNotAuthorized;
                 }
             }
 
@@ -871,32 +731,21 @@ public class UserRepository : IUserRepository
             bool targetUserExists;
             bool targetUserIsActive = false;
 
-            await using (var targetCommand =
-                         connection.CreateCommand())
+            await using (var targetCommand = connection.CreateCommand())
             {
-                targetCommand.Transaction =
-                    transaction;
+                targetCommand.Transaction = transaction;
 
-                targetCommand.CommandText =
-                    targetUserSql;
+                targetCommand.CommandText = targetUserSql;
 
-                AddParameter(
-                    targetCommand,
-                    "@TargetUserId",
-                    targetUserId);
+                AddParameter(targetCommand, "@TargetUserId", targetUserId);
 
-                var result =
-                    await targetCommand
-                        .ExecuteScalarAsync();
+                var result = await targetCommand.ExecuteScalarAsync();
 
-                targetUserExists =
-                    result is not null
-                    && result is not DBNull;
+                targetUserExists = result is not null && result is not DBNull;
 
                 if (targetUserExists)
                 {
-                    targetUserIsActive =
-                        Convert.ToBoolean(result);
+                    targetUserIsActive = Convert.ToBoolean(result);
                 }
             }
 
@@ -904,16 +753,14 @@ public class UserRepository : IUserRepository
             {
                 await transaction.RollbackAsync();
 
-                return AdminUserActivationStatus
-                    .UserNotFound;
+                return AdminUserActivationStatus.UserNotFound;
             }
 
             if (targetUserIsActive)
             {
                 await transaction.RollbackAsync();
 
-                return AdminUserActivationStatus
-                    .AlreadyActive;
+                return AdminUserActivationStatus.AlreadyActive;
             }
 
             // --------------------------------------------------
@@ -929,30 +776,21 @@ public class UserRepository : IUserRepository
                                            AND IsActive = 0;
                                          """;
 
-            await using (var reactivateCommand =
-                         connection.CreateCommand())
+            await using (var reactivateCommand = connection.CreateCommand())
             {
-                reactivateCommand.Transaction =
-                    transaction;
+                reactivateCommand.Transaction = transaction;
 
-                reactivateCommand.CommandText =
-                    reactivateSql;
+                reactivateCommand.CommandText = reactivateSql;
 
-                AddParameter(
-                    reactivateCommand,
-                    "@TargetUserId",
-                    targetUserId);
+                AddParameter(reactivateCommand, "@TargetUserId", targetUserId);
 
-                var affectedRows =
-                    await reactivateCommand
-                        .ExecuteNonQueryAsync();
+                var affectedRows = await reactivateCommand.ExecuteNonQueryAsync();
 
                 if (affectedRows != 1)
                 {
                     await transaction.RollbackAsync();
 
-                    return AdminUserActivationStatus
-                        .AlreadyActive;
+                    return AdminUserActivationStatus.AlreadyActive;
                 }
             }
 
@@ -980,53 +818,29 @@ public class UserRepository : IUserRepository
                                     );
                                     """;
 
-            await using (var auditCommand =
-                         connection.CreateCommand())
+            await using (var auditCommand = connection.CreateCommand())
             {
-                auditCommand.Transaction =
-                    transaction;
+                auditCommand.Transaction = transaction;
 
-                auditCommand.CommandText =
-                    auditSql;
+                auditCommand.CommandText = auditSql;
 
-                AddParameter(
-                    auditCommand,
-                    "@AdministratorUserId",
-                    administratorUserId);
+                AddParameter(auditCommand, "@AdministratorUserId", administratorUserId);
 
-                AddParameter(
-                    auditCommand,
-                    "@Action",
-                    "UserReactivated");
+                AddParameter(auditCommand, "@Action", "UserReactivated");
 
-                AddParameter(
-                    auditCommand,
-                    "@EntityType",
-                    "User");
+                AddParameter(auditCommand, "@EntityType", "User");
 
-                AddParameter(
-                    auditCommand,
-                    "@EntityId",
-                    targetUserId.ToString());
+                AddParameter(auditCommand, "@EntityId", targetUserId.ToString());
 
-                AddParameter(
-                    auditCommand,
-                    "@Details",
-                    "Brugerkonto genaktiveret af administrator.");
+                AddParameter(auditCommand, "@Details", "Brugerkonto genaktiveret af administrator.");
 
-                AddParameter(
-                    auditCommand,
-                    "@CorrelationId",
-                    correlationId);
+                AddParameter(auditCommand, "@CorrelationId", correlationId);
 
-                var affectedRows =
-                    await auditCommand
-                        .ExecuteNonQueryAsync();
+                var affectedRows = await auditCommand.ExecuteNonQueryAsync();
 
                 if (affectedRows != 1)
                 {
-                    throw new InvalidOperationException(
-                        "Auditloggen kunne ikke gemmes.");
+                    throw new InvalidOperationException("Auditloggen kunne ikke gemmes.");
                 }
             }
 
@@ -1035,8 +849,7 @@ public class UserRepository : IUserRepository
             // --------------------------------------------------
             await transaction.CommitAsync();
 
-            return AdminUserActivationStatus
-                .Succeeded;
+            return AdminUserActivationStatus.Succeeded;
         }
         catch
         {
@@ -1048,9 +861,7 @@ public class UserRepository : IUserRepository
     /// <summary>
     /// Omdanner fri søgetekst til et sikkert LIKE-mønster.
     /// </summary>
-    private static string?
-        CreateAdminUserQueryPattern(
-            string? query)
+    private static string? CreateAdminUserQueryPattern(string? query)
     {
         if (string.IsNullOrWhiteSpace(query))
         {
@@ -1068,12 +879,7 @@ public class UserRepository : IUserRepository
         //
         // ~ skal escapes først, fordi det er det escape-tegn,
         // vi selv har valgt.
-        var escapedQuery =
-            query.Trim()
-                .Replace("~", "~~")
-                .Replace("%", "~%")
-                .Replace("_", "~_")
-                .Replace("[", "~[");
+        var escapedQuery = query.Trim().Replace("~", "~~").Replace("%", "~%").Replace("_", "~_").Replace("[", "~[");
 
         // De to procenttegn, som vi selv tilføjer, gør
         // søgningen delvis:
@@ -1088,33 +894,18 @@ public class UserRepository : IUserRepository
     /// <summary>
     /// Tilføjer de fælles, parameteriserede søgefiltre.
     /// </summary>
-    private static void AddAdminSearchParameters(
-        System.Data.Common.DbCommand command,
-        AdminUserSearchDto search,
-        string? queryPattern)
+    private static void AddAdminSearchParameters(System.Data.Common.DbCommand command, AdminUserSearchDto search, string? queryPattern)
     {
         // Parameterisering betyder, at værdierne sendes
         // adskilt fra SQL-koden. Brugerinput bliver derfor
         // ikke udført som SQL.
-        AddParameter(
-            command,
-            "@QueryPattern",
-            queryPattern);
+        AddParameter(command, "@QueryPattern", queryPattern);
 
         // null betyder, at både aktive og inaktive brugere
         // skal medtages.
-        AddParameter(
-            command,
-            "@IsActive",
-            search.IsActive);
+        AddParameter(command, "@IsActive", search.IsActive);
 
         // En tom rolle behandles som intet rollefilter.
-        AddParameter(
-            command,
-            "@Role",
-            string.IsNullOrWhiteSpace(
-                search.Role)
-                ? null
-                : search.Role);
+        AddParameter(command, "@Role", string.IsNullOrWhiteSpace(search.Role) ? null : search.Role);
     }
 }

@@ -24,55 +24,43 @@
     }
     else if (!string.IsNullOrWhiteSpace(_errorMessage))
     {
-        <div class="alert alert-danger"
-             role="alert">
+        <div class="alert alert-danger" role="alert">
             @_errorMessage
         </div>
 
-        <a href="/"
-           class="btn btn-outline-secondary">
+        <a href="/" class="btn btn-outline-secondary">
             Tilbage til forsiden
         </a>
     }
     else if (_announcement is null)
     {
-        <div class="alert alert-warning"
-             role="alert">
+        <div class="alert alert-warning" role="alert">
             Annoncen findes ikke eller er ikke længere aktiv.
         </div>
 
-        <a href="/"
-           class="btn btn-outline-secondary">
+        <a href="/" class="btn btn-outline-secondary">
             Tilbage til forsiden
         </a>
     }
     else
     {
-        @if (!string.IsNullOrWhiteSpace(
-                     _actionSuccessMessage))
+        @if (!string.IsNullOrWhiteSpace(_actionSuccessMessage))
         {
-            <div class="alert alert-success"
-                 role="status"
-                 data-testid="deactivate-success">
+            <div class="alert alert-success" role="status" data-testid="deactivate-success">
                 @_actionSuccessMessage
             </div>
         }
 
-        @if (!string.IsNullOrWhiteSpace(
-                     _actionErrorMessage))
+        @if (!string.IsNullOrWhiteSpace(_actionErrorMessage))
         {
-            <div class="alert alert-danger"
-                 role="alert"
-                 data-testid="deactivate-error">
+            <div class="alert alert-danger" role="alert" data-testid="deactivate-error">
                 @_actionErrorMessage
             </div>
         }
 
         @if (!_announcement.IsActive)
         {
-            <div class="alert alert-secondary"
-                 role="status"
-                 data-testid="inactive-announcement">
+            <div class="alert alert-secondary" role="status" data-testid="inactive-announcement">
                 Denne annonce er deaktiveret og vises
                 ikke længere offentligt.
             </div>
@@ -94,8 +82,7 @@
                             @FormatPrice(_announcement.Price)
                         </p>
 
-                        <p class="card-text"
-                           style="white-space: pre-line;">
+                        <p class="card-text" style="white-space: pre-line;">
                             @_announcement.Description
                         </p>
                     </div>
@@ -173,29 +160,21 @@
                         <div class="d-grid gap-2 mt-3">
                             @if (_canEditAnnouncement)
                             {
-                                <a href="@($"/announcements/{Id}/edit")"
-                                   class="btn btn-outline-primary"
-                                   data-testid="edit-announcement">
+                                <a href="@($"/announcements/{Id}/edit")" class="btn btn-outline-primary" data-testid="edit-announcement">
                                     Rediger annonce
                                 </a>
                             }
 
-                            @if (_isOwner &&
-                                 _announcement.IsActive)
+                            @if (_isOwner && _announcement.IsActive)
                             {
-                                <button type="button"
-                                        class="btn btn-outline-danger"
-                                        data-testid="deactivate-announcement"
-                                        disabled="@_isDeactivating"
-                                        @onclick="ShowDeactivateConfirmation">
+                                <button type="button" class="btn btn-outline-danger" data-testid="deactivate-announcement" disabled="@_isDeactivating" @onclick="ShowDeactivateConfirmation">
                                     Deaktivér annonce
                                 </button>
                             }
 
                             @if (_showDeactivateConfirmation)
                             {
-                                <div class="border border-danger rounded p-3"
-                                     data-testid="deactivate-confirmation">
+                                <div class="border border-danger rounded p-3" data-testid="deactivate-confirmation">
                                     <p class="mb-3">
                                         Er du sikker på, at du vil
                                         deaktivere annoncen? Den vil
@@ -204,11 +183,7 @@
                                     </p>
 
                                     <div class="d-flex gap-2">
-                                        <button type="button"
-                                                class="btn btn-danger"
-                                                data-testid="confirm-deactivate"
-                                                disabled="@_isDeactivating"
-                                                @onclick="HandleDeactivateAsync">
+                                        <button type="button" class="btn btn-danger" data-testid="confirm-deactivate" disabled="@_isDeactivating" @onclick="HandleDeactivateAsync">
                                             @if (_isDeactivating)
                                             {
                                                 <span>
@@ -223,11 +198,7 @@
                                             }
                                         </button>
 
-                                        <button type="button"
-                                                class="btn btn-outline-secondary"
-                                                data-testid="cancel-deactivate"
-                                                disabled="@_isDeactivating"
-                                                @onclick="HideDeactivateConfirmation">
+                                        <button type="button" class="btn btn-outline-secondary" data-testid="cancel-deactivate" disabled="@_isDeactivating" @onclick="HideDeactivateConfirmation">
                                             Annuller
                                         </button>
                                     </div>
@@ -240,33 +211,22 @@
                                     <Authorized>
                                         @if (!_isOwner)
                                         {
-                                            <button type="button"
-                                                    class="btn btn-primary"
-                                                    data-testid="contact-seller"
-                                                    @onclick="StartContact">
+                                            <button type="button" class="btn btn-primary" data-testid="contact-seller" @onclick="StartContact">
                                                 Kontakt sælger
                                             </button>
                                         }
 
                                         <div data-testid="comment-form">
-                                            <CommentForm
-                                                AnnouncementId="Id"
-                                                OnCreated="HandleCommentCreatedAsync"/>
+                                            <CommentForm AnnouncementId="Id" OnCreated="HandleCommentCreatedAsync"/>
                                         </div>
                                     </Authorized>
 
                                     <NotAuthorized>
-                                        <button type="button"
-                                                class="btn btn-primary"
-                                                data-testid="contact-seller"
-                                                @onclick="OpenLoginRegisterModal">
+                                        <button type="button" class="btn btn-primary" data-testid="contact-seller" @onclick="OpenLoginRegisterModal">
                                             Kontakt sælger
                                         </button>
 
-                                        <button type="button"
-                                                class="btn btn-outline-primary"
-                                                data-testid="add-comment"
-                                                @onclick="OpenLoginRegisterModal">
+                                        <button type="button" class="btn btn-outline-primary" data-testid="add-comment" @onclick="OpenLoginRegisterModal">
                                             Skriv kommentar
                                         </button>
                                     </NotAuthorized>
@@ -280,27 +240,21 @@
 
         @if (_announcement.IsActive)
         {
-            <section class="mt-4"
-                     data-testid="public-comments">
+            <section class="mt-4" data-testid="public-comments">
                 <div class="card shadow-sm">
                     <div class="card-body">
                         <h2 class="h4">
                             Kommentarer
                         </h2>
 
-                        <CommentList
-                            AnnouncementId="Id"
-                            Comments="_comments"
-                            OnCreated="HandleCommentCreatedAsync"
-                            OnLoginRequired="OpenLoginRegisterModal"/>
+                        <CommentList AnnouncementId="Id" Comments="_comments" OnCreated="HandleCommentCreatedAsync" OnLoginRequired="OpenLoginRegisterModal"/>
                     </div>
                 </div>
             </section>
         }
 
         <AuthorizeView Roles="Administrator">
-            <div class="mt-4"
-                 data-testid="admin-announcement-actions">
+            <div class="mt-4" data-testid="admin-announcement-actions">
                 <div class="card border-warning">
                     <div class="card-body">
                         <h2 class="h4">
@@ -315,8 +269,7 @@
                 </div>
             </div>
 
-            <div class="mt-4"
-                 data-testid="admin-comment-actions">
+            <div class="mt-4" data-testid="admin-comment-actions">
                 <div class="card border-warning">
                     <div class="card-body">
                         <h2 class="h4">
@@ -335,17 +288,13 @@
         @if (_showLoginRegisterModal)
         {
             <div data-testid="login-register-modal">
-                <LoginRegisterModal
-                    OnClose="CloseLoginRegisterModal"/>
+                <LoginRegisterModal OnClose="CloseLoginRegisterModal"/>
             </div>
         }
 
         @if (_showContactMessage)
         {
-            <ContactSellerForm
-                AnnouncementId="Id"
-                OnSent="HandleMessageSent"
-                OnCancel="CloseContactForm"/>
+            <ContactSellerForm AnnouncementId="Id" OnSent="HandleMessageSent" OnCancel="CloseContactForm"/>
         }
     }
 </div>
@@ -358,11 +307,9 @@
 
     private AnnouncementDetailsDto? _announcement;
 
-    private IReadOnlyList<AnnouncementImageDto> _images =
-        Array.Empty<AnnouncementImageDto>();
+    private IReadOnlyList<AnnouncementImageDto> _images = Array.Empty<AnnouncementImageDto>();
 
-    private IReadOnlyList<CommentDto> _comments =
-        Array.Empty<CommentDto>();
+    private IReadOnlyList<CommentDto> _comments = Array.Empty<CommentDto>();
 
     private bool _isLoading = true;
     private bool _canEditAnnouncement;
@@ -376,8 +323,7 @@
     private string? _actionSuccessMessage;
     private string? _actionErrorMessage;
 
-    private string PageTitle =>
-        _announcement?.Title ?? "Annonce";
+    private string PageTitle => _announcement?.Title ?? "Annonce";
 
     protected override async Task OnParametersSetAsync()
     {
@@ -388,10 +334,8 @@
         _actionSuccessMessage = null;
         _actionErrorMessage = null;
         _announcement = null;
-        _images =
-            Array.Empty<AnnouncementImageDto>();
-        _comments =
-            Array.Empty<CommentDto>();
+        _images = Array.Empty<AnnouncementImageDto>();
+        _comments = Array.Empty<CommentDto>();
         _canEditAnnouncement = false;
         _isOwner = false;
         _showLoginRegisterModal = false;
@@ -401,9 +345,7 @@
 
         try
         {
-            _announcement =
-                await AnnouncementService
-                    .GetDetailsAsync(Id);
+            _announcement = await AnnouncementService.GetDetailsAsync(Id);
 
             if (_announcement is null)
             {
@@ -417,29 +359,19 @@
                 await LoadCommentsAsync();
             }
 
-            var currentUserId =
-                await CurrentUserService
-                    .GetUserIdAsync();
+            var currentUserId = await CurrentUserService.GetUserIdAsync();
 
             // UI-rettigheden er kun præsentation;
             // service-laget håndhæver stadig ejerskab.
-            _isOwner =
-                currentUserId.HasValue
-                && currentUserId.Value ==
-                _announcement.SellerUserId;
+            _isOwner = currentUserId.HasValue && currentUserId.Value == _announcement.SellerUserId;
 
-            var isAdministrator =
-                await CurrentUserService
-                    .IsInRoleAsync(
-                        "Administrator");
+            var isAdministrator = await CurrentUserService.IsInRoleAsync("Administrator");
 
-            _canEditAnnouncement =
-                _isOwner || isAdministrator;
+            _canEditAnnouncement = _isOwner || isAdministrator;
         }
         catch
         {
-            _errorMessage =
-                "Annoncen kunne ikke indlæses. Prøv igen.";
+            _errorMessage = "Annoncen kunne ikke indlæses. Prøv igen.";
         }
         finally
         {
@@ -449,26 +381,19 @@
 
     private async Task LoadImagesAsync()
     {
-        _images =
-            await ImageService
-                .GetForActiveAnnouncementAsync(Id);
+        _images = await ImageService.GetForActiveAnnouncementAsync(Id);
     }
 
     private async Task LoadCommentsAsync()
     {
-        _comments =
-            await CommentService
-                .GetForAnnouncementAsync(Id);
+        _comments = await CommentService.GetForAnnouncementAsync(Id);
     }
 
-    private async Task HandleCommentCreatedAsync(
-        CommentDto comment)
+    private async Task HandleCommentCreatedAsync(CommentDto comment)
     {
         // Genindlæs hele tråden, så sortering og
         // serverskabte felter altid er korrekte.
-        _comments =
-            await CommentService
-                .GetForAnnouncementAsync(Id);
+        _comments = await CommentService.GetForAnnouncementAsync(Id);
     }
 
     private void ShowDeactivateConfirmation()
@@ -499,8 +424,7 @@
 
         try
         {
-            await AnnouncementService
-                .DeactivateAsync(Id);
+            await AnnouncementService.DeactivateAsync(Id);
 
             if (_announcement is not null)
             {
@@ -508,23 +432,19 @@
             }
 
             _showDeactivateConfirmation = false;
-            _actionSuccessMessage =
-                "Annoncen er deaktiveret og vises ikke længere offentligt.";
+            _actionSuccessMessage = "Annoncen er deaktiveret og vises ikke længere offentligt.";
         }
         catch (UnauthorizedAccessException exception)
         {
-            _actionErrorMessage =
-                exception.Message;
+            _actionErrorMessage = exception.Message;
         }
         catch (InvalidOperationException exception)
         {
-            _actionErrorMessage =
-                exception.Message;
+            _actionErrorMessage = exception.Message;
         }
         catch
         {
-            _actionErrorMessage =
-                "Annoncen kunne ikke deaktiveres. Prøv igen.";
+            _actionErrorMessage = "Annoncen kunne ikke deaktiveres. Prøv igen.";
         }
         finally
         {
@@ -547,24 +467,19 @@
         _showContactMessage = true;
     }
 
-    private static string FormatPrice(
-        int price)
+    private static string FormatPrice(int price)
     {
         return $"{price:N0} kr.";
     }
 
-    private static string FormatMileage(
-        int mileage)
+    private static string FormatMileage(int mileage)
     {
         return $"{mileage:N0} km";
     }
 
-    private static string DisplayValue(
-        string? value)
+    private static string DisplayValue(string? value)
     {
-        return string.IsNullOrWhiteSpace(value)
-            ? "Ikke angivet"
-            : value;
+        return string.IsNullOrWhiteSpace(value) ? "Ikke angivet" : value;
     }
 
     private void HandleMessageSent(MessageDto message)

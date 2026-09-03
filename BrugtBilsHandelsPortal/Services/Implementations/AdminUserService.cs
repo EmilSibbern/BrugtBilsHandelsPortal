@@ -12,11 +12,9 @@ namespace BrugtBilsHandelsPortal.Services.Implementations;
 /// </summary>
 public class AdminUserService : IAdminUserService
 {
-    private readonly IUserRepository
-        _userRepository;
+    private readonly IUserRepository _userRepository;
 
-    private readonly ICurrentUserService
-        _currentUserService;
+    private readonly ICurrentUserService _currentUserService;
 
     public AdminUserService(IUserRepository userRepository, ICurrentUserService currentUserService)
     {
@@ -33,13 +31,11 @@ public class AdminUserService : IAdminUserService
 
         var validationResults = new List<ValidationResult>();
 
-        var isValid = Validator.TryValidateObject(search, new ValidationContext(search), validationResults,
-            validateAllProperties: true);
+        var isValid = Validator.TryValidateObject(search, new ValidationContext(search), validationResults, validateAllProperties: true);
 
         if (!isValid)
         {
-            return AdminUserSearchResult.Failed(
-                validationResults.First().ErrorMessage ?? "Søgekriterierne er ugyldige.");
+            return AdminUserSearchResult.Failed(validationResults.First().ErrorMessage ?? "Søgekriterierne er ugyldige.");
         }
 
         // Normalisér værdierne, før repository-laget kaldes.
@@ -47,8 +43,7 @@ public class AdminUserService : IAdminUserService
 
         search.Role = string.IsNullOrWhiteSpace(search.Role) ? null : search.Role.Trim();
 
-        var page =
-            await _userRepository.SearchForAdministrationAsync(search);
+        var page = await _userRepository.SearchForAdministrationAsync(search);
 
         return AdminUserSearchResult.Successful(page);
     }
@@ -69,8 +64,7 @@ public class AdminUserService : IAdminUserService
         // og gemmes sammen med den atomiske auditpost.
         var correlationId = Guid.NewGuid();
 
-        var status =
-            await _userRepository.DeactivateWithAuditAsync(targetUserId, administratorUserId, correlationId);
+        var status = await _userRepository.DeactivateWithAuditAsync(targetUserId, administratorUserId, correlationId);
 
         switch (status)
         {
@@ -101,24 +95,16 @@ public class AdminUserService : IAdminUserService
     {
         // Authorization udføres før øvrig validering,
         // så uvedkommende ikke får oplysninger om brugere.
-        var administratorUserId =
-            await GetAdministratorUserIdAsync();
+        var administratorUserId = await GetAdministratorUserIdAsync();
 
         if (targetUserId <= 0)
         {
-            throw new ValidationException(
-                "Brugeren er ugyldig.");
+            throw new ValidationException("Brugeren er ugyldig.");
         }
 
-        var correlationId =
-            Guid.NewGuid();
+        var correlationId = Guid.NewGuid();
 
-        var status =
-            await _userRepository
-                .ReactivateWithAuditAsync(
-                    targetUserId,
-                    administratorUserId,
-                    correlationId);
+        var status = await _userRepository.ReactivateWithAuditAsync(targetUserId, administratorUserId, correlationId);
 
         switch (status)
         {
@@ -126,21 +112,16 @@ public class AdminUserService : IAdminUserService
                 return;
 
             case AdminUserActivationStatus.UserNotFound:
-                throw new InvalidOperationException(
-                    "Brugeren findes ikke.");
+                throw new InvalidOperationException("Brugeren findes ikke.");
 
             case AdminUserActivationStatus.AlreadyActive:
-                throw new InvalidOperationException(
-                    "Brugeren er allerede aktiv.");
+                throw new InvalidOperationException("Brugeren er allerede aktiv.");
 
-            case AdminUserActivationStatus
-                .AdministratorNotAuthorized:
-                throw new UnauthorizedAccessException(
-                    "Du har ikke adgang til brugeradministration.");
+            case AdminUserActivationStatus.AdministratorNotAuthorized:
+                throw new UnauthorizedAccessException("Du har ikke adgang til brugeradministration.");
 
             default:
-                throw new InvalidOperationException(
-                    "Brugeren kunne ikke genaktiveres.");
+                throw new InvalidOperationException("Brugeren kunne ikke genaktiveres.");
         }
     }
 
@@ -157,16 +138,14 @@ public class AdminUserService : IAdminUserService
             throw new UnauthorizedAccessException("Du skal være logget ind.");
         }
 
-        var userId =
-            await _currentUserService.GetUserIdAsync();
+        var userId = await _currentUserService.GetUserIdAsync();
 
         if (userId is null)
         {
             throw new UnauthorizedAccessException("Brugeridentiteten er ugyldig.");
         }
 
-        var isAdministrator =
-            await _currentUserService.IsInRoleAsync("Administrator");
+        var isAdministrator = await _currentUserService.IsInRoleAsync("Administrator");
 
         if (!isAdministrator)
         {

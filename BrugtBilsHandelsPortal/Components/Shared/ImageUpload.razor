@@ -17,31 +17,24 @@
 
         @if (!string.IsNullOrWhiteSpace(_errorMessage))
         {
-            <div class="alert alert-danger"
-                 role="alert">
+            <div class="alert alert-danger" role="alert">
                 @_errorMessage
             </div>
         }
 
         @if (!string.IsNullOrWhiteSpace(_successMessage))
         {
-            <div class="alert alert-success"
-                 role="status">
+            <div class="alert alert-success" role="status">
                 @_successMessage
             </div>
         }
 
-        <InputFile OnChange="HandleFilesSelectedAsync"
-                   accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
-                   multiple
-                   disabled="@_isUploading" />
+        <InputFile OnChange="HandleFilesSelectedAsync" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" multiple disabled="@_isUploading" />
 
         @if (_isUploading)
         {
             <div class="mt-3">
-                <span class="spinner-border
-                             spinner-border-sm me-2"
-                      aria-hidden="true"></span>
+                <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
 
                 <span>
                     Uploader @_currentFile af @_totalFiles...
@@ -66,14 +59,11 @@
     private string? _errorMessage;
     private string? _successMessage;
 
-    private long MaxFileSize =>
-        Options.Value.MaxFileSizeBytes;
+    private long MaxFileSize => Options.Value.MaxFileSizeBytes;
 
-    private long MaxFileSizeInMb =>
-        MaxFileSize / 1024 / 1024;
+    private long MaxFileSizeInMb => MaxFileSize / 1024 / 1024;
 
-    private async Task HandleFilesSelectedAsync(
-        InputFileChangeEventArgs eventArgs)
+    private async Task HandleFilesSelectedAsync(InputFileChangeEventArgs eventArgs)
     {
         if (_isUploading)
         {
@@ -90,14 +80,11 @@
 
             try
             {
-                files = eventArgs.GetMultipleFiles(
-                    Options.Value.MaxImagesPerAnnouncement);
+                files = eventArgs.GetMultipleFiles(Options.Value.MaxImagesPerAnnouncement);
             }
             catch (InvalidOperationException)
             {
-                _errorMessage =
-                    $"Du kan højst vælge " +
-                    $"{Options.Value.MaxImagesPerAnnouncement} billeder.";
+                _errorMessage = $"Du kan højst vælge " + $"{Options.Value.MaxImagesPerAnnouncement} billeder.";
 
                 return;
             }
@@ -112,34 +99,18 @@
 
                 if (file.Size > MaxFileSize)
                 {
-                    _errorMessage =
-                        $"{file.Name} overskrider grænsen på " +
-                        $"{MaxFileSizeInMb} MB.";
+                    _errorMessage = $"{file.Name} overskrider grænsen på " + $"{MaxFileSizeInMb} MB.";
 
                     continue;
                 }
 
-                await using var stream =
-                    file.OpenReadStream(MaxFileSize);
+                await using var stream = file.OpenReadStream(MaxFileSize);
 
-                var result =
-                    await ImageService.UploadAsync(
-                        new UploadAnnouncementImageRequest
-                        {
-                            AnnouncementId =
-                                AnnouncementId,
-
-                            Content = stream,
-                            Size = file.Size,
-                            ContentType =
-                                file.ContentType
-                        });
+                var result = await ImageService.UploadAsync(new UploadAnnouncementImageRequest { AnnouncementId = AnnouncementId, Content = stream, Size = file.Size, ContentType = file.ContentType });
 
                 if (!result.Succeeded)
                 {
-                    _errorMessage =
-                        result.ErrorMessage
-                        ?? $"{file.Name} kunne ikke uploades.";
+                    _errorMessage = result.ErrorMessage ?? $"{file.Name} kunne ikke uploades.";
 
                     continue;
                 }
@@ -149,18 +120,14 @@
 
             if (uploadedCount > 0)
             {
-                _successMessage =
-                    uploadedCount == 1
-                        ? "Billedet blev uploadet."
-                        : $"{uploadedCount} billeder blev uploadet.";
+                _successMessage = uploadedCount == 1 ? "Billedet blev uploadet." : $"{uploadedCount} billeder blev uploadet.";
 
                 await OnImagesChanged.InvokeAsync();
             }
         }
         catch
         {
-            _errorMessage =
-                "Der opstod en fejl under upload.";
+            _errorMessage = "Der opstod en fejl under upload.";
         }
         finally
         {

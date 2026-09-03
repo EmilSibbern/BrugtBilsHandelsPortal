@@ -20,7 +20,6 @@ public class FakeCurrentUserService : ICurrentUserService
 
     public Task<bool> IsInRoleAsync(string role)
     {
-        return Task.FromResult(
-            role == "Administrator" && IsAdministrator);
+        return Task.FromResult(role == "Administrator" && IsAdministrator);
     }
 }

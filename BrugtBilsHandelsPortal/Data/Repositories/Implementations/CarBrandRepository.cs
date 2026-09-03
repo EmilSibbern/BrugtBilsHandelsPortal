@@ -9,8 +9,7 @@ public class CarBrandRepository : ICarBrandRepository
 {
     private readonly IDbConnectionFactory _connectionFactory;
 
-    public CarBrandRepository(
-        IDbConnectionFactory connectionFactory)
+    public CarBrandRepository(IDbConnectionFactory connectionFactory)
     {
         _connectionFactory = connectionFactory;
     }
@@ -27,27 +26,18 @@ public class CarBrandRepository : ICarBrandRepository
 
         var brands = new List<CarBrand>();
 
-        await using var connection =
-            _connectionFactory.CreateConnection();
+        await using var connection = _connectionFactory.CreateConnection();
 
         await connection.OpenAsync();
 
         await using var command = connection.CreateCommand();
         command.CommandText = sql;
 
-        await using var reader =
-            await command.ExecuteReaderAsync();
+        await using var reader = await command.ExecuteReaderAsync();
 
         while (await reader.ReadAsync())
         {
-            brands.Add(new CarBrand
-            {
-                BrandId = reader.GetInt32(
-                    reader.GetOrdinal("BrandId")),
-
-                BrandName = reader.GetString(
-                    reader.GetOrdinal("BrandName"))
-            });
+            brands.Add(new CarBrand { BrandId = reader.GetInt32(reader.GetOrdinal("BrandId")), BrandName = reader.GetString(reader.GetOrdinal("BrandName")) });
         }
 
         return brands;
@@ -67,8 +57,7 @@ public class CarBrandRepository : ICarBrandRepository
                            END;
                            """;
 
-        await using var connection =
-            _connectionFactory.CreateConnection();
+        await using var connection = _connectionFactory.CreateConnection();
 
         await connection.OpenAsync();
 

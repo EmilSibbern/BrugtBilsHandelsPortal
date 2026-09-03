@@ -56,8 +56,7 @@
             </div>
         </div>
 
-        <a href="/EditProfile"
-           class="btn btn-primary mt-3">
+        <a href="/EditProfile" class="btn btn-primary mt-3">
             Rediger profil
         </a>
     }
@@ -72,8 +71,7 @@
     {
         try
         {
-            _profile =
-                await UserService.GetCurrentProfileAsync();
+            _profile = await UserService.GetCurrentProfileAsync();
         }
         finally
         {
@@ -83,8 +81,6 @@
 
     private static string DisplayValue(string? value)
     {
-        return string.IsNullOrWhiteSpace(value)
-            ? "Ikke angivet"
-            : value;
+        return string.IsNullOrWhiteSpace(value) ? "Ikke angivet" : value;
     }
 }

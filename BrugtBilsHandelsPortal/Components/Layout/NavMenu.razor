@@ -28,44 +28,38 @@
         <AuthorizeView>
             <Authorized Context="authenticationState">
                 <div class="nav-item px-3">
-                    <NavLink class="nav-link"
-                             href="announcements/create">
+                    <NavLink class="nav-link" href="announcements/create">
                         Opret annonce
                     </NavLink>
                 </div>
 
                 <div class="nav-item px-3">
-                    <NavLink class="nav-link"
-                             href="announcements/mine">
+                    <NavLink class="nav-link" href="announcements/mine">
                         Mine annoncer
                     </NavLink>
                 </div>
 
                 <div class="nav-item px-3">
-                    <NavLink class="nav-link"
-                             href="Profile">
+                    <NavLink class="nav-link" href="Profile">
                         Min profil
                     </NavLink>
                 </div>
 
                 <div class="nav-item px-3">
-                    <NavLink class="nav-link"
-                             href="messages">
+                    <NavLink class="nav-link" href="messages">
                         Indbakke
                     </NavLink>
                 </div>
 
                 <div class="nav-item px-3">
-                    <NavLink class="nav-link"
-                             href="Logout">
+                    <NavLink class="nav-link" href="Logout">
                         Log ud
                     </NavLink>
                 </div>
 
                 <AuthorizeView Roles="Administrator">
                     <div class="nav-item px-3">
-                        <NavLink class="nav-link"
-                                 href="admin">
+                        <NavLink class="nav-link" href="admin">
                             Administration
                         </NavLink>
                     </div>
@@ -81,15 +75,13 @@
 
             <NotAuthorized>
                 <div class="nav-item px-3">
-                    <NavLink class="nav-link"
-                             href="Login">
+                    <NavLink class="nav-link" href="Login">
                         Log ind
                     </NavLink>
                 </div>
 
                 <div class="nav-item px-3">
-                    <NavLink class="nav-link"
-                             href="Register">
+                    <NavLink class="nav-link" href="Register">
                         Opret bruger
                     </NavLink>
                 </div>

@@ -12,14 +12,11 @@
 }
 else
 {
-    <div class="row row-cols-1 row-cols-md-2
-                row-cols-xl-3 g-4">
+    <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
         @foreach (var announcement in Announcements)
         {
-            <div class="col"
-                 @key="announcement.Id">
-                <AnnouncementCard
-                    Announcement="announcement" />
+            <div class="col" @key="announcement.Id">
+                <AnnouncementCard Announcement="announcement" />
             </div>
         }
     </div>
@@ -28,15 +25,11 @@ else
 @code {
     // Komponenten er præsentationsorienteret; data og paging-events ejes af forælderen.
     [Parameter, EditorRequired]
-    public IReadOnlyList<AnnouncementListItemDto>
-        Announcements { get; set; }
-            = Array.Empty<AnnouncementListItemDto>();
+    public IReadOnlyList<AnnouncementListItemDto> Announcements { get; set; } = Array.Empty<AnnouncementListItemDto>();
 
     [Parameter]
-    public string EmptyTitle { get; set; }
-        = "Ingen aktive annoncer";
+    public string EmptyTitle { get; set; } = "Ingen aktive annoncer";
 
     [Parameter]
-    public string EmptyText { get; set; }
-        = "Der er endnu ikke oprettet nogen aktive annoncer.";
+    public string EmptyText { get; set; } = "Der er endnu ikke oprettet nogen aktive annoncer.";
 }

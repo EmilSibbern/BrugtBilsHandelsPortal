@@ -9,8 +9,7 @@ public class AuthenticationResult
     public string? Email { get; set; }
     public string? Role { get; set; }
 
-    public static AuthenticationResult Successful(
-        int userId, string username, string email, string role)
+    public static AuthenticationResult Successful(int userId, string username, string email, string role)
     {
         return new AuthenticationResult
         {
@@ -22,8 +21,7 @@ public class AuthenticationResult
         };
     }
 
-    public static AuthenticationResult Failed(
-        string errorMessage)
+    public static AuthenticationResult Failed(string errorMessage)
     {
         return new AuthenticationResult
         {

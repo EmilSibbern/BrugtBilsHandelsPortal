@@ -12,15 +12,12 @@ public class CommentRepository : ICommentRepository
 {
     private readonly IDbConnectionFactory _connectionFactory;
 
-    public CommentRepository(
-        IDbConnectionFactory connectionFactory)
+    public CommentRepository(IDbConnectionFactory connectionFactory)
     {
         _connectionFactory = connectionFactory;
     }
 
-    public async Task<IReadOnlyList<CommentDto>>
-        GetForActiveAnnouncementAsync(
-            int announcementId)
+    public async Task<IReadOnlyList<CommentDto>> GetForActiveAnnouncementAsync(int announcementId)
     {
         const string sql = """
                            SELECT
@@ -51,21 +48,16 @@ public class CommentRepository : ICommentRepository
                                c.Id;
                            """;
 
-        await using var connection =
-            _connectionFactory.CreateConnection();
+        await using var connection = _connectionFactory.CreateConnection();
 
         await connection.OpenAsync();
 
         await using var command = connection.CreateCommand();
         command.CommandText = sql;
 
-        AddParameter(
-            command,
-            "@AnnouncementId",
-            announcementId);
+        AddParameter(command, "@AnnouncementId", announcementId);
 
-        await using var reader =
-            await command.ExecuteReaderAsync();
+        await using var reader = await command.ExecuteReaderAsync();
 
         var comments = new List<CommentDto>();
 
@@ -77,8 +69,7 @@ public class CommentRepository : ICommentRepository
         return CommentMapper.BuildTree(comments);
     }
 
-    public async Task<CommentDto?> GetByIdAsync(
-        long commentId)
+    public async Task<CommentDto?> GetByIdAsync(long commentId)
     {
         const string sql = """
                            SELECT TOP (1)
@@ -100,21 +91,16 @@ public class CommentRepository : ICommentRepository
                            WHERE c.Id = @CommentId;
                            """;
 
-        await using var connection =
-            _connectionFactory.CreateConnection();
+        await using var connection = _connectionFactory.CreateConnection();
 
         await connection.OpenAsync();
 
         await using var command = connection.CreateCommand();
         command.CommandText = sql;
 
-        AddParameter(
-            command,
-            "@CommentId",
-            commentId);
+        AddParameter(command, "@CommentId", commentId);
 
-        await using var reader =
-            await command.ExecuteReaderAsync();
+        await using var reader = await command.ExecuteReaderAsync();
 
         if (!await reader.ReadAsync())
         {
@@ -124,8 +110,7 @@ public class CommentRepository : ICommentRepository
         return CommentMapper.MapToDto(reader);
     }
 
-    public async Task<long> CreateAsync(
-        Comment comment)
+    public async Task<long> CreateAsync(Comment comment)
     {
         const string sql = """
                            SET NOCOUNT ON;
@@ -156,48 +141,32 @@ public class CommentRepository : ICommentRepository
                            FROM @InsertedComments;
                            """;
 
-        await using var connection =
-            _connectionFactory.CreateConnection();
+        await using var connection = _connectionFactory.CreateConnection();
 
         await connection.OpenAsync();
 
         await using var command = connection.CreateCommand();
         command.CommandText = sql;
 
-        AddParameter(
-            command,
-            "@AnnouncementId",
-            comment.AnnouncementId);
+        AddParameter(command, "@AnnouncementId", comment.AnnouncementId);
 
-        AddParameter(
-            command,
-            "@UserId",
-            comment.UserId);
+        AddParameter(command, "@UserId", comment.UserId);
 
-        AddParameter(
-            command,
-            "@Comment",
-            comment.Text);
+        AddParameter(command, "@Comment", comment.Text);
 
-        AddParameter(
-            command,
-            "@ParentCommentId",
-            comment.ParentCommentId);
+        AddParameter(command, "@ParentCommentId", comment.ParentCommentId);
 
         var result = await command.ExecuteScalarAsync();
 
         if (result is null || result is DBNull)
         {
-            throw new InvalidOperationException(
-                "Kommentaren kunne ikke oprettes.");
+            throw new InvalidOperationException("Kommentaren kunne ikke oprettes.");
         }
 
         return Convert.ToInt64(result);
     }
 
-    public async Task<int> CountCreatedSinceAsync(
-        int userId,
-        DateTime since)
+    public async Task<int> CountCreatedSinceAsync(int userId, DateTime since)
     {
         const string sql = """
                            SELECT COUNT(*)
@@ -206,36 +175,24 @@ public class CommentRepository : ICommentRepository
                              AND CreatedAt >= @Since;
                            """;
 
-        await using var connection =
-            _connectionFactory.CreateConnection();
+        await using var connection = _connectionFactory.CreateConnection();
 
         await connection.OpenAsync();
 
-        await using var command =
-            connection.CreateCommand();
+        await using var command = connection.CreateCommand();
 
         command.CommandText = sql;
 
-        AddParameter(
-            command,
-            "@UserId",
-            userId);
+        AddParameter(command, "@UserId", userId);
 
-        AddParameter(
-            command,
-            "@Since",
-            since);
+        AddParameter(command, "@Since", since);
 
-        var result =
-            await command.ExecuteScalarAsync();
+        var result = await command.ExecuteScalarAsync();
 
         return Convert.ToInt32(result);
     }
 
-    public async Task<bool> SoftDeleteAsync(
-        long commentId,
-        int deletedByUserId,
-        DateTime deletedAt)
+    public async Task<bool> SoftDeleteAsync(long commentId, int deletedByUserId, DateTime deletedAt)
     {
         const string sql = """
                            UPDATE dbo.Comments
@@ -247,39 +204,25 @@ public class CommentRepository : ICommentRepository
                              AND IsDeleted = 0;
                            """;
 
-        await using var connection =
-            _connectionFactory.CreateConnection();
+        await using var connection = _connectionFactory.CreateConnection();
 
         await connection.OpenAsync();
 
         await using var command = connection.CreateCommand();
         command.CommandText = sql;
 
-        AddParameter(
-            command,
-            "@CommentId",
-            commentId);
+        AddParameter(command, "@CommentId", commentId);
 
-        AddParameter(
-            command,
-            "@DeletedByUserId",
-            deletedByUserId);
+        AddParameter(command, "@DeletedByUserId", deletedByUserId);
 
-        AddParameter(
-            command,
-            "@DeletedAt",
-            deletedAt);
+        AddParameter(command, "@DeletedAt", deletedAt);
 
-        var affectedRows =
-            await command.ExecuteNonQueryAsync();
+        var affectedRows = await command.ExecuteNonQueryAsync();
 
         return affectedRows == 1;
     }
 
-    private static void AddParameter(
-        DbCommand command,
-        string name,
-        object? value)
+    private static void AddParameter(DbCommand command, string name, object? value)
     {
         var parameter = command.CreateParameter();
 

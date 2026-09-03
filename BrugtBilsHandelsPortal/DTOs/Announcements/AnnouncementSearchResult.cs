@@ -2,26 +2,15 @@
 
 namespace BrugtBilsHandelsPortal.DTOs.Announcements;
 
-public record AnnouncementSearchResult(
-    bool Succeeded,
-    PagedResult<AnnouncementListItemDto>? Page,
-    string? ErrorMessage)
+public record AnnouncementSearchResult(bool Succeeded, PagedResult<AnnouncementListItemDto>? Page, string? ErrorMessage)
 {
-    public static AnnouncementSearchResult Successful(
-        PagedResult<AnnouncementListItemDto> page)
+    public static AnnouncementSearchResult Successful(PagedResult<AnnouncementListItemDto> page)
     {
-        return new AnnouncementSearchResult(
-            true,
-            page,
-            null);
+        return new AnnouncementSearchResult(true, page, null);
     }
 
-    public static AnnouncementSearchResult Failed(
-        string errorMessage)
+    public static AnnouncementSearchResult Failed(string errorMessage)
     {
-        return new AnnouncementSearchResult(
-            false,
-            null,
-            errorMessage);
+        return new AnnouncementSearchResult(false, null, errorMessage);
     }
 }

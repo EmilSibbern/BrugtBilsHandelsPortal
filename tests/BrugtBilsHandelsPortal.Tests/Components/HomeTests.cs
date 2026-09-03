@@ -22,8 +22,7 @@ public class HomeTests
 
         var cut = context.Render<Home>();
 
-        cut.WaitForAssertion(() =>
-            Assert.Contains("Skoda Octavia", cut.Markup));
+        cut.WaitForAssertion(() => Assert.Contains("Skoda Octavia", cut.Markup));
 
         cut.Find("#query").Change("Octavia");
         cut.Find("#brand").Change("1");
@@ -67,8 +66,7 @@ public class HomeTests
 
         var cut = context.Render<Home>();
 
-        cut.WaitForAssertion(() =>
-            Assert.Contains("Ingen aktive annoncer", cut.Markup));
+        cut.WaitForAssertion(() => Assert.Contains("Ingen aktive annoncer", cut.Markup));
 
         cut.Find("#query").Change("Findes ikke");
         cut.Find("form").Submit();
@@ -76,9 +74,7 @@ public class HomeTests
         cut.WaitForAssertion(() =>
         {
             Assert.Contains("Ingen resultater", cut.Markup);
-            Assert.Contains(
-                "Prøv at ændre søgningen eller nulstil filtrene.",
-                cut.Markup);
+            Assert.Contains("Prøv at ændre søgningen eller nulstil filtrene.", cut.Markup);
         });
     }
 
@@ -98,9 +94,7 @@ public class HomeTests
 
         public Task<IReadOnlyList<CarBrand>> GetCarBrandsAsync()
         {
-            IReadOnlyList<CarBrand> brands =
-            [
-                new CarBrand
+            IReadOnlyList<CarBrand> brands = [new CarBrand
                 {
                     BrandId = 1,
                     BrandName = "Skoda"
@@ -110,17 +104,12 @@ public class HomeTests
             return Task.FromResult(brands);
         }
 
-        public Task<AnnouncementSearchResult> SearchActiveAsync(
-            AnnouncementSearchDto search)
+        public Task<AnnouncementSearchResult> SearchActiveAsync(AnnouncementSearchDto search)
         {
             SearchCallCount++;
             LastSearch = search;
 
-            var items = ReturnEmptyResult
-                ? Array.Empty<AnnouncementListItemDto>()
-                :
-                [
-                    new AnnouncementListItemDto
+            var items = ReturnEmptyResult ? Array.Empty<AnnouncementListItemDto>() : [new AnnouncementListItemDto
                     {
                         Id = 42,
                         Title = "Skoda Octavia",
@@ -133,8 +122,7 @@ public class HomeTests
                     }
                 ];
 
-            var page =
-                new PagedResult<AnnouncementListItemDto>
+            var page = new PagedResult<AnnouncementListItemDto>
                 {
                     Items = items,
                     Page = search.Page,
@@ -142,34 +130,21 @@ public class HomeTests
                     TotalItems = items.Length
                 };
 
-            return Task.FromResult(
-                AnnouncementSearchResult.Successful(page));
+            return Task.FromResult(AnnouncementSearchResult.Successful(page));
         }
 
-        public Task<CreateAnnouncementResult> CreateAsync(
-            CreateAnnouncementDto request) =>
-            throw new NotSupportedException();
+        public Task<CreateAnnouncementResult> CreateAsync(CreateAnnouncementDto request) => throw new NotSupportedException();
 
-        public Task<UpdateAnnouncementDto?> GetForEditAsync(
-            int announcementId) =>
-            throw new NotSupportedException();
+        public Task<UpdateAnnouncementDto?> GetForEditAsync(int announcementId) => throw new NotSupportedException();
 
-        public Task UpdateAsync(
-            UpdateAnnouncementDto request) =>
-            throw new NotSupportedException();
+        public Task UpdateAsync(UpdateAnnouncementDto request) => throw new NotSupportedException();
 
-        public Task<IReadOnlyList<AnnouncementListItemDto>>
-            GetMineAsync() =>
-            throw new NotSupportedException();
+        public Task<IReadOnlyList<AnnouncementListItemDto>> GetMineAsync() => throw new NotSupportedException();
 
-        public Task ActivateAsync(int announcementId) =>
-            throw new NotSupportedException();
+        public Task ActivateAsync(int announcementId) => throw new NotSupportedException();
 
-        public Task DeactivateAsync(int announcementId) =>
-            throw new NotSupportedException();
+        public Task DeactivateAsync(int announcementId) => throw new NotSupportedException();
 
-        public Task<AnnouncementDetailsDto?> GetDetailsAsync(
-            int announcementId) =>
-            throw new NotSupportedException();
+        public Task<AnnouncementDetailsDto?> GetDetailsAsync(int announcementId) => throw new NotSupportedException();
     }
 }

@@ -3,20 +3,12 @@
 @code {
     protected override void OnInitialized()
     {
-        var relativePath =
-            Navigation.ToBaseRelativePath(
-                Navigation.Uri);
+        var relativePath = Navigation.ToBaseRelativePath(Navigation.Uri);
 
-        var returnUrl =
-            string.IsNullOrWhiteSpace(relativePath)
-                ? "/"
-                : $"/{relativePath}";
+        var returnUrl = string.IsNullOrWhiteSpace(relativePath) ? "/" : $"/{relativePath}";
 
-        var encodedReturnUrl =
-            Uri.EscapeDataString(returnUrl);
+        var encodedReturnUrl = Uri.EscapeDataString(returnUrl);
 
-        Navigation.NavigateTo(
-            $"/Login?returnUrl={encodedReturnUrl}",
-            forceLoad: true);
+        Navigation.NavigateTo($"/Login?returnUrl={encodedReturnUrl}", forceLoad: true);
     }
 }

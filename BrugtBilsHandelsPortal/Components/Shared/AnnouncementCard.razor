@@ -2,20 +2,15 @@
 
 <div class="card h-100 shadow-sm">
     <div class="ratio ratio-16x9 bg-light">
-        @if (string.IsNullOrWhiteSpace(
-                 Announcement.PrimaryImageFileName))
+        @if (string.IsNullOrWhiteSpace(Announcement.PrimaryImageFileName))
         {
-            <div class="d-flex align-items-center
-                        justify-content-center
-                        text-secondary">
+            <div class="d-flex align-items-center justify-content-center text-secondary">
                 Intet billede
             </div>
         }
         else
         {
-            <img src="@ImageUrl"
-                 class="card-img-top object-fit-cover"
-                 alt="@Announcement.Title" />
+            <img src="@ImageUrl" class="card-img-top object-fit-cover" alt="@Announcement.Title" />
         }
     </div>
 
@@ -38,8 +33,7 @@
             @($"{Announcement.Price:N0} kr.")
         </p>
 
-        <a href="/announcements/@Announcement.Id"
-           class="btn btn-outline-primary">
+        <a href="/announcements/@Announcement.Id" class="btn btn-outline-primary">
             Se annonce
         </a>
     </div>
@@ -47,10 +41,7 @@
 
 @code {
     [Parameter, EditorRequired]
-    public AnnouncementListItemDto Announcement { get; set; }
-        = default!;
+    public AnnouncementListItemDto Announcement { get; set; } = default!;
 
-    private string ImageUrl =>
-        $"/uploads/{Uri.EscapeDataString(
-                Announcement.PrimaryImageFileName!)}";
+    private string ImageUrl => $"/uploads/{Uri.EscapeDataString(Announcement.PrimaryImageFileName!)}";
 }

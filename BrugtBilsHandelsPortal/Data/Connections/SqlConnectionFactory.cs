@@ -10,13 +10,11 @@ public class SqlConnectionFactory : IDbConnectionFactory
 
     public SqlConnectionFactory(IConfiguration configuration)
     {
-        _connectionString = configuration.GetConnectionString("DefaultConnection") ??
-                            throw new InvalidOperationException("DefaultConnection Missing in appsettings.json");
+        _connectionString = configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("DefaultConnection Missing in appsettings.json");
     }
 
     public DbConnection CreateConnection()
     {
-        return new SqlConnection(
-            _connectionString);
+        return new SqlConnection(_connectionString);
     }
 }

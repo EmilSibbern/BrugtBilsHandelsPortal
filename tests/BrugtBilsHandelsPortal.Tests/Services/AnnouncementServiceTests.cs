@@ -18,21 +18,16 @@ public class AnnouncementServiceTests
         };
 
         var carBrandRepository = CreateCarBrandRepository();
-        var service = CreateService(
-            announcementRepository,
-            carBrandRepository,
-            userId: 7);
+        var service = CreateService(announcementRepository, carBrandRepository, userId: 7);
 
-        var result = await service.CreateAsync(
-            CreateValidRequest());
+        var result = await service.CreateAsync(CreateValidRequest());
 
         Assert.True(result.Succeeded);
         Assert.Equal(42, result.AnnouncementId);
         Assert.Null(result.ErrorMessage);
         Assert.Equal(1, announcementRepository.CreateCallCount);
 
-        var car = Assert.IsType<Car>(
-            announcementRepository.CreatedCar);
+        var car = Assert.IsType<Car>(announcementRepository.CreatedCar);
 
         Assert.Equal(1, car.BrandId);
         Assert.Equal("Octavia", car.Model);
@@ -40,8 +35,7 @@ public class AnnouncementServiceTests
         Assert.Equal(85_000, car.Mileage);
         Assert.Equal("Sort", car.Color);
 
-        var announcement = Assert.IsType<Announcement>(
-            announcementRepository.CreatedAnnouncement);
+        var announcement = Assert.IsType<Announcement>(announcementRepository.CreatedAnnouncement);
 
         Assert.Equal(7, announcement.UserId);
         Assert.Equal("Skoda Octavia", announcement.Title);
@@ -60,22 +54,15 @@ public class AnnouncementServiceTests
         request.Title = "  Skoda Octavia  ";
         request.Description = "  Velholdt familiebil.  ";
 
-        var service = CreateService(
-            announcementRepository,
-            CreateCarBrandRepository(),
-            userId: 7);
+        var service = CreateService(announcementRepository, CreateCarBrandRepository(), userId: 7);
 
         var result = await service.CreateAsync(request);
 
         Assert.True(result.Succeeded);
         Assert.Equal("Octavia", announcementRepository.CreatedCar?.Model);
         Assert.Null(announcementRepository.CreatedCar?.Color);
-        Assert.Equal(
-            "Skoda Octavia",
-            announcementRepository.CreatedAnnouncement?.Title);
-        Assert.Equal(
-            "Velholdt familiebil.",
-            announcementRepository.CreatedAnnouncement?.Description);
+        Assert.Equal("Skoda Octavia", announcementRepository.CreatedAnnouncement?.Title);
+        Assert.Equal("Velholdt familiebil.", announcementRepository.CreatedAnnouncement?.Description);
     }
 
     [Fact]
@@ -84,13 +71,9 @@ public class AnnouncementServiceTests
         var announcementRepository = new FakeAnnouncementRepository();
         var carBrandRepository = CreateCarBrandRepository();
 
-        var service = CreateService(
-            announcementRepository,
-            carBrandRepository,
-            userId: null);
+        var service = CreateService(announcementRepository, carBrandRepository, userId: null);
 
-        var result = await service.CreateAsync(
-            CreateValidRequest());
+        var result = await service.CreateAsync(CreateValidRequest());
 
         Assert.False(result.Succeeded);
         Assert.Contains("logget ind", result.ErrorMessage);
@@ -105,10 +88,7 @@ public class AnnouncementServiceTests
         var request = CreateValidRequest();
         request.BrandId = 999;
 
-        var service = CreateService(
-            announcementRepository,
-            CreateCarBrandRepository(),
-            userId: 7);
+        var service = CreateService(announcementRepository, CreateCarBrandRepository(), userId: 7);
 
         var result = await service.CreateAsync(request);
 
@@ -126,10 +106,7 @@ public class AnnouncementServiceTests
 
         request.ProductionYear = DateTime.UtcNow.Year + 2;
 
-        var service = CreateService(
-            announcementRepository,
-            carBrandRepository,
-            userId: 7);
+        var service = CreateService(announcementRepository, carBrandRepository, userId: 7);
 
         var result = await service.CreateAsync(request);
 
@@ -142,8 +119,7 @@ public class AnnouncementServiceTests
     [Theory]
     [InlineData(0)]
     [InlineData(-1)]
-    public async Task CreateAsync_WithNonPositivePrice_IsRejected(
-        int price)
+    public async Task CreateAsync_WithNonPositivePrice_IsRejected(int price)
     {
         var announcementRepository = new FakeAnnouncementRepository();
         var carBrandRepository = CreateCarBrandRepository();
@@ -151,10 +127,7 @@ public class AnnouncementServiceTests
 
         request.Price = price;
 
-        var service = CreateService(
-            announcementRepository,
-            carBrandRepository,
-            userId: 7);
+        var service = CreateService(announcementRepository, carBrandRepository, userId: 7);
 
         var result = await service.CreateAsync(request);
 
@@ -173,10 +146,7 @@ public class AnnouncementServiceTests
 
         request.Model = string.Empty;
 
-        var service = CreateService(
-            announcementRepository,
-            carBrandRepository,
-            userId: 7);
+        var service = CreateService(announcementRepository, carBrandRepository, userId: 7);
 
         var result = await service.CreateAsync(request);
 
@@ -191,10 +161,7 @@ public class AnnouncementServiceTests
     {
         var carBrandRepository = CreateCarBrandRepository();
 
-        var service = CreateService(
-            new FakeAnnouncementRepository(),
-            carBrandRepository,
-            userId: 7);
+        var service = CreateService(new FakeAnnouncementRepository(), carBrandRepository, userId: 7);
 
         var brands = await service.GetCarBrandsAsync();
 
@@ -206,16 +173,11 @@ public class AnnouncementServiceTests
     [Fact]
     public async Task GetDetailsAsync_WithExistingAnnouncement_ReturnsDetails()
     {
-        var announcementRepository =
-            new FakeAnnouncementRepository();
+        var announcementRepository = new FakeAnnouncementRepository();
 
-        announcementRepository.Details[42] =
-            CreateAnnouncementDetails(id: 42);
+        announcementRepository.Details[42] = CreateAnnouncementDetails(id: 42);
 
-        var service = CreateService(
-            announcementRepository,
-            CreateCarBrandRepository(),
-            userId: null);
+        var service = CreateService(announcementRepository, CreateCarBrandRepository(), userId: null);
 
         var result = await service.GetDetailsAsync(42);
 
@@ -223,29 +185,21 @@ public class AnnouncementServiceTests
         Assert.Equal(42, result.Id);
         Assert.Equal("Skoda Octavia", result.Title);
         Assert.Equal("sælger", result.SellerUsername);
-        Assert.Equal(
-            42,
-            announcementRepository.LastRequestedAnnouncementId);
+        Assert.Equal(42, announcementRepository.LastRequestedAnnouncementId);
         Assert.Equal(1, announcementRepository.GetByIdCallCount);
     }
 
     [Fact]
     public async Task GetDetailsAsync_WithMissingAnnouncement_ReturnsNull()
     {
-        var announcementRepository =
-            new FakeAnnouncementRepository();
+        var announcementRepository = new FakeAnnouncementRepository();
 
-        var service = CreateService(
-            announcementRepository,
-            CreateCarBrandRepository(),
-            userId: null);
+        var service = CreateService(announcementRepository, CreateCarBrandRepository(), userId: null);
 
         var result = await service.GetDetailsAsync(999);
 
         Assert.Null(result);
-        Assert.Equal(
-            999,
-            announcementRepository.LastRequestedAnnouncementId);
+        Assert.Equal(999, announcementRepository.LastRequestedAnnouncementId);
         Assert.Equal(1, announcementRepository.GetByIdCallCount);
     }
 
@@ -253,14 +207,9 @@ public class AnnouncementServiceTests
     public async Task GetDetailsAsync_InactiveAnnouncementAsGuest_ReturnsNull()
     {
         var repository = new FakeAnnouncementRepository();
-        repository.Details[42] = CreateAnnouncementDetails(
-            id: 42,
-            isActive: false);
+        repository.Details[42] = CreateAnnouncementDetails(id: 42, isActive: false);
 
-        var service = CreateService(
-            repository,
-            CreateCarBrandRepository(),
-            userId: null);
+        var service = CreateService(repository, CreateCarBrandRepository(), userId: null);
 
         var result = await service.GetDetailsAsync(42);
 
@@ -272,14 +221,9 @@ public class AnnouncementServiceTests
     public async Task GetDetailsAsync_InactiveAnnouncementAsDifferentUser_ReturnsNull()
     {
         var repository = new FakeAnnouncementRepository();
-        repository.Details[42] = CreateAnnouncementDetails(
-            id: 42,
-            isActive: false);
+        repository.Details[42] = CreateAnnouncementDetails(id: 42, isActive: false);
 
-        var service = CreateService(
-            repository,
-            CreateCarBrandRepository(),
-            userId: 99);
+        var service = CreateService(repository, CreateCarBrandRepository(), userId: 99);
 
         var result = await service.GetDetailsAsync(42);
 
@@ -290,14 +234,9 @@ public class AnnouncementServiceTests
     public async Task GetDetailsAsync_InactiveAnnouncementAsOwner_ReturnsDetails()
     {
         var repository = new FakeAnnouncementRepository();
-        repository.Details[42] = CreateAnnouncementDetails(
-            id: 42,
-            isActive: false);
+        repository.Details[42] = CreateAnnouncementDetails(id: 42, isActive: false);
 
-        var service = CreateService(
-            repository,
-            CreateCarBrandRepository(),
-            userId: 7);
+        var service = CreateService(repository, CreateCarBrandRepository(), userId: 7);
 
         var result = await service.GetDetailsAsync(42);
 
@@ -310,15 +249,9 @@ public class AnnouncementServiceTests
     public async Task GetDetailsAsync_InactiveAnnouncementAsAdministrator_ReturnsDetails()
     {
         var repository = new FakeAnnouncementRepository();
-        repository.Details[42] = CreateAnnouncementDetails(
-            id: 42,
-            isActive: false);
+        repository.Details[42] = CreateAnnouncementDetails(id: 42, isActive: false);
 
-        var service = CreateService(
-            repository,
-            CreateCarBrandRepository(),
-            userId: 1,
-            isAdministrator: true);
+        var service = CreateService(repository, CreateCarBrandRepository(), userId: 1, isAdministrator: true);
 
         var result = await service.GetDetailsAsync(42);
 
@@ -329,58 +262,31 @@ public class AnnouncementServiceTests
     [Theory]
     [InlineData(0)]
     [InlineData(-1)]
-    public async Task GetDetailsAsync_WithInvalidId_DoesNotCallRepository(
-        int announcementId)
+    public async Task GetDetailsAsync_WithInvalidId_DoesNotCallRepository(int announcementId)
     {
-        var announcementRepository =
-            new FakeAnnouncementRepository();
+        var announcementRepository = new FakeAnnouncementRepository();
 
-        var service = CreateService(
-            announcementRepository,
-            CreateCarBrandRepository(),
-            userId: null);
+        var service = CreateService(announcementRepository, CreateCarBrandRepository(), userId: null);
 
-        var result =
-            await service.GetDetailsAsync(announcementId);
+        var result = await service.GetDetailsAsync(announcementId);
 
         Assert.Null(result);
         Assert.Equal(0, announcementRepository.GetByIdCallCount);
-        Assert.Null(
-            announcementRepository.LastRequestedAnnouncementId);
+        Assert.Null(announcementRepository.LastRequestedAnnouncementId);
     }
 
     [Fact]
     public async Task SearchActiveAsync_WithAnnouncements_ReturnsRepositoryPage()
     {
-        var announcementRepository =
-            new FakeAnnouncementRepository();
+        var announcementRepository = new FakeAnnouncementRepository();
 
-        announcementRepository.ActiveAnnouncements.Add(
-            CreateAnnouncementListItem(
-                id: 42,
-                title: "Skoda Octavia"));
+        announcementRepository.ActiveAnnouncements.Add(CreateAnnouncementListItem(id: 42, title: "Skoda Octavia"));
 
-        announcementRepository.ActiveAnnouncements.Add(
-            CreateAnnouncementListItem(
-                id: 43,
-                title: "Volvo V60"));
+        announcementRepository.ActiveAnnouncements.Add(CreateAnnouncementListItem(id: 43, title: "Volvo V60"));
 
-        var service = CreateService(
-            announcementRepository,
-            CreateCarBrandRepository(),
-            userId: null);
+        var service = CreateService(announcementRepository, CreateCarBrandRepository(), userId: null);
 
-        var result = await service.SearchActiveAsync(
-            new AnnouncementSearchDto
-            {
-                Query = "  Octavia  ",
-                BrandId = 1,
-                MinPrice = 100_000,
-                MaxPrice = 200_000,
-                Sort = "price-asc",
-                Page = 2,
-                PageSize = 12
-            });
+        var result = await service.SearchActiveAsync(new AnnouncementSearchDto { Query = "  Octavia  ", BrandId = 1, MinPrice = 100_000, MaxPrice = 200_000, Sort = "price-asc", Page = 2, PageSize = 12 });
 
         Assert.True(result.Succeeded);
         Assert.NotNull(result.Page);
@@ -404,16 +310,11 @@ public class AnnouncementServiceTests
     [Fact]
     public async Task SearchActiveAsync_WithoutAnnouncements_ReturnsEmptyPage()
     {
-        var announcementRepository =
-            new FakeAnnouncementRepository();
+        var announcementRepository = new FakeAnnouncementRepository();
 
-        var service = CreateService(
-            announcementRepository,
-            CreateCarBrandRepository(),
-            userId: null);
+        var service = CreateService(announcementRepository, CreateCarBrandRepository(), userId: null);
 
-        var result = await service.SearchActiveAsync(
-            new AnnouncementSearchDto());
+        var result = await service.SearchActiveAsync(new AnnouncementSearchDto());
 
         Assert.True(result.Succeeded);
         Assert.NotNull(result.Page);
@@ -425,20 +326,11 @@ public class AnnouncementServiceTests
     [Fact]
     public async Task SearchActiveAsync_WithInvalidPriceRange_IsRejectedBeforeRepositoryCall()
     {
-        var announcementRepository =
-            new FakeAnnouncementRepository();
+        var announcementRepository = new FakeAnnouncementRepository();
 
-        var service = CreateService(
-            announcementRepository,
-            CreateCarBrandRepository(),
-            userId: null);
+        var service = CreateService(announcementRepository, CreateCarBrandRepository(), userId: null);
 
-        var result = await service.SearchActiveAsync(
-            new AnnouncementSearchDto
-            {
-                MinPrice = 200_000,
-                MaxPrice = 100_000
-            });
+        var result = await service.SearchActiveAsync(new AnnouncementSearchDto { MinPrice = 200_000, MaxPrice = 100_000 });
 
         Assert.False(result.Succeeded);
         Assert.Null(result.Page);
@@ -449,19 +341,11 @@ public class AnnouncementServiceTests
     [Fact]
     public async Task SearchActiveAsync_WithUnknownSort_UsesNewestSort()
     {
-        var announcementRepository =
-            new FakeAnnouncementRepository();
+        var announcementRepository = new FakeAnnouncementRepository();
 
-        var service = CreateService(
-            announcementRepository,
-            CreateCarBrandRepository(),
-            userId: null);
+        var service = CreateService(announcementRepository, CreateCarBrandRepository(), userId: null);
 
-        var result = await service.SearchActiveAsync(
-            new AnnouncementSearchDto
-            {
-                Sort = "DROP TABLE Announcement"
-            });
+        var result = await service.SearchActiveAsync(new AnnouncementSearchDto { Sort = "DROP TABLE Announcement" });
 
         Assert.True(result.Succeeded);
         Assert.NotNull(announcementRepository.LastSearch);
@@ -472,22 +356,13 @@ public class AnnouncementServiceTests
     [Theory]
     [InlineData(0)]
     [InlineData(-1)]
-    public async Task SearchActiveAsync_WithInvalidPage_IsRejected(
-        int page)
+    public async Task SearchActiveAsync_WithInvalidPage_IsRejected(int page)
     {
-        var announcementRepository =
-            new FakeAnnouncementRepository();
+        var announcementRepository = new FakeAnnouncementRepository();
 
-        var service = CreateService(
-            announcementRepository,
-            CreateCarBrandRepository(),
-            userId: null);
+        var service = CreateService(announcementRepository, CreateCarBrandRepository(), userId: null);
 
-        var result = await service.SearchActiveAsync(
-            new AnnouncementSearchDto
-            {
-                Page = page
-            });
+        var result = await service.SearchActiveAsync(new AnnouncementSearchDto { Page = page });
 
         Assert.False(result.Succeeded);
         Assert.Equal(0, announcementRepository.SearchActiveCallCount);
@@ -501,10 +376,7 @@ public class AnnouncementServiceTests
         var details = CreateAnnouncementDetails(42);
         details.UpdatedAt = new DateTime(2026, 8, 24, 12, 0, 0);
         repository.Details[42] = details;
-        var service = CreateService(
-            repository,
-            CreateCarBrandRepository(),
-            userId: 7);
+        var service = CreateService(repository, CreateCarBrandRepository(), userId: 7);
 
         var model = await service.GetForEditAsync(42);
 
@@ -522,13 +394,9 @@ public class AnnouncementServiceTests
     {
         var repository = new FakeAnnouncementRepository();
         repository.Details[42] = CreateAnnouncementDetails(42);
-        var service = CreateService(
-            repository,
-            CreateCarBrandRepository(),
-            userId: 99);
+        var service = CreateService(repository, CreateCarBrandRepository(), userId: 99);
 
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(
-            () => service.GetForEditAsync(42));
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => service.GetForEditAsync(42));
     }
 
     [Fact]
@@ -537,11 +405,7 @@ public class AnnouncementServiceTests
     {
         var repository = new FakeAnnouncementRepository();
         repository.Details[42] = CreateAnnouncementDetails(42);
-        var service = CreateService(
-            repository,
-            CreateCarBrandRepository(),
-            userId: 1,
-            isAdministrator: true);
+        var service = CreateService(repository, CreateCarBrandRepository(), userId: 1, isAdministrator: true);
 
         var model = await service.GetForEditAsync(42);
 
@@ -557,10 +421,7 @@ public class AnnouncementServiceTests
         var details = CreateAnnouncementDetails(42);
         details.UpdatedAt = new DateTime(2026, 8, 24, 12, 0, 0);
         repository.Details[42] = details;
-        var service = CreateService(
-            repository,
-            CreateCarBrandRepository(),
-            userId: 7);
+        var service = CreateService(repository, CreateCarBrandRepository(), userId: 7);
         var request = CreateValidUpdateRequest(details.UpdatedAt);
         request.Model = "  Octavia Combi  ";
         request.Title = "  Opdateret Skoda Octavia  ";
@@ -577,9 +438,7 @@ public class AnnouncementServiceTests
         Assert.NotNull(repository.UpdatedAnnouncement);
         Assert.Equal(42, repository.UpdatedAnnouncement.Id);
         Assert.Equal(7, repository.UpdatedAnnouncement.UserId);
-        Assert.Equal(
-            "Opdateret Skoda Octavia",
-            repository.UpdatedAnnouncement.Title);
+        Assert.Equal("Opdateret Skoda Octavia", repository.UpdatedAnnouncement.Title);
         Assert.Equal(7, repository.LastUpdateActorUserId);
         Assert.False(repository.LastUpdateWasAdministrator);
         Assert.Equal(details.UpdatedAt, repository.LastExpectedUpdatedAt);
@@ -591,13 +450,9 @@ public class AnnouncementServiceTests
     {
         var repository = new FakeAnnouncementRepository();
         repository.Details[42] = CreateAnnouncementDetails(42);
-        var service = CreateService(
-            repository,
-            CreateCarBrandRepository(),
-            userId: 99);
+        var service = CreateService(repository, CreateCarBrandRepository(), userId: 99);
 
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(
-            () => service.UpdateAsync(CreateValidUpdateRequest()));
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => service.UpdateAsync(CreateValidUpdateRequest()));
 
         Assert.Equal(0, repository.UpdateCallCount);
     }
@@ -611,15 +466,12 @@ public class AnnouncementServiceTests
             UpdateSucceeds = false
         };
         repository.Details[42] = CreateAnnouncementDetails(42);
-        var service = CreateService(
-            repository,
-            CreateCarBrandRepository(),
-            userId: 7);
+        var service = CreateService(repository, CreateCarBrandRepository(), userId: 7);
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => service.UpdateAsync(CreateValidUpdateRequest()));
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => service.UpdateAsync(CreateValidUpdateRequest()));
 
-        Assert.Contains("ændret af en anden", exception.Message);
+        Assert.Contains("Annoncen kunne ikke opdateres", exception.Message);
+        Assert.Contains("Genindlæs siden og prøv igen", exception.Message);
         Assert.Equal(1, repository.UpdateCallCount);
     }
 
@@ -629,18 +481,11 @@ public class AnnouncementServiceTests
     {
         var repository = new FakeAnnouncementRepository();
 
-        repository.UserAnnouncements.Add(
-            CreateAnnouncementListItem(
-                id: 42,
-                title: "Min Skoda"));
+        repository.UserAnnouncements.Add(CreateAnnouncementListItem(id: 42, title: "Min Skoda"));
 
-        var service = CreateService(
-            repository,
-            CreateCarBrandRepository(),
-            userId: 7);
+        var service = CreateService(repository, CreateCarBrandRepository(), userId: 7);
 
-        var announcements =
-            await service.GetMineAsync();
+        var announcements = await service.GetMineAsync();
 
         var announcement = Assert.Single(announcements);
         Assert.Equal(42, announcement.Id);
@@ -655,13 +500,9 @@ public class AnnouncementServiceTests
     {
         var repository = new FakeAnnouncementRepository();
 
-        var service = CreateService(
-            repository,
-            CreateCarBrandRepository(),
-            userId: null);
+        var service = CreateService(repository, CreateCarBrandRepository(), userId: null);
 
-        var announcements =
-            await service.GetMineAsync();
+        var announcements = await service.GetMineAsync();
 
         Assert.Empty(announcements);
         Assert.Equal(0, repository.GetByUserIdCallCount);
@@ -673,14 +514,9 @@ public class AnnouncementServiceTests
     {
         var repository = new FakeAnnouncementRepository();
 
-        repository.Details[42] = CreateAnnouncementDetails(
-            42,
-            isActive: false);
+        repository.Details[42] = CreateAnnouncementDetails(42, isActive: false);
 
-        var service = CreateService(
-            repository,
-            CreateCarBrandRepository(),
-            userId: 7);
+        var service = CreateService(repository, CreateCarBrandRepository(), userId: 7);
 
         await service.ActivateAsync(42);
 
@@ -695,17 +531,11 @@ public class AnnouncementServiceTests
     {
         var repository = new FakeAnnouncementRepository();
 
-        repository.Details[42] = CreateAnnouncementDetails(
-            42,
-            isActive: false);
+        repository.Details[42] = CreateAnnouncementDetails(42, isActive: false);
 
-        var service = CreateService(
-            repository,
-            CreateCarBrandRepository(),
-            userId: 99);
+        var service = CreateService(repository, CreateCarBrandRepository(), userId: 99);
 
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(
-            () => service.ActivateAsync(42));
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => service.ActivateAsync(42));
 
         Assert.Equal(0, repository.ActivateCallCount);
     }
@@ -716,10 +546,7 @@ public class AnnouncementServiceTests
     {
         var repository = new FakeAnnouncementRepository();
         repository.Details[42] = CreateAnnouncementDetails(42);
-        var service = CreateService(
-            repository,
-            CreateCarBrandRepository(),
-            userId: 7);
+        var service = CreateService(repository, CreateCarBrandRepository(), userId: 7);
 
         await service.DeactivateAsync(42);
 
@@ -734,13 +561,9 @@ public class AnnouncementServiceTests
     {
         var repository = new FakeAnnouncementRepository();
         repository.Details[42] = CreateAnnouncementDetails(42);
-        var service = CreateService(
-            repository,
-            CreateCarBrandRepository(),
-            userId: 99);
+        var service = CreateService(repository, CreateCarBrandRepository(), userId: 99);
 
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(
-            () => service.DeactivateAsync(42));
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => service.DeactivateAsync(42));
 
         Assert.Equal(0, repository.DeactivateCallCount);
     }
@@ -751,13 +574,9 @@ public class AnnouncementServiceTests
     {
         var repository = new FakeAnnouncementRepository();
         repository.Details[42] = CreateAnnouncementDetails(42);
-        var service = CreateService(
-            repository,
-            CreateCarBrandRepository(),
-            userId: null);
+        var service = CreateService(repository, CreateCarBrandRepository(), userId: null);
 
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(
-            () => service.DeactivateAsync(42));
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => service.DeactivateAsync(42));
 
         Assert.Equal(0, repository.GetByIdCallCount);
         Assert.Equal(0, repository.DeactivateCallCount);
@@ -768,16 +587,10 @@ public class AnnouncementServiceTests
     public async Task DeactivateAsync_WhenAlreadyInactive_IsRejected()
     {
         var repository = new FakeAnnouncementRepository();
-        repository.Details[42] = CreateAnnouncementDetails(
-            42,
-            isActive: false);
-        var service = CreateService(
-            repository,
-            CreateCarBrandRepository(),
-            userId: 7);
+        repository.Details[42] = CreateAnnouncementDetails(42, isActive: false);
+        var service = CreateService(repository, CreateCarBrandRepository(), userId: 7);
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => service.DeactivateAsync(42));
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => service.DeactivateAsync(42));
 
         Assert.Contains("allerede deaktiveret", exception.Message);
         Assert.Equal(0, repository.DeactivateCallCount);
@@ -787,17 +600,12 @@ public class AnnouncementServiceTests
     [InlineData(0)]
     [InlineData(-1)]
     [Trait("UserStory", "US08")]
-    public async Task DeactivateAsync_WithInvalidId_IsRejectedBeforeLookup(
-        int announcementId)
+    public async Task DeactivateAsync_WithInvalidId_IsRejectedBeforeLookup(int announcementId)
     {
         var repository = new FakeAnnouncementRepository();
-        var service = CreateService(
-            repository,
-            CreateCarBrandRepository(),
-            userId: 7);
+        var service = CreateService(repository, CreateCarBrandRepository(), userId: 7);
 
-        await Assert.ThrowsAsync<ValidationException>(
-            () => service.DeactivateAsync(announcementId));
+        await Assert.ThrowsAsync<ValidationException>(() => service.DeactivateAsync(announcementId));
 
         Assert.Equal(0, repository.GetByIdCallCount);
         Assert.Equal(0, repository.DeactivateCallCount);
@@ -808,13 +616,9 @@ public class AnnouncementServiceTests
     public async Task DeactivateAsync_WhenAnnouncementDoesNotExist_IsRejected()
     {
         var repository = new FakeAnnouncementRepository();
-        var service = CreateService(
-            repository,
-            CreateCarBrandRepository(),
-            userId: 7);
+        var service = CreateService(repository, CreateCarBrandRepository(), userId: 7);
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => service.DeactivateAsync(42));
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => service.DeactivateAsync(42));
 
         Assert.Contains("findes ikke", exception.Message);
         Assert.Equal(0, repository.DeactivateCallCount);
@@ -829,44 +633,77 @@ public class AnnouncementServiceTests
             DeactivateSucceeds = false
         };
         repository.Details[42] = CreateAnnouncementDetails(42);
-        var service = CreateService(
-            repository,
-            CreateCarBrandRepository(),
-            userId: 7);
+        var service = CreateService(repository, CreateCarBrandRepository(), userId: 7);
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => service.DeactivateAsync(42));
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => service.DeactivateAsync(42));
 
         Assert.Contains("Genindlæs siden", exception.Message);
         Assert.Equal(1, repository.DeactivateCallCount);
     }
 
-    private static AnnouncementService CreateService(
-        FakeAnnouncementRepository announcementRepository,
-        FakeCarBrandRepository carBrandRepository,
-        int? userId,
-        bool isAdministrator = false)
+    [Theory]
+    [InlineData(1)]
+    [InlineData(7)]
+    [Trait("UserStory", "US17")]
+    public async Task UpdateAsync_AsAdministrator_AlwaysUsesAuditedUpdate(int administratorId)
     {
-        return new AnnouncementService(
-            announcementRepository,
-            carBrandRepository,
-            new FakeCurrentUserService
-            {
-                UserId = userId,
-                IsAdministrator = isAdministrator
-            });
+        var repository = new FakeAnnouncementRepository();
+        repository.Details[42] = CreateAnnouncementDetails(42);
+        var service = CreateService(repository, CreateCarBrandRepository(), administratorId, isAdministrator: true);
+        var expectedUpdatedAt = new DateTime(2026, 8, 30, 12, 0, 0, DateTimeKind.Utc);
+
+        await service.UpdateAsync(CreateValidUpdateRequest(expectedUpdatedAt));
+
+        Assert.Equal(1, repository.AdminUpdateCallCount);
+        Assert.Equal(0, repository.UpdateCallCount);
+        Assert.Equal(administratorId, repository.LastAdministratorUserId);
+        Assert.NotNull(repository.LastAdminCorrelationId);
+        Assert.NotEqual(Guid.Empty, repository.LastAdminCorrelationId);
+        Assert.Equal(expectedUpdatedAt, repository.LastAdminExpectedUpdatedAt);
+        Assert.Equal(42, repository.AdminUpdatedAnnouncement?.Id);
+        Assert.Equal(7, repository.AdminUpdatedAnnouncement?.UserId);
+    }
+
+    [Theory]
+    [InlineData(null, false)]
+    [InlineData(7, false)]
+    [InlineData(9, false)]
+    [InlineData(1, true)]
+    [Trait("UserStory", "US17")]
+    public async Task GetDetailsAsync_WithInactiveSeller_OnlyAdministratorUsesPrivilegedLookup(int? userId, bool isAdministrator)
+    {
+        var repository = new FakeAnnouncementRepository();
+        repository.Details[42] = CreateAnnouncementDetails(42);
+        repository.InactiveSellerUserIds.Add(7);
+        var service = CreateService(repository, CreateCarBrandRepository(), userId, isAdministrator);
+
+        var result = await service.GetDetailsAsync(42);
+
+        if (isAdministrator)
+        {
+            Assert.NotNull(result);
+            Assert.Equal(42, result.Id);
+            Assert.Equal(1, repository.GetByIdForAdministrationCallCount);
+            Assert.Equal(0, repository.GetByIdCallCount);
+        }
+        else
+        {
+            Assert.Null(result);
+            Assert.Equal(0, repository.GetByIdForAdministrationCallCount);
+            Assert.Equal(1, repository.GetByIdCallCount);
+        }
+    }
+
+    private static AnnouncementService CreateService(FakeAnnouncementRepository announcementRepository, FakeCarBrandRepository carBrandRepository, int? userId, bool isAdministrator = false)
+    {
+        return new AnnouncementService(announcementRepository, carBrandRepository, new FakeCurrentUserService { UserId = userId, IsAdministrator = isAdministrator });
     }
 
     private static FakeCarBrandRepository CreateCarBrandRepository()
     {
         var repository = new FakeCarBrandRepository();
 
-        repository.Brands.Add(
-            new CarBrand
-            {
-                BrandId = 1,
-                BrandName = "Skoda"
-            });
+        repository.Brands.Add(new CarBrand { BrandId = 1, BrandName = "Skoda" });
 
         return repository;
     }
@@ -886,8 +723,7 @@ public class AnnouncementServiceTests
         };
     }
 
-    private static UpdateAnnouncementDto CreateValidUpdateRequest(
-        DateTime? expectedUpdatedAt = null)
+    private static UpdateAnnouncementDto CreateValidUpdateRequest(DateTime? expectedUpdatedAt = null)
     {
         return new UpdateAnnouncementDto
         {
@@ -904,9 +740,7 @@ public class AnnouncementServiceTests
         };
     }
 
-    private static AnnouncementDetailsDto CreateAnnouncementDetails(
-        int id,
-        bool isActive = true)
+    private static AnnouncementDetailsDto CreateAnnouncementDetails(int id, bool isActive = true)
     {
         return new AnnouncementDetailsDto
         {
@@ -928,9 +762,7 @@ public class AnnouncementServiceTests
         };
     }
 
-    private static AnnouncementListItemDto CreateAnnouncementListItem(
-        int id,
-        string title)
+    private static AnnouncementListItemDto CreateAnnouncementListItem(int id, string title)
     {
         return new AnnouncementListItemDto
         {

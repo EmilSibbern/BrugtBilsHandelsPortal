@@ -6,10 +6,8 @@ namespace BrugtBilsHandelsPortal.Services.Interfaces;
 public interface IAuthService
 {
     /// <summary>Kontrollerer legitimationsoplysninger og returnerer de claims-relevante brugerdata.</summary>
-    Task<AuthenticationResult> LoginAsync(
-        LoginRequest request);
+    Task<AuthenticationResult> LoginAsync(LoginRequest request);
 
     /// <summary>Validerer og opretter en ny bruger med en sikkert hashet adgangskode.</summary>
-    Task<AuthenticationResult> RegisterAsync(
-        RegisterRequest request);
+    Task<AuthenticationResult> RegisterAsync(RegisterRequest request);
 }

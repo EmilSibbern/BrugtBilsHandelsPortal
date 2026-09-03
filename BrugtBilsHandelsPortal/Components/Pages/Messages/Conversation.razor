@@ -11,8 +11,7 @@
 <PageTitle>Samtale</PageTitle>
 
 <div class="container py-4">
-    <a href="/messages"
-       class="btn btn-link px-0 mb-3">
+    <a href="/messages" class="btn btn-link px-0 mb-3">
         ← Tilbage til indbakken
     </a>
 
@@ -22,15 +21,13 @@
     }
     else if (!string.IsNullOrWhiteSpace(_loadError))
     {
-        <div class="alert alert-danger"
-             role="alert">
+        <div class="alert alert-danger" role="alert">
             @_loadError
         </div>
     }
     else if (_conversation is null)
     {
-        <div class="alert alert-warning"
-             role="alert">
+        <div class="alert alert-warning" role="alert">
             Samtalen findes ikke, eller du har ikke adgang til den.
         </div>
     }
@@ -59,22 +56,18 @@
         }
         else
         {
-            <div class="d-flex flex-column gap-3 mb-4"
-                 data-testid="conversation-messages">
+            <div class="d-flex flex-column gap-3 mb-4" data-testid="conversation-messages">
                 @foreach (var message in _conversation.Messages)
                 {
                     var isIncoming =
                         message.SenderUserId ==
                         _conversation.OtherUserId;
 
-                    <article class="card @(isIncoming ? "me-5" : "ms-5 border-primary")"
-                             @key="message.Id">
+                    <article class="card @(isIncoming ? "me-5" : "ms-5 border-primary")" @key="message.Id">
                         <div class="card-body">
                             <div class="d-flex justify-content-between gap-3">
                                 <strong>
-                                    @(isIncoming
-                                        ? _conversation.OtherUsername
-                                        : "Dig")
+                                    @(isIncoming ? _conversation.OtherUsername : "Dig")
                                 </strong>
 
                                 <small class="text-muted">
@@ -82,8 +75,7 @@
                                 </small>
                             </div>
 
-                            <p class="mb-0 mt-2"
-                               style="white-space: pre-line;">
+                            <p class="mb-0 mt-2" style="white-space: pre-line;">
                                 @message.Text
                             </p>
                         </div>
@@ -93,50 +85,38 @@
         }
 
         <section aria-labelledby="reply-heading">
-            <h2 id="reply-heading"
-                class="h4">
+            <h2 id="reply-heading" class="h4">
                 Skriv et svar
             </h2>
 
             @if (!string.IsNullOrWhiteSpace(_submitError))
             {
-                <div class="alert alert-danger"
-                     role="alert">
+                <div class="alert alert-danger" role="alert">
                     @_submitError
                 </div>
             }
 
             @if (_replyWasSent)
             {
-                <div class="alert alert-success"
-                     role="status">
+                <div class="alert alert-success" role="status">
                     Dit svar er sendt.
                 </div>
             }
 
-            <EditForm Model="_reply"
-                      OnValidSubmit="SubmitReplyAsync"
-                      FormName="conversation-reply">
+            <EditForm Model="_reply" OnValidSubmit="SubmitReplyAsync" FormName="conversation-reply">
                 <DataAnnotationsValidator />
 
                 <div class="mb-3">
-                    <label for="reply-text"
-                           class="form-label">
+                    <label for="reply-text" class="form-label">
                         Besked
                     </label>
 
-                    <InputTextArea id="reply-text"
-                                   class="form-control"
-                                   rows="4"
-                                   @bind-Value="_reply.Text"
-                                   disabled="@_isSubmitting" />
+                    <InputTextArea id="reply-text" class="form-control" rows="4" @bind-Value="_reply.Text" disabled="@_isSubmitting" />
 
                     <ValidationMessage For="@(() => _reply.Text)" />
                 </div>
 
-                <button type="submit"
-                        class="btn btn-primary"
-                        disabled="@_isSubmitting">
+                <button type="submit" class="btn btn-primary" disabled="@_isSubmitting">
                     @if (_isSubmitting)
                     {
                         <span>
@@ -181,19 +161,15 @@
 
         try
         {
-            _conversation =
-                await MessageService.GetConversationAsync(
-                    MessageId);
+            _conversation = await MessageService.GetConversationAsync(MessageId);
         }
         catch (UnauthorizedAccessException)
         {
-            _loadError =
-                "Du skal være logget ind for at se samtalen.";
+            _loadError = "Du skal være logget ind for at se samtalen.";
         }
         catch (Exception)
         {
-            _loadError =
-                "Samtalen kunne ikke indlæses. Prøv igen.";
+            _loadError = "Samtalen kunne ikke indlæses. Prøv igen.";
         }
         finally
         {
@@ -214,16 +190,12 @@
 
         try
         {
-            await MessageService.ReplyAsync(
-                MessageId,
-                _reply.Text);
+            await MessageService.ReplyAsync(MessageId, _reply.Text);
 
             _reply = new ReplyFormModel();
             _replyWasSent = true;
 
-            _conversation =
-                await MessageService.GetConversationAsync(
-                    MessageId);
+            _conversation = await MessageService.GetConversationAsync(MessageId);
         }
         catch (ValidationException exception)
         {
@@ -231,13 +203,11 @@
         }
         catch (UnauthorizedAccessException)
         {
-            _submitError =
-                "Du skal være logget ind for at svare.";
+            _submitError = "Du skal være logget ind for at svare.";
         }
         catch (Exception)
         {
-            _submitError =
-                "Svaret kunne ikke sendes. Prøv igen.";
+            _submitError = "Svaret kunne ikke sendes. Prøv igen.";
         }
         finally
         {
@@ -247,14 +217,8 @@
 
     private sealed class ReplyFormModel
     {
-        [Required(
-            ErrorMessage = "Beskeden må ikke være tom.")]
-        [StringLength(
-            2000,
-            MinimumLength = 1,
-            ErrorMessage =
-                "Beskeden skal være mellem 1 og 2000 tegn.")]
-        public string Text { get; set; }
-            = string.Empty;
+        [Required(ErrorMessage = "Beskeden må ikke være tom.")]
+        [StringLength(2000, MinimumLength = 1, ErrorMessage = "Beskeden skal være mellem 1 og 2000 tegn.")]
+        public string Text { get; set; } = string.Empty;
     }
 }

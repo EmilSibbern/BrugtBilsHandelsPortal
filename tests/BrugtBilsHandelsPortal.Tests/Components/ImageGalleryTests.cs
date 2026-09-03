@@ -13,22 +13,15 @@ public class ImageGalleryTests
     {
         using var context = new BunitContext();
         int? deletedImageId = null;
-        var cut = context.Render<ImageGallery>(parameters => parameters
-            .Add(component => component.Images, CreateImages())
-            .Add(component => component.CanManage, true)
-            .Add(component => component.OnDelete,
-                imageId => deletedImageId = imageId));
+        var cut = context.Render<ImageGallery>(parameters => parameters.Add(component => component.Images, CreateImages()).Add(component => component.CanManage, true).Add(component => component.OnDelete, imageId => deletedImageId = imageId));
 
         cut.Find("[data-testid='delete-image']").Click();
 
         Assert.Null(deletedImageId);
-        var confirmation =
-            cut.Find("[data-testid='delete-image-confirmation']");
+        var confirmation = cut.Find("[data-testid='delete-image-confirmation']");
         Assert.Contains("Er du sikker", confirmation.TextContent);
 
-        cut.Find(
-                "[data-testid='delete-image-confirmation'] button.btn-danger")
-            .Click();
+        cut.Find("[data-testid='delete-image-confirmation'] button.btn-danger").Click();
 
         Assert.Equal(1, deletedImageId);
     }
@@ -38,8 +31,7 @@ public class ImageGalleryTests
     public void ReadOnlyGallery_DoesNotShowImageActions()
     {
         using var context = new BunitContext();
-        var cut = context.Render<ImageGallery>(parameters =>
-            parameters.Add(component => component.Images, CreateImages()));
+        var cut = context.Render<ImageGallery>(parameters => parameters.Add(component => component.Images, CreateImages()));
 
         Assert.Empty(cut.FindAll("[data-testid='delete-image']"));
         Assert.DoesNotContain("Sæt som primært billede", cut.Markup);
@@ -47,9 +39,7 @@ public class ImageGalleryTests
 
     private static IReadOnlyList<AnnouncementImageDto> CreateImages()
     {
-        return
-        [
-            new AnnouncementImageDto
+        return[new AnnouncementImageDto
             {
                 Id = 1,
                 AnnouncementId = 42,

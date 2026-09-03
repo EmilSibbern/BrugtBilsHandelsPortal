@@ -24,35 +24,26 @@
 
     <div class="card shadow-sm mb-4">
         <div class="card-body">
-            <EditForm Model="_search"
-                      OnValidSubmit="ApplySearchAsync">
+            <EditForm Model="_search" OnValidSubmit="ApplySearchAsync">
                 <DataAnnotationsValidator/>
 
                 <div class="row g-3">
                     <div class="col-12 col-lg-5">
-                        <label for="user-search"
-                               class="form-label">
+                        <label for="user-search" class="form-label">
                             Søg
                         </label>
 
-                        <InputText id="user-search"
-                                   class="form-control"
-                                   placeholder="Brugernavn eller e-mail"
-                                   @bind-Value="_search.Query"/>
+                        <InputText id="user-search" class="form-control" placeholder="Brugernavn eller e-mail" @bind-Value="_search.Query"/>
 
-                        <ValidationMessage
-                            For="@(() => _search.Query)"/>
+                        <ValidationMessage For="@(() => _search.Query)"/>
                     </div>
 
                     <div class="col-12 col-md-6 col-lg-3">
-                        <label for="status-filter"
-                               class="form-label">
+                        <label for="status-filter" class="form-label">
                             Status
                         </label>
 
-                        <InputSelect id="status-filter"
-                                     class="form-select"
-                                     @bind-Value="_search.IsActive">
+                        <InputSelect id="status-filter" class="form-select" @bind-Value="_search.IsActive">
                             <option value="">
                                 Alle statusser
                             </option>
@@ -68,14 +59,11 @@
                     </div>
 
                     <div class="col-12 col-md-6 col-lg-2">
-                        <label for="role-filter"
-                               class="form-label">
+                        <label for="role-filter" class="form-label">
                             Rolle
                         </label>
 
-                        <InputSelect id="role-filter"
-                                     class="form-select"
-                                     @bind-Value="_search.Role">
+                        <InputSelect id="role-filter" class="form-select" @bind-Value="_search.Role">
                             <option value="">
                                 Alle roller
                             </option>
@@ -89,22 +77,16 @@
                             </option>
                         </InputSelect>
 
-                        <ValidationMessage
-                            For="@(() => _search.Role)"/>
+                        <ValidationMessage For="@(() => _search.Role)"/>
                     </div>
 
                     <div class="col-12 col-lg-2 d-flex align-items-end">
                         <div class="d-grid gap-2 w-100">
-                            <button type="submit"
-                                    class="btn btn-primary"
-                                    disabled="@IsBusy">
+                            <button type="submit" class="btn btn-primary" disabled="@IsBusy">
                                 Søg
                             </button>
 
-                            <button type="button"
-                                    class="btn btn-outline-secondary"
-                                    disabled="@IsBusy"
-                                    @onclick="ResetSearchAsync">
+                            <button type="button" class="btn btn-outline-secondary" disabled="@IsBusy" @onclick="ResetSearchAsync">
                                 Nulstil
                             </button>
                         </div>
@@ -114,22 +96,16 @@
         </div>
     </div>
 
-    @if (!string.IsNullOrWhiteSpace(
-        _successMessage))
+    @if (!string.IsNullOrWhiteSpace(_successMessage))
     {
-        <div class="alert alert-success"
-             role="status"
-             data-testid="admin-user-success">
+        <div class="alert alert-success" role="status" data-testid="admin-user-success">
             @_successMessage
         </div>
     }
 
-    @if (!string.IsNullOrWhiteSpace(
-        _errorMessage))
+    @if (!string.IsNullOrWhiteSpace(_errorMessage))
     {
-        <div class="alert alert-danger"
-             role="alert"
-             data-testid="admin-user-error">
+        <div class="alert alert-danger" role="alert" data-testid="admin-user-error">
             @_errorMessage
         </div>
     }
@@ -143,17 +119,14 @@
     else if (_page is null ||
              _page.Items.Count == 0)
     {
-        <div class="alert alert-info"
-             role="status"
-             data-testid="admin-users-empty">
+        <div class="alert alert-info" role="status" data-testid="admin-users-empty">
             Ingen brugere matcher søgningen.
         </div>
     }
     else
     {
         <div class="table-responsive">
-            <table class="table table-striped align-middle"
-                   data-testid="admin-users-table">
+            <table class="table table-striped align-middle" data-testid="admin-users-table">
                 <thead>
                 <tr>
                     <th scope="col">
@@ -227,30 +200,19 @@
                         <td>
                             @if (!user.IsActive)
                             {
-                                <button type="button"
-                                        class="btn btn-sm btn-outline-success"
-                                        data-testid="open-reactivate-user"
-                                        disabled="@IsBusy"
-                                        @onclick="() => OpenReactivateConfirmation(user)">
+                                <button type="button" class="btn btn-sm btn-outline-success" data-testid="open-reactivate-user" disabled="@IsBusy" @onclick="() => OpenReactivateConfirmation(user)">
                                     Genaktivér
                                 </button>
                             }
                             else if (user.Id == _currentUserId)
                             {
-                                <button type="button"
-                                        class="btn btn-sm btn-outline-secondary"
-                                        disabled
-                                        title="Du kan ikke deaktivere din egen konto.">
+                                <button type="button" class="btn btn-sm btn-outline-secondary" disabled title="Du kan ikke deaktivere din egen konto.">
                                     Kan ikke deaktiveres
                                 </button>
                             }
                             else
                             {
-                                <button type="button"
-                                        class="btn btn-sm btn-outline-danger"
-                                        data-testid="open-deactivate-user"
-                                        disabled="@IsBusy"
-                                        @onclick="() => OpenDeactivateConfirmation(user)">
+                                <button type="button" class="btn btn-sm btn-outline-danger" data-testid="open-deactivate-user" disabled="@IsBusy" @onclick="() => OpenDeactivateConfirmation(user)">
                                     Deaktivér
                                 </button>
                             }
@@ -263,12 +225,8 @@
 
         @if (_page.TotalPages > 1)
         {
-            <nav class="d-flex justify-content-between align-items-center mt-3"
-                 aria-label="Sider med brugere">
-                <button type="button"
-                        class="btn btn-outline-secondary"
-                        disabled="@(!_page.HasPreviousPage || IsBusy)"
-                        @onclick="PreviousPageAsync">
+            <nav class="d-flex justify-content-between align-items-center mt-3" aria-label="Sider med brugere">
+                <button type="button" class="btn btn-outline-secondary" disabled="@(!_page.HasPreviousPage || IsBusy)" @onclick="PreviousPageAsync">
                     Forrige
                 </button>
 
@@ -276,10 +234,7 @@
                     Side @_page.Page af @_page.TotalPages
                 </span>
 
-                <button type="button"
-                        class="btn btn-outline-secondary"
-                        disabled="@(!_page.HasNextPage || IsBusy)"
-                        @onclick="NextPageAsync">
+                <button type="button" class="btn btn-outline-secondary" disabled="@(!_page.HasNextPage || IsBusy)" @onclick="NextPageAsync">
                     Næste
                 </button>
             </nav>
@@ -288,8 +243,7 @@
 
     @if (_userToDeactivate is not null)
     {
-        <div class="card border-danger mt-4"
-             data-testid="deactivate-user-confirmation">
+        <div class="card border-danger mt-4" data-testid="deactivate-user-confirmation">
             <div class="card-body">
                 <h2 class="h5">
                     Deaktivér bruger
@@ -306,11 +260,7 @@
                 </p>
 
                 <div class="d-flex gap-2">
-                    <button type="button"
-                            class="btn btn-danger"
-                            data-testid="confirm-deactivate-user"
-                            disabled="@IsBusy"
-                            @onclick="ConfirmDeactivateAsync">
+                    <button type="button" class="btn btn-danger" data-testid="confirm-deactivate-user" disabled="@IsBusy" @onclick="ConfirmDeactivateAsync">
                         @if (_isDeactivating)
                         {
                             <span>Deaktiverer...</span>
@@ -321,11 +271,7 @@
                         }
                     </button>
 
-                    <button type="button"
-                            class="btn btn-outline-secondary"
-                            data-testid="cancel-deactivate-user"
-                            disabled="@IsBusy"
-                            @onclick="CloseDeactivateConfirmation">
+                    <button type="button" class="btn btn-outline-secondary" data-testid="cancel-deactivate-user" disabled="@IsBusy" @onclick="CloseDeactivateConfirmation">
                         Annuller
                     </button>
                 </div>
@@ -335,8 +281,7 @@
 
     @if (_userToReactivate is not null)
     {
-        <div class="card border-success mt-4"
-             data-testid="reactivate-user-confirmation">
+        <div class="card border-success mt-4" data-testid="reactivate-user-confirmation">
             <div class="card-body">
                 <h2 class="h5">
                     Genaktivér bruger
@@ -353,11 +298,7 @@
                 </p>
 
                 <div class="d-flex gap-2">
-                    <button type="button"
-                            class="btn btn-success"
-                            data-testid="confirm-reactivate-user"
-                            disabled="@IsBusy"
-                            @onclick="ConfirmReactivateAsync">
+                    <button type="button" class="btn btn-success" data-testid="confirm-reactivate-user" disabled="@IsBusy" @onclick="ConfirmReactivateAsync">
                         @if (_isReactivating)
                         {
                             <span>Genaktiverer...</span>
@@ -368,11 +309,7 @@
                         }
                     </button>
 
-                    <button type="button"
-                            class="btn btn-outline-secondary"
-                            data-testid="cancel-reactivate-user"
-                            disabled="@IsBusy"
-                            @onclick="CloseReactivateConfirmation">
+                    <button type="button" class="btn btn-outline-secondary" data-testid="cancel-reactivate-user" disabled="@IsBusy" @onclick="CloseReactivateConfirmation">
                         Annuller
                     </button>
                 </div>
@@ -382,8 +319,7 @@
 </div>
 
 @code {
-    private AdminUserSearchDto _search =
-        new();
+    private AdminUserSearchDto _search = new();
 
     private PagedResult<AdminUserDto>? _page;
 
@@ -399,15 +335,11 @@
     private string? _successMessage;
     private string? _errorMessage;
 
-    private bool IsBusy =>
-        _isLoading ||
-        _isDeactivating ||
-        _isReactivating;
+    private bool IsBusy => _isLoading || _isDeactivating || _isReactivating;
 
     protected override async Task OnInitializedAsync()
     {
-        _currentUserId =
-            await CurrentUserService.GetUserIdAsync();
+        _currentUserId = await CurrentUserService.GetUserIdAsync();
 
         await LoadUsersAsync();
     }
@@ -422,8 +354,7 @@
 
     private async Task ResetSearchAsync()
     {
-        _search =
-            new AdminUserSearchDto();
+        _search = new AdminUserSearchDto();
 
         _successMessage = null;
 
@@ -432,9 +363,7 @@
 
     private async Task PreviousPageAsync()
     {
-        if (_page is null ||
-            !_page.HasPreviousPage ||
-            IsBusy)
+        if (_page is null || !_page.HasPreviousPage || IsBusy)
         {
             return;
         }
@@ -446,9 +375,7 @@
 
     private async Task NextPageAsync()
     {
-        if (_page is null ||
-            !_page.HasNextPage ||
-            IsBusy)
+        if (_page is null || !_page.HasNextPage || IsBusy)
         {
             return;
         }
@@ -465,18 +392,13 @@
 
         try
         {
-            var result =
-                await AdminUserService
-                    .SearchAsync(_search);
+            var result = await AdminUserService.SearchAsync(_search);
 
-            if (!result.Succeeded ||
-                result.Page is null)
+            if (!result.Succeeded || result.Page is null)
             {
                 _page = null;
 
-                _errorMessage =
-                    result.ErrorMessage
-                    ?? "Brugerne kunne ikke indlæses.";
+                _errorMessage = result.ErrorMessage ?? "Brugerne kunne ikke indlæses.";
 
                 return;
             }
@@ -487,15 +409,13 @@
         {
             _page = null;
 
-            _errorMessage =
-                "Du har ikke adgang til brugeradministration.";
+            _errorMessage = "Du har ikke adgang til brugeradministration.";
         }
         catch
         {
             _page = null;
 
-            _errorMessage =
-                "Brugerne kunne ikke indlæses. Prøv igen.";
+            _errorMessage = "Brugerne kunne ikke indlæses. Prøv igen.";
         }
         finally
         {
@@ -503,8 +423,7 @@
         }
     }
 
-    private void OpenDeactivateConfirmation(
-        AdminUserDto user)
+    private void OpenDeactivateConfirmation(AdminUserDto user)
     {
         if (IsBusy)
         {
@@ -527,9 +446,7 @@
 
     private async Task ConfirmDeactivateAsync()
     {
-        if (_userToDeactivate is null ||
-            _isDeactivating ||
-            _isReactivating)
+        if (_userToDeactivate is null || _isDeactivating || _isReactivating)
         {
             return;
         }
@@ -538,36 +455,29 @@
         _successMessage = null;
         _errorMessage = null;
 
-        var targetUsername =
-            _userToDeactivate.Username;
+        var targetUsername = _userToDeactivate.Username;
 
         try
         {
-            await AdminUserService
-                .DeactivateAsync(
-                    _userToDeactivate.Id);
+            await AdminUserService.DeactivateAsync(_userToDeactivate.Id);
 
             _userToDeactivate = null;
 
-            _successMessage =
-                $"Brugeren {targetUsername} er deaktiveret.";
+            _successMessage = $"Brugeren {targetUsername} er deaktiveret.";
 
             await LoadUsersAsync();
         }
         catch (UnauthorizedAccessException)
         {
-            _errorMessage =
-                "Du har ikke adgang til at deaktivere brugere.";
+            _errorMessage = "Du har ikke adgang til at deaktivere brugere.";
         }
         catch (InvalidOperationException exception)
         {
-            _errorMessage =
-                exception.Message;
+            _errorMessage = exception.Message;
         }
         catch
         {
-            _errorMessage =
-                "Brugeren kunne ikke deaktiveres. Prøv igen.";
+            _errorMessage = "Brugeren kunne ikke deaktiveres. Prøv igen.";
         }
         finally
         {
@@ -575,8 +485,7 @@
         }
     }
 
-    private void OpenReactivateConfirmation(
-        AdminUserDto user)
+    private void OpenReactivateConfirmation(AdminUserDto user)
     {
         if (IsBusy)
         {
@@ -599,9 +508,7 @@
 
     private async Task ConfirmReactivateAsync()
     {
-        if (_userToReactivate is null ||
-            _isReactivating ||
-            _isDeactivating)
+        if (_userToReactivate is null || _isReactivating || _isDeactivating)
         {
             return;
         }
@@ -610,36 +517,29 @@
         _successMessage = null;
         _errorMessage = null;
 
-        var targetUsername =
-            _userToReactivate.Username;
+        var targetUsername = _userToReactivate.Username;
 
         try
         {
-            await AdminUserService
-                .ReactivateAsync(
-                    _userToReactivate.Id);
+            await AdminUserService.ReactivateAsync(_userToReactivate.Id);
 
             _userToReactivate = null;
 
-            _successMessage =
-                $"Brugeren {targetUsername} er genaktiveret.";
+            _successMessage = $"Brugeren {targetUsername} er genaktiveret.";
 
             await LoadUsersAsync();
         }
         catch (UnauthorizedAccessException)
         {
-            _errorMessage =
-                "Du har ikke adgang til at genaktivere brugere.";
+            _errorMessage = "Du har ikke adgang til at genaktivere brugere.";
         }
         catch (InvalidOperationException exception)
         {
-            _errorMessage =
-                exception.Message;
+            _errorMessage = exception.Message;
         }
         catch
         {
-            _errorMessage =
-                "Brugeren kunne ikke genaktiveres. Prøv igen.";
+            _errorMessage = "Brugeren kunne ikke genaktiveres. Prøv igen.";
         }
         finally
         {

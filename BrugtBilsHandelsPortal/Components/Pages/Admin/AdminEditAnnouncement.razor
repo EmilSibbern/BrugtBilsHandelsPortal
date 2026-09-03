@@ -1,0 +1,292 @@
+﻿@page "/admin/announcements/{Id:int}/edit"
+@attribute [Authorize(Roles = "Administrator")]
+@rendermode InteractiveServer
+
+@using System.ComponentModel.DataAnnotations
+@using BrugtBilsHandelsPortal.DTOs.Announcements
+@using BrugtBilsHandelsPortal.Models.Entities
+@using BrugtBilsHandelsPortal.Services.Interfaces
+
+@inject IAdminAnnouncementService AdminAnnouncementService
+@inject IAnnouncementService AnnouncementService
+@inject NavigationManager Navigation
+
+<PageTitle>Rediger annonce</PageTitle>
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-xl-9">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-3 mb-4">
+
+                <div>
+                    <p class="text-primary text-uppercase small fw-semibold mb-2">
+                        Annoncemoderation
+                    </p>
+
+                    <h1 class="mb-1">
+                        Rediger annonce
+                    </h1>
+
+                    <p class="text-muted mb-0">
+                        Ændringer foretaget her
+                        registreres i auditloggen.
+                    </p>
+                </div>
+
+                <a href="/admin/announcements" class="btn btn-outline-secondary">
+                    Tilbage til annoncer
+                </a>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(_errorMessage))
+            {
+                <div class="alert alert-danger" role="alert">
+                    @_errorMessage
+                </div>
+            }
+
+            @if (_isLoading)
+            {
+                <div class="d-flex align-items-center justify-content-center gap-2 py-5" role="status">
+
+                    <span class="spinner-border" aria-hidden="true">
+                    </span>
+
+                    <span>
+                        Indlæser annoncen...
+                    </span>
+                </div>
+            }
+            else if (_notFound)
+            {
+                <div class="alert alert-warning" role="alert">
+                    Annoncen findes ikke.
+                </div>
+            }
+            else if (_model is not null)
+            {
+                <div class="card shadow-sm">
+                    <div class="card-body p-4">
+                        <EditForm Model="_model" OnValidSubmit="SaveAsync" FormName="admin-edit-announcement">
+
+                            <DataAnnotationsValidator />
+
+                            <ValidationSummary class="text-danger mb-3" />
+
+                            <div class="row g-3">
+                                <div class="col-12 col-md-6">
+                                    <label for="brand" class="form-label">
+                                        Mærke
+                                    </label>
+
+                                    <InputSelect id="brand" class="form-select" @bind-Value="_model.BrandId">
+                                        <option value="0">
+                                            Vælg bilmærke
+                                        </option>
+
+                                        @foreach (var brand in _brands)
+                                        {
+                                            <option value="@brand.BrandId">
+                                                @brand.BrandName
+                                            </option>
+                                        }
+                                    </InputSelect>
+
+                                    <ValidationMessage For="@(() => _model.BrandId)" />
+                                </div>
+
+                                <div class="col-12 col-md-6">
+                                    <label for="model" class="form-label">
+                                        Model
+                                    </label>
+
+                                    <InputText id="model" class="form-control" @bind-Value="_model.Model" />
+
+                                    <ValidationMessage For="@(() => _model.Model)" />
+                                </div>
+
+                                <div class="col-12 col-md-4">
+                                    <label for="production-year" class="form-label">
+                                        Produktionsår
+                                    </label>
+
+                                    <InputNumber id="production-year" class="form-control" @bind-Value="_model.ProductionYear" />
+
+                                    <ValidationMessage For="@(() => _model.ProductionYear)" />
+                                </div>
+
+                                <div class="col-12 col-md-4">
+                                    <label for="mileage" class="form-label">
+                                        Kilometer
+                                    </label>
+
+                                    <InputNumber id="mileage" class="form-control" @bind-Value="_model.Mileage" />
+
+                                    <ValidationMessage For="@(() => _model.Mileage)" />
+                                </div>
+
+                                <div class="col-12 col-md-4">
+                                    <label for="color" class="form-label">
+                                        Farve
+                                    </label>
+
+                                    <InputText id="color" class="form-control" @bind-Value="_model.Color" />
+
+                                    <ValidationMessage For="@(() => _model.Color)" />
+                                </div>
+
+                                <div class="col-12">
+                                    <label for="title" class="form-label">
+                                        Titel
+                                    </label>
+
+                                    <InputText id="title" class="form-control" @bind-Value="_model.Title" />
+
+                                    <ValidationMessage For="@(() => _model.Title)" />
+                                </div>
+
+                                <div class="col-12">
+                                    <label for="description" class="form-label">
+                                        Beskrivelse
+                                    </label>
+
+                                    <InputTextArea id="description" class="form-control" rows="7" @bind-Value="_model.Description" />
+
+                                    <ValidationMessage For="@(() => _model.Description)" />
+                                </div>
+
+                                <div class="col-12 col-md-6">
+                                    <label for="price" class="form-label">
+                                        Pris
+                                    </label>
+
+                                    <div class="input-group">
+                                        <InputNumber id="price" class="form-control" @bind-Value="_model.Price" />
+
+                                        <span class="input-group-text">
+                                            kr.
+                                        </span>
+                                    </div>
+
+                                    <ValidationMessage For="@(() => _model.Price)" />
+                                </div>
+                            </div>
+
+                            <hr class="my-4" />
+
+                            <div class="d-flex flex-column flex-sm-row justify-content-between gap-3">
+
+                                <a href="/admin/announcements/@Id/images" class="btn btn-outline-primary">
+                                    Moderér billeder
+                                </a>
+
+                                <div class="d-flex flex-column flex-sm-row gap-2">
+
+                                    <a href="/admin/announcements" class="btn btn-outline-secondary">
+                                        Annuller
+                                    </a>
+
+                                    <button type="submit" class="btn btn-primary" disabled="@_isSaving">
+
+                                        @if (_isSaving)
+                                        {
+                                            <span class="spinner-border spinner-border-sm me-2" aria-hidden="true">
+                                            </span>
+                                        }
+
+                                        @(_isSaving ? "Gemmer..." : "Gem ændringer")
+                                    </button>
+                                </div>
+                            </div>
+                        </EditForm>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private UpdateAnnouncementDto? _model;
+
+    private IReadOnlyList<CarBrand> _brands = Array.Empty<CarBrand>();
+
+    private bool _isLoading = true;
+    private bool _isSaving;
+    private bool _notFound;
+
+    private string? _errorMessage;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _isLoading = true;
+        _notFound = false;
+        _errorMessage = null;
+        _model = null;
+
+        try
+        {
+            // Bilmærkerne er almindelige referencedata.
+            _brands = await AnnouncementService.GetCarBrandsAsync();
+
+            // Selve annoncen hentes gennem admin-servicen,
+            // som håndhæver administratorrollen.
+            _model = await AdminAnnouncementService.GetForEditAsync(Id);
+
+            _notFound = _model is null;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            _errorMessage = "Du har ikke adgang til " + "annoncemoderation.";
+        }
+        catch
+        {
+            _errorMessage = "Annoncen kunne ikke indlæses.";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_model is null || _isSaving)
+        {
+            return;
+        }
+
+        _isSaving = true;
+        _errorMessage = null;
+
+        try
+        {
+            await AdminAnnouncementService.UpdateAsync(_model);
+
+            Navigation.NavigateTo("/admin/announcements");
+        }
+        catch (ValidationException exception)
+        {
+            _errorMessage = exception.Message;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            _errorMessage = "Du har ikke adgang til at " + "redigere annoncen.";
+        }
+        catch (InvalidOperationException exception)
+        {
+            _errorMessage = exception.Message;
+        }
+        catch
+        {
+            _errorMessage = "Annoncen kunne ikke gemmes.";
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+}

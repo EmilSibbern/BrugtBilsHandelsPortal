@@ -25,10 +25,7 @@ public class AuthServiceTests
         Assert.Equal("User", _repository.CreatedUser.UserGroupName);
         Assert.NotEqual(request.Password, _repository.CreatedUser.PasswordHash);
 
-        var verification = _passwordHasher.VerifyHashedPassword(
-            _repository.CreatedUser,
-            _repository.CreatedUser.PasswordHash,
-            request.Password);
+        var verification = _passwordHasher.VerifyHashedPassword(_repository.CreatedUser, _repository.CreatedUser.PasswordHash, request.Password);
 
         Assert.NotEqual(PasswordVerificationResult.Failed, verification);
     }
@@ -69,11 +66,7 @@ public class AuthServiceTests
         _repository.Users.Add(user);
         var service = CreateService();
 
-        var result = await service.LoginAsync(new LoginRequest
-        {
-            EmailOrUsername = user.Email,
-            Password = "Password123!"
-        });
+        var result = await service.LoginAsync(new LoginRequest { EmailOrUsername = user.Email, Password = "Password123!" });
 
         Assert.True(result.Succeeded);
         Assert.Equal(user.Id, result.UserId);
@@ -89,16 +82,10 @@ public class AuthServiceTests
         _repository.Users.Add(user);
         var service = CreateService();
 
-        var result = await service.LoginAsync(new LoginRequest
-        {
-            EmailOrUsername = user.Username,
-            Password = "ForkertPassword"
-        });
+        var result = await service.LoginAsync(new LoginRequest { EmailOrUsername = user.Username, Password = "ForkertPassword" });
 
         Assert.False(result.Succeeded);
-        Assert.Equal(
-            "Brugernavn/e-mail eller password er forkert.",
-            result.ErrorMessage);
+        Assert.Equal("Brugernavn/e-mail eller password er forkert.", result.ErrorMessage);
     }
 
     [Fact]
@@ -110,11 +97,7 @@ public class AuthServiceTests
         _repository.Users.Add(user);
         var service = CreateService();
 
-        var result = await service.LoginAsync(new LoginRequest
-        {
-            EmailOrUsername = user.Username,
-            Password = "Password123!"
-        });
+        var result = await service.LoginAsync(new LoginRequest { EmailOrUsername = user.Username, Password = "Password123!" });
 
         Assert.False(result.Succeeded);
         Assert.Equal("Brugerkontoen er deaktiveret.", result.ErrorMessage);
@@ -138,8 +121,7 @@ public class AuthServiceTests
         };
     }
 
-    private static User CreateUser(
-        string email = "bruger@example.com")
+    private static User CreateUser(string email = "bruger@example.com")
     {
         return new User
         {

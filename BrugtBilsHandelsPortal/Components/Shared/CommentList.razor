@@ -2,8 +2,7 @@
 
 @if (Comments.Count == 0)
 {
-    <p class="text-muted"
-       data-testid="comments-empty">
+    <p class="text-muted" data-testid="comments-empty">
         Der er endnu ingen kommentarer.
     </p>
 }
@@ -12,41 +11,31 @@ else
     <div data-testid="comment-list">
         @foreach (var comment in Comments)
         {
-            <article class="card mb-3"
-                     data-testid="comment"
-                     @key="comment.Id">
+            <article class="card mb-3" data-testid="comment" @key="comment.Id">
                 <div class="card-body">
                     <div class="d-flex justify-content-between gap-3 mb-2">
                         <strong>
                             @comment.Username
                         </strong>
 
-                        <time class="text-muted"
-                              datetime="@comment.CreatedAt.ToString("O")">
+                        <time class="text-muted" datetime="@comment.CreatedAt.ToString("O")">
                             @comment.CreatedAt.ToLocalTime().ToString("dd-MM-yyyy HH:mm")
                         </time>
                     </div>
 
-                    <p class="mb-2"
-                       style="white-space: pre-line;">
+                    <p class="mb-2" style="white-space: pre-line;">
                         @comment.Text
                     </p>
 
                     <AuthorizeView>
                         <Authorized>
-                            <button type="button"
-                                    class="btn btn-sm btn-link px-0"
-                                    data-testid="@($"reply-comment-{comment.Id}")"
-                                    @onclick="() => StartReply(comment.Id)">
+                            <button type="button" class="btn btn-sm btn-link px-0" data-testid="@($"reply-comment-{comment.Id}")" @onclick="() => StartReply(comment.Id)">
                                 Svar
                             </button>
                         </Authorized>
 
                         <NotAuthorized>
-                            <button type="button"
-                                    class="btn btn-sm btn-link px-0"
-                                    data-testid="@($"reply-comment-{comment.Id}")"
-                                    @onclick="RequestLoginAsync">
+                            <button type="button" class="btn btn-sm btn-link px-0" data-testid="@($"reply-comment-{comment.Id}")" @onclick="RequestLoginAsync">
                                 Svar
                             </button>
                         </NotAuthorized>
@@ -54,12 +43,8 @@ else
 
                     @if (_replyingToCommentId == comment.Id)
                     {
-                        <div class="mt-3"
-                             data-testid="@($"reply-form-{comment.Id}")">
-                            <CommentForm AnnouncementId="AnnouncementId"
-                                         ParentCommentId="comment.Id"
-                                         OnCreated="HandleReplyCreatedAsync"
-                                         OnCancel="CancelReplyAsync" />
+                        <div class="mt-3" data-testid="@($"reply-form-{comment.Id}")">
+                            <CommentForm AnnouncementId="AnnouncementId" ParentCommentId="comment.Id" OnCreated="HandleReplyCreatedAsync" OnCancel="CancelReplyAsync" />
                         </div>
                     }
                 </div>
@@ -67,9 +52,7 @@ else
 
             @foreach (var reply in comment.Replies)
             {
-                <article class="card mb-3 ms-4 border-start border-primary"
-                         data-testid="comment-reply"
-                         @key="reply.Id">
+                <article class="card mb-3 ms-4 border-start border-primary" data-testid="comment-reply" @key="reply.Id">
                     <div class="card-body">
                         <div class="d-flex justify-content-between gap-3 mb-2">
                             <div>
@@ -83,16 +66,14 @@ else
                                 </span>
                             </div>
 
-                            <time class="text-muted"
-                                  datetime="@reply.CreatedAt.ToString("O")">
+                            <time class="text-muted" datetime="@reply.CreatedAt.ToString("O")">
                                 @reply.CreatedAt
                                     .ToLocalTime()
                                     .ToString("dd-MM-yyyy HH:mm")
                             </time>
                         </div>
 
-                        <p class="mb-0"
-                           style="white-space: pre-line;">
+                        <p class="mb-0" style="white-space: pre-line;">
                             @reply.Text
                         </p>
                     </div>
@@ -107,8 +88,7 @@ else
     public int AnnouncementId { get; set; }
 
     [Parameter, EditorRequired]
-    public IReadOnlyList<CommentDto> Comments { get; set; }
-        = Array.Empty<CommentDto>();
+    public IReadOnlyList<CommentDto> Comments { get; set; } = Array.Empty<CommentDto>();
 
     [Parameter]
     public EventCallback<CommentDto> OnCreated { get; set; }
@@ -118,8 +98,7 @@ else
 
     private long? _replyingToCommentId;
 
-    private void StartReply(
-        long commentId)
+    private void StartReply(long commentId)
     {
         _replyingToCommentId = commentId;
     }
@@ -130,8 +109,7 @@ else
         await Task.CompletedTask;
     }
 
-    private async Task HandleReplyCreatedAsync(
-        CommentDto reply)
+    private async Task HandleReplyCreatedAsync(CommentDto reply)
     {
         _replyingToCommentId = null;
         await OnCreated.InvokeAsync(reply);

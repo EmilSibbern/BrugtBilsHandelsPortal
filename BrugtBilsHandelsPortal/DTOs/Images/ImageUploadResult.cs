@@ -1,25 +1,14 @@
 ﻿namespace BrugtBilsHandelsPortal.DTOs.Images;
 
-public record ImageUploadResult(
-    bool Succeeded,
-    AnnouncementImageDto? Image,
-    string? ErrorMessage)
+public record ImageUploadResult(bool Succeeded, AnnouncementImageDto? Image, string? ErrorMessage)
 {
-    public static ImageUploadResult Successful(
-        AnnouncementImageDto image)
+    public static ImageUploadResult Successful(AnnouncementImageDto image)
     {
-        return new ImageUploadResult(
-            true,
-            image,
-            null);
+        return new ImageUploadResult(true, image, null);
     }
 
-    public static ImageUploadResult Failed(
-        string errorMessage)
+    public static ImageUploadResult Failed(string errorMessage)
     {
-        return new ImageUploadResult(
-            false,
-            null,
-            errorMessage);
+        return new ImageUploadResult(false, null, errorMessage);
     }
 }

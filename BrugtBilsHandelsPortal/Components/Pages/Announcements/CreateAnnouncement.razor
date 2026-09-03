@@ -29,30 +29,23 @@
             {
                 @if (!string.IsNullOrWhiteSpace(_errorMessage))
                 {
-                    <div class="alert alert-danger"
-                         role="alert">
+                    <div class="alert alert-danger" role="alert">
                         @_errorMessage
                     </div>
                 }
 
-                <EditForm Model="_model"
-                          OnValidSubmit="HandleSubmitAsync"
-                          FormName="create-announcement-form">
+                <EditForm Model="_model" OnValidSubmit="HandleSubmitAsync" FormName="create-announcement-form">
 
                     <DataAnnotationsValidator />
 
-                    <ValidationSummary
-                        class="text-danger mb-3" />
+                    <ValidationSummary class="text-danger mb-3" />
 
                     <div class="mb-3">
-                        <label for="brand"
-                               class="form-label">
+                        <label for="brand" class="form-label">
                             Mærke
                         </label>
 
-                        <InputSelect id="brand"
-                                     class="form-select"
-                                     @bind-Value="_model.BrandId">
+                        <InputSelect id="brand" class="form-select" @bind-Value="_model.BrandId">
                             <option value="0">
                                 Vælg bilmærke
                             </option>
@@ -65,109 +58,79 @@
                             }
                         </InputSelect>
 
-                        <ValidationMessage
-                            For="@(() => _model.BrandId)" />
+                        <ValidationMessage For="@(() => _model.BrandId)" />
                     </div>
 
                     <div class="mb-3">
-                        <label for="model"
-                               class="form-label">
+                        <label for="model" class="form-label">
                             Model
                         </label>
 
-                        <InputText id="model"
-                                   class="form-control"
-                                   @bind-Value="_model.Model" />
+                        <InputText id="model" class="form-control" @bind-Value="_model.Model" />
 
-                        <ValidationMessage
-                            For="@(() => _model.Model)" />
+                        <ValidationMessage For="@(() => _model.Model)" />
                     </div>
 
                     <div class="row">
                         <div class="col-md-4 mb-3">
-                            <label for="year"
-                                   class="form-label">
+                            <label for="year" class="form-label">
                                 Produktionsår
                             </label>
 
-                            <InputNumber id="year"
-                                         class="form-control"
-                                         @bind-Value="_model.ProductionYear" />
+                            <InputNumber id="year" class="form-control" @bind-Value="_model.ProductionYear" />
 
-                            <ValidationMessage
-                                For="@(() => _model.ProductionYear)" />
+                            <ValidationMessage For="@(() => _model.ProductionYear)" />
                         </div>
 
                         <div class="col-md-4 mb-3">
-                            <label for="mileage"
-                                   class="form-label">
+                            <label for="mileage" class="form-label">
                                 Kilometer
                             </label>
 
-                            <InputNumber id="mileage"
-                                         class="form-control"
-                                         @bind-Value="_model.Mileage" />
+                            <InputNumber id="mileage" class="form-control" @bind-Value="_model.Mileage" />
 
-                            <ValidationMessage
-                                For="@(() => _model.Mileage)" />
+                            <ValidationMessage For="@(() => _model.Mileage)" />
                         </div>
 
                         <div class="col-md-4 mb-3">
-                            <label for="color"
-                                   class="form-label">
+                            <label for="color" class="form-label">
                                 Farve
                             </label>
 
-                            <InputText id="color"
-                                       class="form-control"
-                                       @bind-Value="_model.Color" />
+                            <InputText id="color" class="form-control" @bind-Value="_model.Color" />
 
-                            <ValidationMessage
-                                For="@(() => _model.Color)" />
+                            <ValidationMessage For="@(() => _model.Color)" />
                         </div>
                     </div>
 
                     <div class="mb-3">
-                        <label for="title"
-                               class="form-label">
+                        <label for="title" class="form-label">
                             Titel
                         </label>
 
-                        <InputText id="title"
-                                   class="form-control"
-                                   @bind-Value="_model.Title" />
+                        <InputText id="title" class="form-control" @bind-Value="_model.Title" />
 
-                        <ValidationMessage
-                            For="@(() => _model.Title)" />
+                        <ValidationMessage For="@(() => _model.Title)" />
                     </div>
 
                     <div class="mb-3">
-                        <label for="description"
-                               class="form-label">
+                        <label for="description" class="form-label">
                             Beskrivelse
                         </label>
 
-                        <InputTextArea id="description"
-                                       class="form-control"
-                                       rows="6"
-                                       @bind-Value="_model.Description" />
+                        <InputTextArea id="description" class="form-control" rows="6" @bind-Value="_model.Description" />
 
-                        <ValidationMessage
-                            For="@(() => _model.Description)" />
+                        <ValidationMessage For="@(() => _model.Description)" />
                     </div>
 
                     <div class="mb-3">
-                        <label for="price"
-                               class="form-label">
+                        <label for="price" class="form-label">
                             Pris
                         </label>
 
-                        <InputNumber id="price"
-                                     class="form-control"
-                                     @bind-Value="_model.Price" />
+                        <InputNumber id="price" class="form-control" @bind-Value="_model.Price" />
 
-                        <ValidationMessage
-                            For="@(() => _model.Price)" />
+                        <ValidationMessage For="@(() => _model.Price)" />
                     </div>
 
                     <div class="mb-4">
@@ -175,10 +138,7 @@
                             Billeder
                         </label>
 
-                        <InputFile OnChange="HandleImagesSelected"
-                                   accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
-                                   multiple
-                                   disabled="@_isSubmitting" />
+                        <InputFile OnChange="HandleImagesSelected" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" multiple disabled="@_isSubmitting" />
 
                         <div class="form-text">
                             JPG, JPEG, PNG eller WebP. Maksimalt
@@ -200,20 +160,13 @@
                         }
                     </div>
 
-                    <button type="submit"
-                            class="btn btn-primary"
-                            disabled="@_isSubmitting">
+                    <button type="submit" class="btn btn-primary" disabled="@_isSubmitting">
                         @if (_isSubmitting)
                         {
-                            <span class="spinner-border spinner-border-sm me-2"
-                                  aria-hidden="true"></span>
+                            <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
                         }
 
-                        @(_isUploadingImages
-                            ? $"Uploader billede {_currentImage} af {_selectedImages.Count}..."
-                            : _isSubmitting
-                                ? "Opretter..."
-                                : "Opret annonce")
+                        @(_isUploadingImages ? $"Uploader billede {_currentImage} af {_selectedImages.Count}..." : _isSubmitting ? "Opretter..." : "Opret annonce")
                     </button>
                 </EditForm>
             }
@@ -225,36 +178,30 @@
     // Formularens tilstand holdes lokalt, så en fejl ikke rydder brugerens indtastning eller valgte filer.
     private readonly CreateAnnouncementDto _model = new();
 
-    private IReadOnlyList<CarBrand> _brands =
-        Array.Empty<CarBrand>();
+    private IReadOnlyList<CarBrand> _brands = Array.Empty<CarBrand>();
 
     private bool _isLoading = true;
     private bool _isSubmitting;
     private bool _isUploadingImages;
     private int _currentImage;
 
-    private IReadOnlyList<IBrowserFile> _selectedImages =
-        Array.Empty<IBrowserFile>();
+    private IReadOnlyList<IBrowserFile> _selectedImages = Array.Empty<IBrowserFile>();
 
     private string? _errorMessage;
 
-    private long MaxFileSize =>
-        ImageOptions.Value.MaxFileSizeBytes;
+    private long MaxFileSize => ImageOptions.Value.MaxFileSizeBytes;
 
-    private long MaxFileSizeInMb =>
-        MaxFileSize / 1024 / 1024;
+    private long MaxFileSizeInMb => MaxFileSize / 1024 / 1024;
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            _brands =
-                await AnnouncementService.GetCarBrandsAsync();
+            _brands = await AnnouncementService.GetCarBrandsAsync();
         }
         catch
         {
-            _errorMessage =
-                "Bilmærkerne kunne ikke indlæses.";
+            _errorMessage = "Bilmærkerne kunne ikke indlæses.";
         }
         finally
         {
@@ -262,27 +209,22 @@
         }
     }
 
-    private void HandleImagesSelected(
-        InputFileChangeEventArgs eventArgs)
+    private void HandleImagesSelected(InputFileChangeEventArgs eventArgs)
     {
         _errorMessage = null;
 
         try
         {
-            var images = eventArgs.GetMultipleFiles(
-                ImageOptions.Value.MaxImagesPerAnnouncement);
+            var images = eventArgs.GetMultipleFiles(ImageOptions.Value.MaxImagesPerAnnouncement);
 
             // Klientkontrollen giver hurtig feedback; service-laget validerer igen af sikkerhedshensyn.
-            var oversizedImage = images.FirstOrDefault(
-                image => image.Size > MaxFileSize);
+            var oversizedImage = images.FirstOrDefault(image => image.Size > MaxFileSize);
 
             if (oversizedImage is not null)
             {
                 _selectedImages = Array.Empty<IBrowserFile>();
 
-                _errorMessage =
-                    $"{oversizedImage.Name} overskrider grænsen på " +
-                    $"{MaxFileSizeInMb} MB.";
+                _errorMessage = $"{oversizedImage.Name} overskrider grænsen på " + $"{MaxFileSizeInMb} MB.";
 
                 return;
             }
@@ -293,21 +235,16 @@
         {
             _selectedImages = Array.Empty<IBrowserFile>();
 
-            _errorMessage =
-                $"Du kan højst vælge " +
-                $"{ImageOptions.Value.MaxImagesPerAnnouncement} billeder.";
+            _errorMessage = $"Du kan højst vælge " + $"{ImageOptions.Value.MaxImagesPerAnnouncement} billeder.";
         }
     }
 
     private static string FormatFileSize(long bytes)
     {
-        return bytes >= 1024 * 1024
-            ? $"{bytes / 1024d / 1024d:F1} MB"
-            : $"{bytes / 1024d:F0} KB";
+        return bytes >= 1024 * 1024 ? $"{bytes / 1024d / 1024d:F1} MB" : $"{bytes / 1024d:F0} KB";
     }
 
-    private async Task<int> UploadSelectedImagesAsync(
-        int announcementId)
+    private async Task<int> UploadSelectedImagesAsync(int announcementId)
     {
         if (_selectedImages.Count == 0)
         {
@@ -320,27 +257,16 @@
         try
         {
             // Filer uploades enkeltvis, så én ugyldig fil ikke forhindrer de øvrige i at blive gemt.
-            for (var index = 0;
-                 index < _selectedImages.Count;
-                 index++)
+            for (var index = 0; index < _selectedImages.Count; index++)
             {
                 _currentImage = index + 1;
                 var image = _selectedImages[index];
 
                 try
                 {
-                    await using var stream =
-                        image.OpenReadStream(MaxFileSize);
+                    await using var stream = image.OpenReadStream(MaxFileSize);
 
-                    var uploadResult =
-                        await ImageService.UploadAsync(
-                            new UploadAnnouncementImageRequest
-                            {
-                                AnnouncementId = announcementId,
-                                Content = stream,
-                                Size = image.Size,
-                                ContentType = image.ContentType
-                            });
+                    var uploadResult = await ImageService.UploadAsync(new UploadAnnouncementImageRequest { AnnouncementId = announcementId, Content = stream, Size = image.Size, ContentType = image.ContentType });
 
                     if (!uploadResult.Succeeded)
                     {
@@ -374,37 +300,25 @@
 
         try
         {
-            var result =
-                await AnnouncementService.CreateAsync(_model);
+            var result = await AnnouncementService.CreateAsync(_model);
 
-            if (!result.Succeeded ||
-                result.AnnouncementId is null)
+            if (!result.Succeeded || result.AnnouncementId is null)
             {
-                _errorMessage =
-                    result.ErrorMessage
-                    ?? "Annoncen kunne ikke oprettes.";
+                _errorMessage = result.ErrorMessage ?? "Annoncen kunne ikke oprettes.";
 
                 return;
             }
 
-            var announcementId =
-                result.AnnouncementId.Value;
+            var announcementId = result.AnnouncementId.Value;
 
             // Annoncen oprettes først, fordi billedmetadata kræver annoncens database-id.
-            var failedUploads =
-                await UploadSelectedImagesAsync(
-                    announcementId);
+            var failedUploads = await UploadSelectedImagesAsync(announcementId);
 
-            Navigation.NavigateTo(
-                failedUploads > 0
-                    ? $"/announcements/{announcementId}" +
-                      $"?failedImages={failedUploads}"
-                    : $"/announcements/{announcementId}");
+            Navigation.NavigateTo(failedUploads > 0 ? $"/announcements/{announcementId}" + $"?failedImages={failedUploads}" : $"/announcements/{announcementId}");
         }
         catch
         {
-            _errorMessage =
-                "Der opstod en fejl under oprettelsen.";
+            _errorMessage = "Der opstod en fejl under oprettelsen.";
         }
         finally
         {
