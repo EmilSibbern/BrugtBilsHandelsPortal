@@ -1221,6 +1221,137 @@ public class AnnouncementRepository : IAnnouncementRepository
         }
     }
 
+    public async Task<bool> ReactivateForAdministrationWithAuditAsync(int announcementId, int administratorUserId,
+        Guid correlationId)
+    {
+        const string administratorSql = """
+                                        SELECT CASE
+                                            WHEN EXISTS
+                                            (
+                                                SELECT 1
+                                                FROM dbo.Users AS admin
+                                                INNER JOIN dbo.UserGroups AS userGroup
+                                                    ON userGroup.Id = admin.UserGroupId
+                                                WHERE admin.Id = @AdministratorUserId
+                                                  AND admin.IsActive = 1
+                                                  AND userGroup.Name = N'Administrator'
+                                            )
+                                            THEN CAST(1 AS bit)
+                                            ELSE CAST(0 AS bit)
+                                        END;
+                                        """;
+
+        const string reactivateSql = """
+                                     UPDATE dbo.Announcement
+                                     SET
+                                         IsActive = 1,
+                                         UpdatedAt =
+                                             CASE
+                                                 WHEN SYSUTCDATETIME() <= COALESCE(UpdatedAt, CreatedAt)
+                                                 THEN DATEADD(SECOND, 1, COALESCE(UpdatedAt, CreatedAt))
+                                                 ELSE SYSUTCDATETIME()
+                                             END
+                                     WHERE Id = @AnnouncementId
+                                       AND IsActive = 0;
+                                     """;
+
+        const string auditSql = """
+                                INSERT INTO dbo.AuditLogs
+                                (
+                                    UserId,
+                                    Action,
+                                    EntityType,
+                                    EntityId,
+                                    Details,
+                                    CorrelationId
+                                )
+                                VALUES
+                                (
+                                    @AdministratorUserId,
+                                    @Action,
+                                    @EntityType,
+                                    @EntityId,
+                                    @Details,
+                                    @CorrelationId
+                                );
+                                """;
+
+        await using var connection = _connectionFactory.CreateConnection();
+
+        await connection.OpenAsync();
+
+        // Administratorens rolle fastholdes under transaktionen,
+        // og statusændringen gemmes sammen med auditloggen.
+        await using var transaction = await connection.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
+
+        try
+        {
+            // Kontrollér administratoren direkte i databasen.
+            await using (var administratorCommand = connection.CreateCommand())
+            {
+                administratorCommand.Transaction = transaction;
+                administratorCommand.CommandText = administratorSql;
+
+                AddParameter(administratorCommand, "@AdministratorUserId", administratorUserId);
+
+                var administratorResult = await administratorCommand.ExecuteScalarAsync();
+
+                if (!Convert.ToBoolean(administratorResult))
+                {
+                    await transaction.RollbackAsync();
+                    return false;
+                }
+            }
+
+            // Kun inaktive annoncer kan genaktiveres.
+            // Ejerens kontostatus ændres ikke.
+            await using (var reactivateCommand = connection.CreateCommand())
+            {
+                reactivateCommand.Transaction = transaction;
+                reactivateCommand.CommandText = reactivateSql;
+
+                AddParameter(reactivateCommand, "@AnnouncementId", announcementId);
+
+                var affectedAnnouncements = await reactivateCommand.ExecuteNonQueryAsync();
+
+                if (affectedAnnouncements != 1)
+                {
+                    await transaction.RollbackAsync();
+                    return false;
+                }
+            }
+
+            // Gem auditloggen i samme transaktion.
+            await using (var auditCommand = connection.CreateCommand())
+            {
+                auditCommand.Transaction = transaction;
+                auditCommand.CommandText = auditSql;
+
+                AddParameter(auditCommand, "@AdministratorUserId", administratorUserId);
+                AddParameter(auditCommand, "@Action", "AnnouncementReactivated");
+                AddParameter(auditCommand, "@EntityType", "Announcement");
+                AddParameter(auditCommand, "@EntityId", announcementId.ToString());
+                AddParameter(auditCommand, "@Details", "Annonce genaktiveret af administrator.");
+                AddParameter(auditCommand, "@CorrelationId", correlationId);
+
+                var insertedAuditLogs = await auditCommand.ExecuteNonQueryAsync();
+
+                if (insertedAuditLogs != 1)
+                {
+                    throw new InvalidOperationException("Auditloggen kunne ikke gemmes.");
+                }
+            }
+
+            await transaction.CommitAsync();
+            return true;
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
+    }
+
     private static void AddParameter(DbCommand command, string name, object? value)
     {
         var parameter = command.CreateParameter();

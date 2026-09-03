@@ -15,6 +15,61 @@ namespace BrugtBilsHandelsPortal.Tests.Components;
 
 public class AdminAnnouncementComponentsTests
 {
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    [Trait("UserStory", "US17")]
+    public void Overview_Reactivate_RequiresConfirmation(bool confirm)
+    {
+        var service = CreateAdminService();
+        var announcement = CreateAdminAnnouncement();
+        announcement.IsActive = false;
+        service.Announcements.Add(announcement);
+        using var context = CreateContext(service);
+        var cut = context.Render<ManageAnnouncements>();
+
+        cut.WaitForElement("button.btn-outline-success").Click();
+        Assert.Equal(0, service.ReactivateCallCount);
+        Assert.Contains("Volvo V70", cut.Find("[role='dialog']").TextContent);
+        cut.Find(confirm ? "[role='dialog'] button.btn-success" : "[role='dialog'] button.btn-outline-secondary").Click();
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Empty(cut.FindAll("[role='dialog']"));
+            Assert.Equal(confirm ? 1 : 0, service.ReactivateCallCount);
+            Assert.Equal(confirm, announcement.IsActive);
+            if (confirm)
+            {
+                Assert.Equal(42, service.LastReactivatedAnnouncementId);
+                Assert.Contains("Annoncen er genaktiveret", cut.Markup);
+                Assert.NotNull(cut.Find("button.btn-outline-danger"));
+            }
+        });
+    }
+
+    [Fact]
+    [Trait("UserStory", "US17")]
+    public void Overview_ReactivateFailure_ShowsErrorInsideConfirmation()
+    {
+        var service = CreateAdminService();
+        var announcement = CreateAdminAnnouncement();
+        announcement.IsActive = false;
+        service.Announcements.Add(announcement);
+        service.ReactivateException = new InvalidOperationException("Genaktivering afvist.");
+        using var context = CreateContext(service);
+        var cut = context.Render<ManageAnnouncements>();
+
+        cut.WaitForElement("button.btn-outline-success").Click();
+        cut.Find("[role='dialog'] button.btn-success").Click();
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Contains("Genaktivering afvist", cut.Find("[role='dialog'] .alert-danger").TextContent);
+            Assert.False(announcement.IsActive);
+            Assert.Equal(1, service.ReactivateCallCount);
+        });
+    }
+
     [Fact]
     [Trait("UserStory", "US17")]
     public void AdminPages_RequireAdministratorRole()
@@ -119,6 +174,10 @@ public class AdminAnnouncementComponentsTests
         cut.Find("#title").Change("Opdateret Volvo V70");
         cut.Find("form").Submit();
 
+        Assert.Equal(0, adminService.UpdateCallCount);
+        Assert.Contains("Opdateret Volvo V70", cut.Find("[role='dialog']").TextContent);
+        cut.Find("[role='dialog'] button.btn-primary").Click();
+
         cut.WaitForAssertion(() =>
         {
             Assert.Equal(1, adminService.UpdateCallCount);
@@ -193,6 +252,8 @@ public class AdminAnnouncementComponentsTests
 
         cut.WaitForElement("#title").Change("Bevar denne titel");
         cut.Find("form").Submit();
+        Assert.Equal(0, service.UpdateCallCount);
+        cut.Find("[role='dialog'] button.btn-primary").Click();
 
         cut.WaitForAssertion(() =>
         {
@@ -200,8 +261,50 @@ public class AdminAnnouncementComponentsTests
             Assert.Contains("Genindlæs siden", error.TextContent);
             Assert.Equal(1, service.UpdateCallCount);
             Assert.Equal("Bevar denne titel", cut.Find("#title").GetAttribute("value"));
+            Assert.Empty(cut.FindAll("[role='dialog']"));
             Assert.Equal(originalUri, context.Services.GetRequiredService<NavigationManager>().Uri);
         });
+    }
+
+    [Theory]
+    [InlineData("button.btn-outline-secondary")]
+    [InlineData("button.btn-close")]
+    [Trait("UserStory", "US17")]
+    public void EditPage_CancelConfirmation_PreservesInputWithoutSaving(string closeSelector)
+    {
+        var service = CreateAdminService();
+        service.EditModel = CreateUpdateRequest();
+        using var context = CreateContext(service);
+        context.Services.AddSingleton<IAnnouncementService>(new AnnouncementServiceStub());
+        var originalUri = context.Services.GetRequiredService<NavigationManager>().Uri;
+        var cut = context.Render<AdminEditAnnouncement>(parameters => parameters.Add(page => page.Id, 42));
+
+        cut.WaitForElement("#title").Change("Bevar ændringerne");
+        cut.Find("form").Submit();
+        cut.Find($"[role='dialog'] {closeSelector}").Click();
+
+        Assert.Empty(cut.FindAll("[role='dialog']"));
+        Assert.Equal(0, service.UpdateCallCount);
+        Assert.Equal("Bevar ændringerne", cut.Find("#title").GetAttribute("value"));
+        Assert.Equal(originalUri, context.Services.GetRequiredService<NavigationManager>().Uri);
+    }
+
+    [Fact]
+    [Trait("UserStory", "US17")]
+    public void EditPage_InvalidForm_DoesNotOpenConfirmationOrSave()
+    {
+        var service = CreateAdminService();
+        service.EditModel = CreateUpdateRequest();
+        using var context = CreateContext(service);
+        context.Services.AddSingleton<IAnnouncementService>(new AnnouncementServiceStub());
+        var cut = context.Render<AdminEditAnnouncement>(parameters => parameters.Add(page => page.Id, 42));
+
+        cut.WaitForElement("#title").Change("");
+        cut.Find("form").Submit();
+
+        Assert.Empty(cut.FindAll("[role='dialog']"));
+        Assert.Equal(0, service.UpdateCallCount);
+        Assert.NotEmpty(cut.FindAll(".validation-message"));
     }
 
     private static BunitContext CreateContext(AdminAnnouncementServiceStub service)
@@ -254,6 +357,19 @@ public class AdminAnnouncementComponentsTests
 
     private sealed class AdminAnnouncementServiceStub : IAdminAnnouncementService
     {
+        public int ReactivateCallCount { get; private set; }
+        public int? LastReactivatedAnnouncementId { get; private set; }
+        public Exception? ReactivateException { get; set; }
+
+        public Task ReactivateAsync(int announcementId)
+        {
+            ReactivateCallCount++;
+            LastReactivatedAnnouncementId = announcementId;
+            if (ReactivateException is not null) return Task.FromException(ReactivateException);
+            Announcements.Single(item => item.Id == announcementId).IsActive = true;
+            return Task.CompletedTask;
+        }
+
         public List<AdminAnnouncementDto> Announcements { get; } = [];
         public List<AnnouncementImageDto> Images { get; } = [];
         public UpdateAnnouncementDto? EditModel { get; set; }

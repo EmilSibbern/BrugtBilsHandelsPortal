@@ -39,4 +39,10 @@ public interface IAdminAnnouncementService
     Task<bool> DeleteImageAsync(int announcementId, int imageId, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<AnnouncementImageDto>> GetImagesAsync(int announcementId);
+
+    /// <summary>
+    /// Genaktiverer en inaktiv annonce som administrator.
+    /// Handlingen registreres i auditloggen.
+    /// </summary>
+    Task ReactivateAsync(int announcementId);
 }

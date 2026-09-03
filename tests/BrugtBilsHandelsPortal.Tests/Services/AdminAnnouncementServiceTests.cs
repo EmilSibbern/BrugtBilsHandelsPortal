@@ -9,6 +9,84 @@ namespace BrugtBilsHandelsPortal.Tests.Services;
 
 public class AdminAnnouncementServiceTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    [Trait("UserStory", "US17")]
+    public async Task ReactivateAsync_PassesAuditParametersRegardlessOfSellerStatus(bool inactiveSeller)
+    {
+        var repository = new FakeAnnouncementRepository();
+        var details = CreateAnnouncementDetails();
+        details.IsActive = false;
+        repository.Details[42] = details;
+        if (inactiveSeller) repository.InactiveSellerUserIds.Add(7);
+
+        await CreateService(repository).ReactivateAsync(42);
+
+        Assert.Equal(1, repository.AdminReactivateCallCount);
+        Assert.Equal(42, repository.LastAdminReactivatedAnnouncementId);
+        Assert.Equal(1, repository.LastAdministratorUserId);
+        Assert.NotNull(repository.LastAdminCorrelationId);
+        Assert.NotEqual(Guid.Empty, repository.LastAdminCorrelationId);
+        Assert.Equal(1, repository.GetByIdForAdministrationCallCount);
+        Assert.Equal(0, repository.GetByIdCallCount);
+        Assert.Equal(0, repository.ActivateCallCount);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData(7)]
+    [Trait("UserStory", "US17")]
+    public async Task ReactivateAsync_WithoutAdministratorAccess_IsRejectedBeforeLookup(int? userId)
+    {
+        var repository = new FakeAnnouncementRepository();
+        var service = new AdminAnnouncementService(repository, new FakeImageRepository(), new FakeCarBrandRepository(), new FakeCurrentUserService { UserId = userId }, new FakeImageStorage());
+
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => service.ReactivateAsync(42));
+
+        Assert.Equal(0, repository.GetByIdForAdministrationCallCount);
+        Assert.Equal(0, repository.AdminReactivateCallCount);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    [Trait("UserStory", "US17")]
+    public async Task ReactivateAsync_InvalidId_IsRejectedBeforeLookup(int id)
+    {
+        var repository = new FakeAnnouncementRepository();
+        await Assert.ThrowsAsync<ValidationException>(() => CreateService(repository).ReactivateAsync(id));
+        Assert.Equal(0, repository.GetByIdForAdministrationCallCount);
+        Assert.Equal(0, repository.AdminReactivateCallCount);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    [Trait("UserStory", "US17")]
+    public async Task ReactivateAsync_MissingOrAlreadyActive_IsRejectedBeforeMutation(bool exists)
+    {
+        var repository = new FakeAnnouncementRepository();
+        if (exists) repository.Details[42] = CreateAnnouncementDetails();
+
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(() => CreateService(repository).ReactivateAsync(42));
+
+        Assert.Contains(exists ? "allerede aktiv" : "findes ikke", error.Message);
+        Assert.Equal(0, repository.AdminReactivateCallCount);
+    }
+
+    [Fact]
+    [Trait("UserStory", "US17")]
+    public async Task ReactivateAsync_RepositoryRejectsMutation_ShowsRetryError()
+    {
+        var repository = new FakeAnnouncementRepository { AdminReactivateSucceeds = false };
+        repository.Details[42] = CreateAnnouncementDetails();
+        repository.Details[42].IsActive = false;
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(() => CreateService(repository).ReactivateAsync(42));
+        Assert.Contains("Genindlæs siden", error.Message);
+        Assert.Equal(1, repository.AdminReactivateCallCount);
+    }
+
     [Fact]
     [Trait("UserStory", "US17")]
     public async Task SearchAsync_AsAdministrator_NormalizesAndReturnsAnnouncements()

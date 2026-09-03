@@ -7,6 +7,19 @@ namespace BrugtBilsHandelsPortal.Tests.Fakes;
 
 public class FakeAnnouncementRepository : IAnnouncementRepository
 {
+    public int AdminReactivateCallCount { get; private set; }
+    public int? LastAdminReactivatedAnnouncementId { get; private set; }
+    public bool AdminReactivateSucceeds { get; set; } = true;
+
+    public Task<bool> ReactivateForAdministrationWithAuditAsync(int announcementId, int administratorUserId, Guid correlationId)
+    {
+        AdminReactivateCallCount++;
+        LastAdminReactivatedAnnouncementId = announcementId;
+        LastAdministratorUserId = administratorUserId;
+        LastAdminCorrelationId = correlationId;
+        return Task.FromResult(AdminReactivateSucceeds);
+    }
+
     public int AnnouncementIdToReturn { get; set; } = 1;
 
     public int CreateCallCount { get; private set; }

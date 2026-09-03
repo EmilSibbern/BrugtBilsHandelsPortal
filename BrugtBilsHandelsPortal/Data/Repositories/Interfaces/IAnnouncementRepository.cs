@@ -63,4 +63,10 @@ public interface IAnnouncementRepository
     /// Må kun kaldes efter administratorautorisation.
     /// </summary>
     Task<AnnouncementDetailsDto?> GetByIdForAdministrationAsync(int announcementId);
+
+    /// <summary>
+    /// Genaktiverer en annonce som administrator og opretter
+    /// en auditlog i samme databasetransaktion.
+    /// </summary>
+    Task<bool> ReactivateForAdministrationWithAuditAsync(int announcementId, int administratorUserId, Guid correlationId);
 }

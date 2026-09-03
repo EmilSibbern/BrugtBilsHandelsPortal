@@ -67,11 +67,11 @@
             {
                 <div class="card shadow-sm">
                     <div class="card-body p-4">
-                        <EditForm Model="_model" OnValidSubmit="SaveAsync" FormName="admin-edit-announcement">
+                        <EditForm Model="_model" OnValidSubmit="OpenSaveConfirmation" FormName="admin-edit-announcement">
 
-                            <DataAnnotationsValidator />
+                            <DataAnnotationsValidator/>
 
-                            <ValidationSummary class="text-danger mb-3" />
+                            <ValidationSummary class="text-danger mb-3"/>
 
                             <div class="row g-3">
                                 <div class="col-12 col-md-6">
@@ -92,7 +92,7 @@
                                         }
                                     </InputSelect>
 
-                                    <ValidationMessage For="@(() => _model.BrandId)" />
+                                    <ValidationMessage For="@(() => _model.BrandId)"/>
                                 </div>
 
                                 <div class="col-12 col-md-6">
@@ -100,9 +100,9 @@
                                         Model
                                     </label>
 
-                                    <InputText id="model" class="form-control" @bind-Value="_model.Model" />
+                                    <InputText id="model" class="form-control" @bind-Value="_model.Model"/>
 
-                                    <ValidationMessage For="@(() => _model.Model)" />
+                                    <ValidationMessage For="@(() => _model.Model)"/>
                                 </div>
 
                                 <div class="col-12 col-md-4">
@@ -110,9 +110,9 @@
                                         Produktionsår
                                     </label>
 
-                                    <InputNumber id="production-year" class="form-control" @bind-Value="_model.ProductionYear" />
+                                    <InputNumber id="production-year" class="form-control" @bind-Value="_model.ProductionYear"/>
 
-                                    <ValidationMessage For="@(() => _model.ProductionYear)" />
+                                    <ValidationMessage For="@(() => _model.ProductionYear)"/>
                                 </div>
 
                                 <div class="col-12 col-md-4">
@@ -120,9 +120,9 @@
                                         Kilometer
                                     </label>
 
-                                    <InputNumber id="mileage" class="form-control" @bind-Value="_model.Mileage" />
+                                    <InputNumber id="mileage" class="form-control" @bind-Value="_model.Mileage"/>
 
-                                    <ValidationMessage For="@(() => _model.Mileage)" />
+                                    <ValidationMessage For="@(() => _model.Mileage)"/>
                                 </div>
 
                                 <div class="col-12 col-md-4">
@@ -130,9 +130,9 @@
                                         Farve
                                     </label>
 
-                                    <InputText id="color" class="form-control" @bind-Value="_model.Color" />
+                                    <InputText id="color" class="form-control" @bind-Value="_model.Color"/>
 
-                                    <ValidationMessage For="@(() => _model.Color)" />
+                                    <ValidationMessage For="@(() => _model.Color)"/>
                                 </div>
 
                                 <div class="col-12">
@@ -140,9 +140,9 @@
                                         Titel
                                     </label>
 
-                                    <InputText id="title" class="form-control" @bind-Value="_model.Title" />
+                                    <InputText id="title" class="form-control" @bind-Value="_model.Title"/>
 
-                                    <ValidationMessage For="@(() => _model.Title)" />
+                                    <ValidationMessage For="@(() => _model.Title)"/>
                                 </div>
 
                                 <div class="col-12">
@@ -150,9 +150,9 @@
                                         Beskrivelse
                                     </label>
 
-                                    <InputTextArea id="description" class="form-control" rows="7" @bind-Value="_model.Description" />
+                                    <InputTextArea id="description" class="form-control" rows="7" @bind-Value="_model.Description"/>
 
-                                    <ValidationMessage For="@(() => _model.Description)" />
+                                    <ValidationMessage For="@(() => _model.Description)"/>
                                 </div>
 
                                 <div class="col-12 col-md-6">
@@ -161,18 +161,18 @@
                                     </label>
 
                                     <div class="input-group">
-                                        <InputNumber id="price" class="form-control" @bind-Value="_model.Price" />
+                                        <InputNumber id="price" class="form-control" @bind-Value="_model.Price"/>
 
                                         <span class="input-group-text">
                                             kr.
                                         </span>
                                     </div>
 
-                                    <ValidationMessage For="@(() => _model.Price)" />
+                                    <ValidationMessage For="@(() => _model.Price)"/>
                                 </div>
                             </div>
 
-                            <hr class="my-4" />
+                            <hr class="my-4"/>
 
                             <div class="d-flex flex-column flex-sm-row justify-content-between gap-3">
 
@@ -206,6 +206,42 @@
     </div>
 </div>
 
+@if (_showSaveConfirmation)
+{
+    <div class="modal d-block" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="confirm-save-title">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="confirm-save-title" class="modal-title h5">Bekræft ændringer</h2>
+
+                    <button type="button" class="btn-close" aria-label="Luk" disabled="@_isSaving" @onclick="CloseSaveConfirmation"></button>
+                </div>
+
+                <div class="modal-body">
+                    <p>Vil du gemme ændringerne til annoncen <strong>@_model?.Title</strong>?</p>
+
+                    <p class="text-muted mb-0">Ændringerne træder i kraft med det samme og registreres i auditloggen.</p>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" disabled="@_isSaving" @onclick="CloseSaveConfirmation">Annuller</button>
+
+                    <button type="button" class="btn btn-primary" disabled="@_isSaving" @onclick="SaveAsync">
+                        @if (_isSaving)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+                        }
+
+                        @(_isSaving ? "Gemmer..." : "Bekræft og gem")
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-backdrop show"></div>
+}
+
 @code {
     [Parameter]
     public int Id { get; set; }
@@ -220,12 +256,36 @@
 
     private string? _errorMessage;
 
+    private bool _showSaveConfirmation;
+
+    private void OpenSaveConfirmation()
+    {
+        if (_model is null || _isSaving)
+        {
+            return;
+        }
+
+        _errorMessage = null;
+        _showSaveConfirmation = true;
+    }
+
+    private void CloseSaveConfirmation()
+    {
+        if (_isSaving)
+        {
+            return;
+        }
+
+        _showSaveConfirmation = false;
+    }
+
     protected override async Task OnParametersSetAsync()
     {
         _isLoading = true;
         _notFound = false;
         _errorMessage = null;
         _model = null;
+        _showSaveConfirmation = false;
 
         try
         {
@@ -254,7 +314,7 @@
 
     private async Task SaveAsync()
     {
-        if (_model is null || _isSaving)
+        if (_model is null || _isSaving || !_showSaveConfirmation)
         {
             return;
         }
@@ -287,6 +347,7 @@
         finally
         {
             _isSaving = false;
+            _showSaveConfirmation = false;
         }
     }
 }

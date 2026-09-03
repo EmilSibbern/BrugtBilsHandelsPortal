@@ -202,6 +202,39 @@ public class AdminAnnouncementService : IAdminAnnouncementService
         }
     }
 
+    public async Task ReactivateAsync(int announcementId)
+    {
+        // Kontrollér adgang før validering og opslag.
+        var administratorUserId = await GetAdministratorUserIdAsync();
+
+        if (announcementId <= 0)
+        {
+            throw new ValidationException("Annoncen er ugyldig.");
+        }
+
+        // Admin-opslaget kan også hente annoncer fra deaktiverede ejere.
+        var announcement = await _announcementRepository.GetByIdForAdministrationAsync(announcementId);
+
+        if (announcement is null)
+        {
+            throw new InvalidOperationException("Annoncen findes ikke.");
+        }
+
+        if (announcement.IsActive)
+        {
+            throw new InvalidOperationException("Annoncen er allerede aktiv.");
+        }
+
+        // Repository-laget kontrollerer administratoren igen og
+        // gemmer statusændring og auditlog i samme transaktion.
+        var wasReactivated = await _announcementRepository.ReactivateForAdministrationWithAuditAsync(announcementId, administratorUserId, Guid.NewGuid());
+
+        if (!wasReactivated)
+        {
+            throw new InvalidOperationException("Annoncen kunne ikke genaktiveres. Genindlæs siden og prøv igen.");
+        }
+    }
+
     public async Task<IReadOnlyList<AnnouncementImageDto>> GetImagesAsync(int announcementId)
     {
         await GetAdministratorUserIdAsync();

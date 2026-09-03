@@ -39,9 +39,9 @@
         <div class="card-body p-4">
             <EditForm Model="_search" OnValidSubmit="ApplySearchAsync" FormName="admin-announcement-search">
 
-                <DataAnnotationsValidator />
+                <DataAnnotationsValidator/>
 
-                <ValidationSummary class="text-danger mb-3" />
+                <ValidationSummary class="text-danger mb-3"/>
 
                 <div class="row g-3">
                     <div class="col-12 col-lg-4">
@@ -49,7 +49,8 @@
                             Søg i annoncer
                         </label>
 
-                        <InputText id="announcement-query" class="form-control" placeholder="Titel, mærke eller model" @bind-Value="_search.Query" />
+                        <InputText id="announcement-query" class="form-control" placeholder="Titel, mærke eller model"
+                                   @bind-Value="_search.Query"/>
                     </div>
 
                     <div class="col-12 col-md-6 col-lg-3">
@@ -57,7 +58,8 @@
                             Ejer
                         </label>
 
-                        <InputText id="owner-query" class="form-control" placeholder="Brugernavn eller e-mail" @bind-Value="_search.OwnerQuery" />
+                        <InputText id="owner-query" class="form-control" placeholder="Brugernavn eller e-mail"
+                                   @bind-Value="_search.OwnerQuery"/>
                     </div>
 
                     <div class="col-12 col-md-6 col-lg-2">
@@ -83,7 +85,8 @@
                             Søg
                         </button>
 
-                        <button type="button" class="btn btn-outline-secondary" disabled="@_isLoading" @onclick="ResetSearchAsync">
+                        <button type="button" class="btn btn-outline-secondary" disabled="@_isLoading"
+                                @onclick="ResetSearchAsync">
                             Nulstil
                         </button>
                     </div>
@@ -146,7 +149,8 @@
                             }
                             else
                             {
-                                <img src="@GetImageUrl( announcement)" class="card-img-top object-fit-cover" alt="@announcement.Title" />
+                                <img src="@GetImageUrl(announcement)" class="card-img-top object-fit-cover"
+                                     alt="@announcement.Title"/>
                             }
                         </div>
 
@@ -220,8 +224,16 @@
 
                                 @if (announcement.IsActive)
                                 {
-                                    <button type="button" class="btn btn-outline-danger" disabled="@_isChangingStatus" @onclick="() => OpenDeactivateConfirmation( announcement)">
+                                    <button type="button" class="btn btn-outline-danger" disabled="@_isChangingStatus"
+                                            @onclick="() => OpenDeactivateConfirmation(announcement)">
                                         Deaktiver annonce
+                                    </button>
+                                }
+                                else
+                                {
+                                    <button type="button" class="btn btn-outline-success" disabled="@_isChangingStatus"
+                                            @onclick="() => OpenReactivateConfirmation(announcement)">
+                                        Genaktiver annonce
                                     </button>
                                 }
                             </div>
@@ -242,11 +254,13 @@
                 </p>
 
                 <div class="btn-group">
-                    <button type="button" class="btn btn-outline-primary" disabled="@(!_page.HasPreviousPage || _isLoading)" @onclick="PreviousPageAsync">
+                    <button type="button" class="btn btn-outline-primary"
+                            disabled="@(!_page.HasPreviousPage || _isLoading)" @onclick="PreviousPageAsync">
                         Forrige
                     </button>
 
-                    <button type="button" class="btn btn-outline-primary" disabled="@(!_page.HasNextPage || _isLoading)" @onclick="NextPageAsync">
+                    <button type="button" class="btn btn-outline-primary" disabled="@(!_page.HasNextPage || _isLoading)"
+                            @onclick="NextPageAsync">
                         Næste
                     </button>
                 </div>
@@ -266,7 +280,8 @@
                         Deaktiver annonce
                     </h2>
 
-                    <button type="button" class="btn-close" aria-label="Luk" disabled="@_isChangingStatus" @onclick="CloseConfirmation">
+                    <button type="button" class="btn-close" aria-label="Luk" disabled="@_isChangingStatus"
+                            @onclick="CloseConfirmation">
                     </button>
                 </div>
 
@@ -287,11 +302,13 @@
                 </div>
 
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" disabled="@_isChangingStatus" @onclick="CloseConfirmation">
+                    <button type="button" class="btn btn-outline-secondary" disabled="@_isChangingStatus"
+                            @onclick="CloseConfirmation">
                         Annuller
                     </button>
 
-                    <button type="button" class="btn btn-danger" disabled="@_isChangingStatus" @onclick="ConfirmDeactivateAsync">
+                    <button type="button" class="btn btn-danger" disabled="@_isChangingStatus"
+                            @onclick="ConfirmDeactivateAsync">
 
                         @if (_isChangingStatus)
                         {
@@ -309,6 +326,56 @@
     <div class="modal-backdrop show"></div>
 }
 
+@if (_announcementToReactivate is not null)
+{
+    <div class="modal d-block" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="reactivate-title">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="reactivate-title" class="modal-title h5">Genaktiver annonce</h2>
+
+                    <button type="button" class="btn-close" aria-label="Luk" disabled="@_isChangingStatus"
+                            @onclick="CloseReactivateConfirmation"></button>
+                </div>
+
+                <div class="modal-body">
+                    <p>Vil du genaktivere annoncen <strong>@_announcementToReactivate.Title</strong>?</p>
+
+                    <p class="text-muted mb-0">
+                        Annoncen bliver synlig igen, hvis ejerens konto er aktiv. Handlingen registreres i auditloggen.
+                    </p>
+
+                    @if (!string.IsNullOrWhiteSpace(_errorMessage))
+                    {
+                        <div class="alert alert-danger mt-3 mb-0" role="alert">
+                            @_errorMessage
+                        </div>
+                    }
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" disabled="@_isChangingStatus"
+                            @onclick="CloseReactivateConfirmation">
+                        Annuller
+                    </button>
+
+                    <button type="button" class="btn btn-success" disabled="@_isChangingStatus"
+                            @onclick="ConfirmReactivateAsync">
+                        @if (_isChangingStatus)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+                        }
+
+                        @(_isChangingStatus ? "Genaktiverer..." : "Bekræft genaktivering")
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-backdrop show"></div>
+}
+
 @code {
     private AdminAnnouncementSearchDto _search = new();
 
@@ -317,6 +384,7 @@
     private PagedResult<AdminAnnouncementDto>? _page;
 
     private AdminAnnouncementDto? _announcementToDeactivate;
+    private AdminAnnouncementDto? _announcementToReactivate;
 
     private bool _isLoading = true;
     private bool _isChangingStatus;
@@ -413,8 +481,8 @@
     {
         _successMessage = null;
         _errorMessage = null;
-
         _announcementToDeactivate = announcement;
+        _announcementToReactivate = null;
     }
 
     private void CloseConfirmation()
@@ -425,6 +493,68 @@
         }
 
         _announcementToDeactivate = null;
+    }
+
+    private void OpenReactivateConfirmation(AdminAnnouncementDto announcement)
+    {
+        if (_isChangingStatus)
+        {
+            return;
+        }
+
+        _successMessage = null;
+        _errorMessage = null;
+        _announcementToDeactivate = null;
+        _announcementToReactivate = announcement;
+    }
+
+    private void CloseReactivateConfirmation()
+    {
+        if (_isChangingStatus)
+        {
+            return;
+        }
+
+        _announcementToReactivate = null;
+        _errorMessage = null;
+    }
+
+    private async Task ConfirmReactivateAsync()
+    {
+        if (_announcementToReactivate is null || _isChangingStatus)
+        {
+            return;
+        }
+
+        _isChangingStatus = true;
+        _successMessage = null;
+        _errorMessage = null;
+
+        try
+        {
+            await AdminAnnouncementService.ReactivateAsync(_announcementToReactivate.Id);
+
+            _announcementToReactivate = null;
+            _successMessage = "Annoncen er genaktiveret.";
+
+            await LoadAnnouncementsAsync();
+        }
+        catch (Exception exception) when (exception is ValidationException or InvalidOperationException)
+        {
+            _errorMessage = exception.Message;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            _errorMessage = "Du har ikke adgang til at genaktivere annoncen.";
+        }
+        catch
+        {
+            _errorMessage = "Annoncen kunne ikke genaktiveres.";
+        }
+        finally
+        {
+            _isChangingStatus = false;
+        }
     }
 
     private async Task ConfirmDeactivateAsync()
@@ -470,4 +600,5 @@
     {
         return $"/uploads/{Uri.EscapeDataString(announcement.PrimaryImageFileName!)}";
     }
+
 }
